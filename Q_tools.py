@@ -6762,17 +6762,45 @@ unittest.TextTestRunner().run(suite);
 class QHStates(QH):
     """A class made up of many quaternions."""
     
-    def __init__(self, qs=None, qtype="", representation=""):
+    QS_TYPES = ["bra", "ket", "op", "operator"]
+    
+    def __init__(self, qs=None, qs_type="ket", rows=0, columns=0):
         
         self.qs = qs
+        self.qs_type = qs_type
+        
+        if qs_type not in self.QS_TYPES:
+            print("Oops, only know of these quaternion series types: {}".format(self.QS_TYPES))
+            return None
         
         if qs is None:
             self.d, self.dim, self.dimensions = 0, 0, 0
         else:
             self.d, self.dim, self.dimensions = len(qs), len(qs), len(qs)
     
-        self.qtype = qtype
-        self.representation = representation
+        if rows * columns == self.dim:
+            self.rows = rows
+            self.columns = columns
+            
+        elif self.qs_type == "ket":
+            self.rows = self.dim
+            self.columns = 1
+            
+        elif self.qs_type == "bra":
+            self.rows = 1
+            self.columns = self.dim
+            
+        else:
+            # Square series
+            root_dim = math.sqrt(self.dim)
+            
+            if root_dim.is_integer():
+                self.rows = root_dim
+                self.columns = root_dim
+                
+            else:
+                print("Oops, please set rows and columns for this quaternion series operator. Thanks.")
+                return None
         
     def __str__(self, quiet=False):
         """Print out all the states."""
@@ -7324,7 +7352,7 @@ class QHStates(QH):
         return signma[kind].normalize()
 
 
-# In[31]:
+# In[39]:
 
 
 class TestQHStates(unittest.TestCase):
@@ -7356,6 +7384,10 @@ class TestQHStates(unittest.TestCase):
     v33 = QHStates([q_7, q_0, q_n3, q_2, q_3, q_4, q_1, q_n1, q_n2])
     v33inv = QHStates([q_n2, q_3, q_9, q_8, q_n11, q_n34, q_n5, q_7, q_21])
     q_i3 = QHStates([q_1, q_1, q_1])
+    q_i3_bra = QHStates([q_1, q_1, q_1], "bra")
+    q_6_op = QHStates([q_1, q_0, q_0, q_1, q_i, q_i], "op")    
+    q_6_op_32 = QHStates([q_1, q_0, q_0, q_1, q_i, q_i], "op", rows=3, columns=2)
+    q_i2d_op = QHStates([q_1, q_0, q_0, q_1], "op")
     q_i2d = QHStates([q_1, q_0, q_0, q_1])
     q_i4 = QH([0,4,0,0])
     q_0_q_1 = QHStates([q_0, q_1])
@@ -7371,6 +7403,16 @@ class TestQHStates(unittest.TestCase):
     
     def test_init(self):
         self.assertTrue(self.q_0_q_1.dim == 2)
+    
+    def test_set_rows_and_columns(self):
+        self.assertTrue(self.q_i3.rows == 3)
+        self.assertTrue(self.q_i3.columns == 1)
+        self.assertTrue(self.q_i3_bra.rows == 1)
+        self.assertTrue(self.q_i3_bra.columns == 3)
+        self.assertTrue(self.q_i2d_op.rows == 2)
+        self.assertTrue(self.q_i2d_op.columns == 2)
+        self.assertTrue(self.q_6_op_32.rows == 3)
+        self.assertTrue(self.q_6_op_32.columns == 2)
         
     def test_equals(self):
         self.assertTrue(self.A.equals(self.A))
@@ -7600,14 +7642,45 @@ unittest.TextTestRunner().run(suite);
 class QHaStates(QHa):
     """A class made up of many quaternions."""
     
-    def __init__(self, qs=None, qtype="", representation=""):
+    QS_TYPES = ["bra", "ket", "op", "operator"]
+    
+    def __init__(self, qs=None, qs_type="ket", rows=0, columns=0):
         
         self.qs = qs
+        self.qs_type = qs_type
+        
+        if qs_type not in self.QS_TYPES:
+            print("Oops, only know of these quaternion series types: {}".format(self.QS_TYPES))
+            return None
         
         if qs is None:
             self.d, self.dim, self.dimensions = 0, 0, 0
         else:
             self.d, self.dim, self.dimensions = len(qs), len(qs), len(qs)
+    
+        if rows * columns == self.dim:
+            self.rows = rows
+            self.columns = columns
+            
+        elif self.qs_type == "ket":
+            self.rows = self.dim
+            self.columns = 1
+            
+        elif self.qs_type == "bra":
+            self.rows = 1
+            self.columns = self.dim
+            
+        else:
+            # Square series
+            root_dim = math.sqrt(self.dim)
+            
+            if root_dim.is_integer():
+                self.rows = root_dim
+                self.columns = root_dim
+                
+            else:
+                print("Oops, please set rows and columns for this quaternion series operator. Thanks.")
+                return None
         
     def __str__(self, quiet=False):
         """Print out all the states."""
@@ -8094,7 +8167,7 @@ class QHaStates(QHa):
         return signma[kind].normalize()
 
 
-# In[33]:
+# In[40]:
 
 
 class TestQHaStates(unittest.TestCase):
@@ -8126,6 +8199,10 @@ class TestQHaStates(unittest.TestCase):
     v33 = QHaStates([q_7, q_0, q_n3, q_2, q_3, q_4, q_1, q_n1, q_n2])
     v33inv = QHaStates([q_n2, q_3, q_9, q_8, q_n11, q_n34, q_n5, q_7, q_21])
     q_i3 = QHaStates([q_1, q_1, q_1])
+    q_i3_bra = QHaStates([q_1, q_1, q_1], "bra")
+    q_6_op = QHaStates([q_1, q_0, q_0, q_1, q_i, q_i], "op")    
+    q_6_op_32 = QHaStates([q_1, q_0, q_0, q_1, q_i, q_i], "op", rows=3, columns=2)
+    q_i2d_op = QHaStates([q_1, q_0, q_0, q_1], "op")
     q_i2d = QHaStates([q_1, q_0, q_0, q_1])
     q_i4 = QHa([0,4,0,0])
     q_0_q_1 = QHaStates([q_0, q_1])
@@ -8140,7 +8217,17 @@ class TestQHaStates(unittest.TestCase):
     qn = QHaStates([QHa([3,0,0,4])])
     def test_init(self):
         self.assertTrue(self.q_0_q_1.dim == 2)
-        
+    
+    def test_set_rows_and_columns(self):
+        self.assertTrue(self.q_i3.rows == 3)
+        self.assertTrue(self.q_i3.columns == 1)
+        self.assertTrue(self.q_i3_bra.rows == 1)
+        self.assertTrue(self.q_i3_bra.columns == 3)
+        self.assertTrue(self.q_i2d_op.rows == 2)
+        self.assertTrue(self.q_i2d_op.columns == 2)
+        self.assertTrue(self.q_6_op_32.rows == 3)
+        self.assertTrue(self.q_6_op_32.columns == 2)
+    
     def test_equals(self):
         self.assertTrue(self.A.equals(self.A))
         self.assertFalse(self.A.equals(self.B))
@@ -8339,14 +8426,45 @@ unittest.TextTestRunner().run(suite);
 class Q8States(Q8):
     """A class made up of many quaternions."""
     
-    def __init__(self, qs=None, qtype="", representation=""):
+    QS_TYPES = ["bra", "ket", "op", "operator"]
+    
+    def __init__(self, qs=None, qs_type="ket", rows=0, columns=0):
         
         self.qs = qs
+        self.qs_type = qs_type
+        
+        if qs_type not in self.QS_TYPES:
+            print("Oops, only know of these quaternion series types: {}".format(self.QS_TYPES))
+            return None
         
         if qs is None:
             self.d, self.dim, self.dimensions = 0, 0, 0
         else:
             self.d, self.dim, self.dimensions = len(qs), len(qs), len(qs)
+    
+        if rows * columns == self.dim:
+            self.rows = rows
+            self.columns = columns
+            
+        elif self.qs_type == "ket":
+            self.rows = self.dim
+            self.columns = 1
+            
+        elif self.qs_type == "bra":
+            self.rows = 1
+            self.columns = self.dim
+            
+        else:
+            # Square series
+            root_dim = math.sqrt(self.dim)
+            
+            if root_dim.is_integer():
+                self.rows = root_dim
+                self.columns = root_dim
+                
+            else:
+                print("Oops, please set rows and columns for this quaternion series operator. Thanks.")
+                return None
         
     def __str__(self, quiet=False):
         """Print out all the states."""
@@ -8809,7 +8927,7 @@ class Q8States(Q8):
         return signma[kind].normalize()
 
 
-# In[35]:
+# In[41]:
 
 
 class TestQ8States(unittest.TestCase):
@@ -8841,6 +8959,10 @@ class TestQ8States(unittest.TestCase):
     v33 = Q8States([q_7, q_0, q_n3, q_2, q_3, q_4, q_1, q_n1, q_n2])
     v33inv = Q8States([q_n2, q_3, q_9, q_8, q_n11, q_n34, q_n5, q_7, q_21])
     q_i3 = Q8States([q_1, q_1, q_1])
+    q_i3_bra = Q8States([q_1, q_1, q_1], "bra")
+    q_6_op = Q8States([q_1, q_0, q_0, q_1, q_i, q_i], "op")    
+    q_6_op_32 = Q8States([q_1, q_0, q_0, q_1, q_i, q_i], "op", rows=3, columns=2)
+    q_i2d_op = Q8States([q_1, q_0, q_0, q_1], "op")
     q_i2d = Q8States([q_1, q_0, q_0, q_1])
     q_i4 = Q8([0,4,0,0])
     q_0_q_1 = Q8States([q_0, q_1])
@@ -8852,10 +8974,21 @@ class TestQ8States(unittest.TestCase):
     Op4i = Q8States([q_i4])
     q_1234 = Q8States([Q8([1, 1, 0, 0]), Q8([2, 1, 0, 0]), Q8([3, 1, 0, 0]), Q8([4, 1, 0, 0])])
     sigma_y = Q8States([Q8([1, 0, 0, 0]), Q8([0, -1, 0, 0]), Q8([0, 1, 0, 0]), Q8([-1, 0, 0, 0])])
-    qn = Q8States([Q8([3,0,0,4])])    
+    qn = Q8States([Q8([3,0,0,4])])  
+    
     def test_init(self):
         self.assertTrue(self.q_0_q_1.dim == 2)
-        
+    
+    def test_set_rows_and_columns(self):
+        self.assertTrue(self.q_i3.rows == 3)
+        self.assertTrue(self.q_i3.columns == 1)
+        self.assertTrue(self.q_i3_bra.rows == 1)
+        self.assertTrue(self.q_i3_bra.columns == 3)
+        self.assertTrue(self.q_i2d_op.rows == 2)
+        self.assertTrue(self.q_i2d_op.columns == 2)
+        self.assertTrue(self.q_6_op_32.rows == 3)
+        self.assertTrue(self.q_6_op_32.columns == 2)
+    
     def test_equals(self):
         self.assertTrue(self.A.equals(self.A))
         self.assertFalse(self.A.equals(self.B))
@@ -9025,17 +9158,45 @@ unittest.TextTestRunner().run(suite);
 class Q8aStates(Q8a):
     """A class made up of many quaternions."""
     
-    def __init__(self, qs=None, qtype="Q", representation=""):
+    QS_TYPES = ["bra", "ket", "op", "operator"]
+    
+    def __init__(self, qs=None, qs_type="ket", rows=0, columns=0):
         
         self.qs = qs
+        self.qs_type = qs_type
+        
+        if qs_type not in self.QS_TYPES:
+            print("Oops, only know of these quaternion series types: {}".format(self.QS_TYPES))
+            return None
         
         if qs is None:
             self.d, self.dim, self.dimensions = 0, 0, 0
         else:
             self.d, self.dim, self.dimensions = len(qs), len(qs), len(qs)
-        
-        self.qtype = qtype
-        self.representation = representation
+    
+        if rows * columns == self.dim:
+            self.rows = rows
+            self.columns = columns
+            
+        elif self.qs_type == "ket":
+            self.rows = self.dim
+            self.columns = 1
+            
+        elif self.qs_type == "bra":
+            self.rows = 1
+            self.columns = self.dim
+            
+        else:
+            # Square series
+            root_dim = math.sqrt(self.dim)
+            
+            if root_dim.is_integer():
+                self.rows = root_dim
+                self.columns = root_dim
+                
+            else:
+                print("Oops, please set rows and columns for this quaternion series operator. Thanks.")
+                return None
         
     def __str__(self, quiet=False):
         """Print out all the states."""
@@ -9501,7 +9662,7 @@ class Q8aStates(Q8a):
         return signma[kind].normalize()
 
 
-# In[37]:
+# In[42]:
 
 
 class TestQ8aStates(unittest.TestCase):
@@ -9533,6 +9694,10 @@ class TestQ8aStates(unittest.TestCase):
     v33 = Q8aStates([q_7, q_0, q_n3, q_2, q_3, q_4, q_1, q_n1, q_n2])
     v33inv = Q8aStates([q_n2, q_3, q_9, q_8, q_n11, q_n34, q_n5, q_7, q_21])
     q_i3 = Q8aStates([q_1, q_1, q_1])
+    q_i3_bra = Q8aStates([q_1, q_1, q_1], "bra")
+    q_6_op = Q8aStates([q_1, q_0, q_0, q_1, q_i, q_i], "op")    
+    q_6_op_32 = Q8aStates([q_1, q_0, q_0, q_1, q_i, q_i], "op", rows=3, columns=2)
+    q_i2d_op = Q8aStates([q_1, q_0, q_0, q_1], "op")
     q_i2d = Q8aStates([q_1, q_0, q_0, q_1])
     q_i4 = Q8a([0,4,0,0])
     q_0_q_1 = Q8aStates([q_0, q_1])
@@ -9549,6 +9714,16 @@ class TestQ8aStates(unittest.TestCase):
     def test_init(self):
         self.assertTrue(self.q_0_q_1.dim == 2)
 
+    def test_set_rows_and_columns(self):
+        self.assertTrue(self.q_i3.rows == 3)
+        self.assertTrue(self.q_i3.columns == 1)
+        self.assertTrue(self.q_i3_bra.rows == 1)
+        self.assertTrue(self.q_i3_bra.columns == 3)
+        self.assertTrue(self.q_i2d_op.rows == 2)
+        self.assertTrue(self.q_i2d_op.columns == 2)
+        self.assertTrue(self.q_6_op_32.rows == 3)
+        self.assertTrue(self.q_6_op_32.columns == 2)    
+        
     def test_equals(self):
         self.assertTrue(self.A.equals(self.A))
         self.assertFalse(self.A.equals(self.B))
