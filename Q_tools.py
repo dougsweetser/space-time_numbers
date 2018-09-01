@@ -6757,7 +6757,7 @@ unittest.TextTestRunner().run(suite);
 
 # Any quaternion can be viewed as the sum of n other quaternions. This is common to see in quantum mechanics, whose needs are driving the development of this class and its methods.
 
-# In[30]:
+# In[1]:
 
 
 class QHStates(QH):
@@ -6930,7 +6930,15 @@ class QHStates(QH):
             else:
                 if self.dim == 1:
                     q_inv =QHStates(self.qs[0].inverse())
-        
+ 
+                elif self.qs_type in ["bra", "ket"]:
+                    new_qs = []
+                    
+                    for q in self.qs:
+                        new_qs.append(q.inverse())
+                    
+                    q_inv = QHStates(new_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+
                 elif self.dim == 4:
                     det = self.determinant()
                     detinv = det.inverse()
@@ -7348,6 +7356,10 @@ class TestQHStates(unittest.TestCase):
     v9 = QHStates([q_1, q_1, q_2, q_3, q_1, q_1, q_2, q_3, q_2])
     v9i = QHStates([QH([0,1,0,0]), QH([0,2,0,0]), QH([0,3,0,0]), QH([0,4,0,0]), QH([0,5,0,0]), QH([0,6,0,0]), QH([0,7,0,0]), QH([0,8,0,0]), QH([0,9,0,0])])
     vv9 = v9.add(v9i)
+    q_1d0 = QH([1.0, 0, 0, 0])
+    q12 = QHStates([q_1d0, q_1d0])
+    q14 = QHStates([q_1d0, q_1d0, q_1d0, q_1d0])
+    q19 = QHStates([q_1d0, q_0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0])
     qn627 = QH([-6,27,0,0])
     v33 = QHStates([q_7, q_0, q_n3, q_2, q_3, q_4, q_1, q_n1, q_n2])
     v33inv = QHStates([q_n2, q_3, q_9, q_8, q_n11, q_n34, q_n5, q_7, q_21])
@@ -7415,11 +7427,21 @@ class TestQHStates(unittest.TestCase):
     def test_1060_inverse(self):
         inv_v1123 = self.v1123.inverse(operator=True)
         print("inv_v1123 operator", inv_v1123)
-        self.assertTrue(inv_v1123.equals(self.v3n1n21))
+        vvinv = inv_v1123.product(self.v1123)
+        vvinv.print_state("vinvD x v")
+        self.assertTrue(vvinv.equals(self.q14))
 
         inv_v33 = self.v33.inverse(operator=True)
         print("inv_v33 operator", inv_v33)
-        self.assertTrue(inv_v33.equals(self.v33inv))
+        vv33 = inv_v33.product(self.v33)
+        vv33.print_state("inv_v33D x v33")
+        self.assertTrue(vv33.equals(self.q19))
+        
+        Ainv = self.A.inverse(operator=True)
+        print("A ket inverse, ", Ainv)
+        AAinv = self.A.product(Ainv)
+        AAinv.print_state("A x AinvD")
+        self.assertTrue(AAinv.equals(self.q12))
         
     def test_1070_normalize(self):
         qn = self.qn.normalize()
@@ -7796,6 +7818,14 @@ class QHaStates(QHa):
                 if self.dim == 1:
                     q_inv =QHaStates(self.qs[0].inverse())
         
+                elif self.qs_type in ["bra", "ket"]:
+                    new_qs = []
+                    
+                    for q in self.qs:
+                        new_qs.append(q.inverse())
+                    
+                    q_inv = QHaStates(new_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+                    
                 elif self.dim == 4:
                     det = self.determinant()
                     detinv = det.inverse()
@@ -8211,6 +8241,10 @@ class TestQHaStates(unittest.TestCase):
     v3 = QHaStates([q_3])
     v1123 = QHaStates([q_1, q_1, q_2, q_3])
     v3n1n21 = QHaStates([q_3,q_n1,q_n2,q_1])
+    q_1d0 = QHa([1.0, 0, 0, 0])
+    q12 = QHaStates([q_1d0, q_1d0])
+    q14 = QHaStates([q_1d0, q_1d0, q_1d0, q_1d0])
+    q19 = QHaStates([q_1d0, q_0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0])
     v9 = QHaStates([q_1, q_1, q_2, q_3, q_1, q_1, q_2, q_3, q_2])
     v9i = QHaStates([QHa([0,1,0,0]), QHa([0,2,0,0]), QHa([0,3,0,0]), QHa([0,4,0,0]), QHa([0,5,0,0]), QHa([0,6,0,0]), QHa([0,7,0,0]), QHa([0,8,0,0]), QHa([0,9,0,0])])
     vv9 = v9.add(v9i)
@@ -8235,7 +8269,7 @@ class TestQHaStates(unittest.TestCase):
     q_1234 = QHaStates([QHa([1, 1, 0, 0]), QHa([2, 1, 0, 0]), QHa([3, 1, 0, 0]), QHa([4, 1, 0, 0])])
     sigma_y = QHaStates([QHa([1, 0, 0, 0]), QHa([0, -1, 0, 0]), QHa([0, 1, 0, 0]), QHa([-1, 0, 0, 0])])
     qn = QHaStates([QHa([3,0,0,4])])
-    q_bad = QHaStates([q1], rows=2, columns=3)
+    q_bad = QHaStates([q_1], rows=2, columns=3)
     
     b = QHaStates([q_1, q_2, q_3], qs_type="bra")
     k = QHaStates([q_4, q_5, q_6], qs_type="ket")
@@ -8281,11 +8315,21 @@ class TestQHaStates(unittest.TestCase):
     def test_1060_inverse(self):
         inv_v1123 = self.v1123.inverse(operator=True)
         print("inv_v1123 operator", inv_v1123)
-        self.assertTrue(inv_v1123.equals(self.v3n1n21))
+        vvinv = inv_v1123.product(self.v1123)
+        vvinv.print_state("vinvD x v")
+        self.assertTrue(vvinv.equals(self.q14))
 
         inv_v33 = self.v33.inverse(operator=True)
         print("inv_v33 operator", inv_v33)
-        self.assertTrue(inv_v33.equals(self.v33inv))
+        vv33 = inv_v33.product(self.v33)
+        vv33.print_state("inv_v33D x v33")
+        self.assertTrue(vv33.equals(self.q19))
+        
+        Ainv = self.A.inverse(operator=True)
+        print("A bra inverse, ", Ainv)
+        AAinv = self.A.product(Ainv)
+        AAinv.print_state("A x AinvD")
+        self.assertTrue(AAinv.equals(self.q12))
         
     def test_1070_normalize(self):
         qn = self.qn.normalize()
@@ -8653,6 +8697,14 @@ class Q8States(Q8):
                 if self.dim == 1:
                     q_inv =Q8States(self.qs[0].inverse())
         
+                elif self.qs_type in ["bra", "ket"]:
+                    new_qs = []
+                    
+                    for q in self.qs:
+                        new_qs.append(q.inverse())
+                    
+                    q_inv = Q8States(new_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+                    
                 elif self.dim == 4:
                     det = self.determinant()
                     detinv = det.inverse()
@@ -9078,6 +9130,10 @@ class TestQ8States(unittest.TestCase):
     v3 = Q8States([q_3])
     v1123 = Q8States([q_1, q_1, q_2, q_3])
     v3n1n21 = Q8States([q_3,q_n1,q_n2,q_1])
+    q_1d0 = Q8([1.0, 0, 0, 0])
+    q12 = Q8States([q_1d0, q_1d0])
+    q14 = Q8States([q_1d0, q_1d0, q_1d0, q_1d0])
+    q19 = Q8States([q_1d0, q_0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0])
     v9 = Q8States([q_1, q_1, q_2, q_3, q_1, q_1, q_2, q_3, q_2])
     v9i = Q8States([Q8([0,1,0,0]), Q8([0,2,0,0]), Q8([0,3,0,0]), Q8([0,4,0,0]), Q8([0,5,0,0]), Q8([0,6,0,0]), Q8([0,7,0,0]), Q8([0,8,0,0]), Q8([0,9,0,0])])
     vv9 = v9.add(v9i)
@@ -9148,11 +9204,21 @@ class TestQ8States(unittest.TestCase):
     def test_1060_inverse(self):
         inv_v1123 = self.v1123.inverse(operator=True)
         print("inv_v1123 operator", inv_v1123)
-        self.assertTrue(inv_v1123.equals(self.v3n1n21))
+        vvinv = inv_v1123.product(self.v1123)
+        vvinv.print_state("vinvD x v")
+        self.assertTrue(vvinv.equals(self.q14))
 
         inv_v33 = self.v33.inverse(operator=True)
         print("inv_v33 operator", inv_v33)
-        self.assertTrue(inv_v33.equals(self.v33inv))
+        vv33 = inv_v33.product(self.v33)
+        vv33.print_state("inv_v33D x v33")
+        self.assertTrue(vv33.equals(self.q19))
+        
+        Ainv = self.A.inverse(operator=True)
+        print("A bra inverse, ", Ainv)
+        AAinv = self.A.product(Ainv)
+        AAinv.print_state("A x AinvD")
+        self.assertTrue(AAinv.equals(self.q12))
         
     def test_1070_normalize(self):
         qn = self.qn.normalize()
@@ -9519,6 +9585,14 @@ class Q8aStates(Q8a):
             else:
                 if self.dim == 1:
                     q_inv =Q8aStates(self.qs[0].inverse())
+        
+                elif self.qs_type in ["bra", "ket"]:
+                    new_qs = []
+                    
+                    for q in self.qs:
+                        new_qs.append(q.inverse())
+                    
+                    q_inv = Q8aStates(new_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
         
                 elif self.dim == 4:
                     det = self.determinant()
@@ -9944,6 +10018,10 @@ class TestQ8aStates(unittest.TestCase):
     v3 = Q8aStates([q_3])
     v1123 = Q8aStates([q_1, q_1, q_2, q_3])
     v3n1n21 = Q8aStates([q_3,q_n1,q_n2,q_1])
+    q_1d0 = Q8a([1.0, 0, 0, 0])
+    q12 = Q8aStates([q_1d0, q_1d0])
+    q14 = Q8aStates([q_1d0, q_1d0, q_1d0, q_1d0])
+    q19 = Q8aStates([q_1d0, q_0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0, q_1d0])
     v9 = Q8aStates([q_1, q_1, q_2, q_3, q_1, q_1, q_2, q_3, q_2])
     v9i = Q8aStates([Q8a([0,1,0,0]), Q8a([0,2,0,0]), Q8a([0,3,0,0]), Q8a([0,4,0,0]), Q8a([0,5,0,0]), Q8a([0,6,0,0]), Q8a([0,7,0,0]), Q8a([0,8,0,0]), Q8a([0,9,0,0])])
     vv9 = v9.add(v9i)
@@ -9968,7 +10046,7 @@ class TestQ8aStates(unittest.TestCase):
     q_1234 = Q8aStates([Q8a([1, 1, 0, 0]), Q8a([2, 1, 0, 0]), Q8a([3, 1, 0, 0]), Q8a([4, 1, 0, 0])])
     sigma_y = Q8aStates([Q8a([1, 0, 0, 0]), Q8a([0, -1, 0, 0]), Q8a([0, 1, 0, 0]), Q8a([-1, 0, 0, 0])])
     qn = Q8aStates([Q8a([3,0,0,4])])
-    q_bad = QHStates([q_1], rows=2, columns=3)
+    q_bad = Q8aStates([q_1], rows=2, columns=3)
     
     b = Q8aStates([q_1, q_2, q_3], qs_type="bra")
     k = Q8aStates([q_4, q_5, q_6], qs_type="ket")
@@ -10014,11 +10092,21 @@ class TestQ8aStates(unittest.TestCase):
     def test_1060_inverse(self):
         inv_v1123 = self.v1123.inverse(operator=True)
         print("inv_v1123 operator", inv_v1123)
-        self.assertTrue(inv_v1123.equals(self.v3n1n21))
+        vvinv = inv_v1123.product(self.v1123)
+        vvinv.print_state("vinvD x v")
+        self.assertTrue(vvinv.equals(self.q14))
 
         inv_v33 = self.v33.inverse(operator=True)
         print("inv_v33 operator", inv_v33)
-        self.assertTrue(inv_v33.equals(self.v33inv))
+        vv33 = inv_v33.product(self.v33)
+        vv33.print_state("inv_v33D x v33")
+        self.assertTrue(vv33.equals(self.q19))
+        
+        Ainv = self.A.inverse(operator=True)
+        print("A ket inverse, ", Ainv)
+        AAinv = self.A.product(Ainv)
+        AAinv.print_state("A x AinvD")
+        self.assertTrue(AAinv.equals(self.q12))
         
     def test_1070_normalize(self):
         qn = self.qn.normalize()
