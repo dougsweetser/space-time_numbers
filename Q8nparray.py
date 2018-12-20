@@ -3,7 +3,7 @@
 
 # # Q8 Designed for nparray
 
-# In[3]:
+# In[1]:
 
 
 import IPython
@@ -26,7 +26,7 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 
 # Define the stretch factor $\gamma$ and the $\gamma \beta$ used in special relativity.
 
-# In[4]:
+# In[2]:
 
 
 def sr_gamma(beta_x=0, beta_y=0, beta_z=0):
@@ -42,7 +42,7 @@ def sr_gamma_betas(beta_x=0, beta_y=0, beta_z=0):
     return [g, g * beta_x, g * beta_y, g * beta_z]
 
 
-# In[5]:
+# In[3]:
 
 
 class Q8a(np.ndarray):
@@ -57,33 +57,22 @@ class Q8a(np.ndarray):
         obj.qtype = qtype
         obj.representation = representation
         
-        if (type(obj.values).__name__ == 'ndarray') and (type(obj.values[0]).__name__ == 'Q8a'):
-            # for Q8aStates
-            print("ndarray skip mode")
-            pass
-        
-        elif (type(obj.values).__name__ == 'list') and (type(obj.values[0]).__name__ == 'Q8a'):
-            # for Q8aStates
-            print("list skip mode")
-            pass
-        
-        else:
-            if values is not None:        
-                if len(values) == 4:
-                    for i in range(0, 4):
-                        obj[i * 2], obj[i * 2 + 1] = obj.__handle_negatives(values[i], 0)
+        if values is not None:        
+            if len(values) == 4:
+                for i in range(0, 4):
+                    obj[i * 2], obj[i * 2 + 1] = obj.__handle_negatives(values[i], 0)
             
-                elif len(values) == 8:
-                    for i in range(0,8,2):
-                        obj[i], obj[i+1] = obj.__handle_negatives(values[i], values[i+1])
+            elif len(values) == 8:
+                for i in range(0,8,2):
+                    obj[i], obj[i+1] = obj.__handle_negatives(values[i], values[i+1])
                     
-                else:
-                    print("Oops, need to be fed 4 or 8 numbers.")
             else:
-                # Puts in zeroes by default.
-                pass
+                print("Oops, need to be fed 4 or 8 numbers.")
+        else:
+            # Puts in zeroes by default.
+            pass
         
-            obj[obj < 10e-100] = 0
+        obj[obj < 10e-100] = 0
         
         return obj
     
@@ -1057,7 +1046,7 @@ class Q8a(np.ndarray):
     trinary_op["triple_product"] = triple_product
 
 
-# In[6]:
+# In[4]:
 
 
 class TestQ8a(unittest.TestCase):
@@ -1533,487 +1522,12 @@ suite = unittest.TestLoader().loadTestsFromModule(TestQ8a())
 unittest.TextTestRunner().run(suite);
 
 
-# In[7]:
+# In[29]:
 
 
-class TestNPArrayQ8a(unittest.TestCase):
-
-    """Class to make sure all the functions work as expected."""
-    q_0 = Q8a.q_0()
-    q_1 = Q8a.q_1()
-    q1 = Q8a(np.array([1, 0, 0, 2, 0, 3, 0, 4]))
-    q2 = Q8a(np.array([0, 0, 4, 0, 0, 3, 0, 0]))
-    q_big = Q8a(np.array([1, 2, 3, 4, 5, 6, 7, 8]))
-    Q = Q8a(np.array([1, -2, -3, -4]), qtype="Q")
-    P = Q8a(np.array([0, 4, -3, 0]), qtype="P")
-    R = Q8a(np.array([3, 0, 0, 0]), qtype="R")
-    C = Q8a(np.array([2, 4, 0, 0]), qtype="C")
-    verbose = True
-    
-    def test_qt(self):
-        self.assertTrue(self.q1[0] == 1)
-    
-    def test_scalar(self):
-        q_z = self.q1.scalar()
-        print("scalar(q): ", q_z)
-        self.assertTrue(q_z[0] == 1)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[6] == 0)
-        
-    def test_vector(self):
-        q_z = self.q1.vector()
-        print("vector(q): ", q_z)
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[3] == 2)
-        self.assertTrue(q_z[5] == 3)
-        self.assertTrue(q_z[7] == 4)
-        
-    def test_xyz(self):
-        q_z = self.q1.xyz()
-        print("q.xyz()): ", q_z)
-        self.assertTrue(q_z[0] == -2)
-        self.assertTrue(q_z[1] == -3)
-        self.assertTrue(q_z[2] == -4)
-        
-    def test_q_zero(self):
-        q_z = self.q1.q_0()
-        print("q0: {}".format(q_z))
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[5] == 0)
-        self.assertTrue(q_z[6] == 0)
-        
-    def test_q_1(self):
-        q_z = self.q1.q_1()
-        q_zn = self.q1.q_1(-1)
-        print("q_1: {}".format(q_z))
-        self.assertTrue(q_z[0] == 1)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_zn[1] == 1)
-        
-    def test_q_i(self):
-        q_z = self.q1.q_i()
-        q_zn = self.q1.q_i(-1)
-        print("q_i: {}".format(q_z))
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[2] == 1)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_zn[3] == 1)
-        
-    def test_q_j(self):
-        q_z = self.q1.q_j()
-        q_zn = self.q1.q_j(-1)
-        print("q_j: {}".format(q_z))
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[4] == 1)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_zn[5] == 1)
-        
-    def test_q_k(self):
-        q_z = self.q1.q_k()
-        q_zn = self.q1.q_k(-1)
-        print("q_k: {}".format(q_z))
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[6] == 1)
-        self.assertTrue(q_zn[7] == 1)
-                
-    def test_q_random(self):
-        q_z = self.q1.q_random()
-        print("q_random():", q_z)
-        for i in range(8):
-            self.assertTrue(q_z[i] >= 0 and q_z[i] <= 1)
-            
-    def test_conj_0(self):
-        q_z = self.q1.conj()
-        print("conj 0: {}".format(q_z))
-        self.assertTrue(1)
-        self.assertTrue(q_z[0] == 1)
-        self.assertTrue(q_z[2] == 2)
-        self.assertTrue(q_z[4] == 3)
-        self.assertTrue(q_z[6] == 4)
-            
-    def test_equals(self):
-        self.assertTrue(self.q1.equals(self.q1))
-        self.assertFalse(self.q1.equals(self.q2))
-                 
-    def test_conj_1(self):
-        q_z = self.q1.conj(1)
-        print("conj 1: {}".format(q_z))
-        self.assertTrue(q_z[1] == 1)
-        self.assertTrue(q_z[3] == 2)
-        self.assertTrue(q_z[4] == 3)
-        self.assertTrue(q_z[6] == 4)
-                 
-    def test_conj_2(self):
-        q_z = self.q1.conj(2)
-        print("conj 2: {}".format(q_z))
-        self.assertTrue(q_z[1] == 1)
-        self.assertTrue(q_z[2] == 2)
-        self.assertTrue(q_z[5] == 3)
-        self.assertTrue(q_z[6] == 4)
-        
-    def test_vahlen_conj_0(self):
-        q1 = Q8a(values=[1, 0, 0, 2, 0, 3, 0, 4])
-        q_z = q1.vahlen_conj()
-        print("vahlen conj -: {}".format(q_z))
-        self.assertTrue(q_z[0] == 1)
-        self.assertTrue(q_z[2] == 2)
-        self.assertTrue(q_z[4] == 3)
-        self.assertTrue(q_z[6] == 4)
-                 
-    def test_vahlen_conj_1(self):
-        q_z = self.q1.vahlen_conj("'")
-        print("vahlen conj ': {}".format(q_z))
-        self.assertTrue(q_z[0] == 1)
-        self.assertTrue(q_z[2] == 2)
-        self.assertTrue(q_z[4] == 3)
-        self.assertTrue(q_z[7] == 4)
-                 
-    def test_vahlen_conj_2(self):
-        q_z = self.q1.vahlen_conj('*')
-        print("vahlen conj *: {}".format(q_z))
-        self.assertTrue(q_z[0] == 1)
-        self.assertTrue(q_z[3] == 2)
-        self.assertTrue(q_z[5] == 3)
-        self.assertTrue(q_z[6] == 4)
-        
-    def test_reduce(self):
-        q_z = self.q_big.reduce()
-        print("q_big reduced: {}".format(q_z))
-        for i in range(0, 8, 2):
-            self.assertTrue(q_z[i] == 0)
-            self.assertTrue(q_z[i + 1] == 1)
-            
-    def test_flip_signs(self):
-        q_z = self.q_big.flip_signs()
-        print("q_big sign_flip: {}".format(q_z))
-        for i in range(0, 8, 2):
-            self.assertTrue(q_z[i] == self.q_big[i+1])
-            self.assertTrue(q_z[i+1] == self.q_big[i])
-            
-    def test_add(self):
-        q_z = self.q1.add(self.q2)
-        print("add: {}".format(q_z))
-        self.assertTrue(q_z[0] == 1)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[2] == 4)
-        self.assertTrue(q_z[3] == 2)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[5] == 6)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_z[7] == 4)
-        
-    def test_add_reduce(self):
-        q_z_red = self.q1.add(self.q2).reduce()
-        print("add reduce: {}".format(q_z_red))
-        self.assertTrue(q_z_red[0] == 1)
-        self.assertTrue(q_z_red[1] == 0)
-        self.assertTrue(q_z_red[2] == 2)
-        self.assertTrue(q_z_red[3] == 0)
-        self.assertTrue(q_z_red[4] == 0)
-        self.assertTrue(q_z_red[5] == 6)
-        self.assertTrue(q_z_red[6] == 0)
-        self.assertTrue(q_z_red[7] == 4)
-        
-    def test_dif(self):
-        q_z = self.q1.dif(self.q2)
-        print("dif: {}".format(q_z))
-        self.assertTrue(q_z[0] == 1)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[3] == 6) 
-        self.assertTrue(q_z[4] == 3)
-        self.assertTrue(q_z[5] == 3)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_z[7] == 4) 
-        
-    def test_square(self):
-        q_sq = self.q1.square()
-        q_sq_red = q_sq.reduce()
-        print("square: {}".format(q_sq))
-        print("square reduced: {}".format(q_sq_red))
-        self.assertTrue(q_sq[0] == 1)
-        self.assertTrue(q_sq[1] == 29)
-        self.assertTrue(q_sq[3] == 4)
-        self.assertTrue(q_sq[5] == 6)
-        self.assertTrue(q_sq[7] == 8)
-        self.assertTrue(q_sq_red[0] == 0)
-        self.assertTrue(q_sq_red[1] == 28)
-        
-    def test_norm_squared(self):
-        q_z = self.q1.norm_squared()
-        print("norm_squared: {}".format(q_z))
-        self.assertTrue(q_z[0] == 30)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[3] == 0)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[5] == 0)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_z[7] == 0)
-        
-    def test_norm_squared_of_vector(self):
-        q_z = self.q1.norm_squared_of_vector()
-        print("norm_squared_of_vector: {}".format(q_z))
-        self.assertTrue(q_z[0] == 29)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[3] == 0)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[5] == 0)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_z[7] == 0)
-        
-    def test_abs_of_q(self):
-        q_z = self.q2.abs_of_q()
-        print("abs_of_q: {}".format(q_z))
-        self.assertTrue(q_z[0] == 5)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[3] == 0)
-        self.assertTrue(q_z[5] == 0)
-        self.assertTrue(q_z[7] == 0)
-        
-    def test_abs_of_vector(self):
-        q_z = self.q2.abs_of_vector()
-        print("abs_of_vector: {}".format(q_z))
-        self.assertTrue(q_z[0] == 5)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[3] == 0)
-        self.assertTrue(q_z[5] == 0)
-        self.assertTrue(q_z[7] == 0)
-        
-    def test_normalize(self):
-        q_z = self.q2.normalize()
-        print("q_normalized: {}".format(q_z))
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[2] == 0.8)
-        self.assertTrue(q_z[3] == 0)
-        self.assertTrue(q_z[4] == 0)
-        self.assertAlmostEqual(q_z[5], 0.6)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_z[7] == 0)
-    
-    def test_product(self):
-        q_z = self.q1.product(self.q2).reduce()
-        print("product: {}".format(q_z))
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[1] == 1)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[3] == 8)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[5] == 19)
-        self.assertTrue(q_z[6] == 18)
-        self.assertTrue(q_z[7] == 0)
-        
-    def test_product_even(self):
-        q_z = self.q1.product(self.q2, kind="even").reduce()
-        print("product, kind even: {}".format(q_z))
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[1] == 1)
-        self.assertTrue(q_z[2] == 4)
-        self.assertTrue(q_z[3] == 0)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[5] == 3)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_z[7] == 0)
-        
-    def test_product_odd(self):
-        q_z = self.q1.product(self.q2, kind="odd").reduce()
-        print("product, kind odd: {}".format(q_z))
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[3] == 12)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[5] == 16)
-        self.assertTrue(q_z[6] == 18)
-        self.assertTrue(q_z[7] == 0)
-        
-    def test_product_reverse(self):
-        q1q2_rev = self.q1.product(self.q2, reverse=True)
-        q2q1 = self.q2.product(self.q1)
-        self.assertTrue(q1q2_rev.equals(q2q1))
-        
-    def test_Euclidean_product(self):
-        q_z = self.q1.Euclidean_product(self.q2).reduce()
-        print("Euclidean product: {}".format(q_z))
-        self.assertTrue(q_z[0] == 1)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[2] == 16)
-        self.assertTrue(q_z[3] == 0)
-        self.assertTrue(q_z[4] == 13)
-        self.assertTrue(q_z[5] == 0)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_z[7] == 18)
-        
-    def test_inverse(self):
-        q_z = self.q2.inverse().reduce()
-        print("inverse: {}".format(q_z))
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[3] == 0.16)
-        self.assertTrue(q_z[4] == 0.12)
-        self.assertTrue(q_z[5] == 0)
-        self.assertTrue(q_z[6] == 0)
-        self.assertTrue(q_z[7] == 0)
-
-    def test_triple_product(self):
-        q_z = self.q1.triple_product(self.q2, self.q1).reduce()
-        print("triple: {}".format(q_z))
-        self.assertTrue(q_z[0] == 0)
-        self.assertTrue(q_z[1] == 2)
-        self.assertTrue(q_z[2] == 124)
-        self.assertTrue(q_z[3] == 0)
-        self.assertTrue(q_z[4] == 0)
-        self.assertTrue(q_z[5] == 84)
-        self.assertTrue(q_z[6] == 8)
-        self.assertTrue(q_z[7] == 0)
-
-    def test_rotate(self):
-        q_z = self.q1.rotate(1).reduce()
-        print("rotate: {}".format(q_z))
-        self.assertTrue(q_z[0] == 1)
-        self.assertTrue(q_z[1] == 0)
-        self.assertTrue(q_z[2] == 0)
-        self.assertTrue(q_z[3] == 2)
-        self.assertTrue(q_z[4] == 3)
-        self.assertTrue(q_z[5] == 0)
-        self.assertTrue(q_z[6] == 4)
-        self.assertTrue(q_z[7] == 0)
-        
-    def test_boost(self):
-        q1_sq = self.q1.square().reduce()
-        q_z = self.q1.boost(0.003)
-        q_z2 = q_z.square().reduce()
-        print("q1_sq: {}".format(q1_sq))
-        print("boosted: {}".format(q_z))
-        print("b squared: {}".format(q_z2))
-        self.assertTrue(round(q_z2[1], 12) == round(q1_sq[1], 12))
-        
-    def test_g_shift(self):
-        q1_sq = self.q1.square().reduce()
-        q_z = self.q1.g_shift(0.003)
-        q_z2 = q_z.square().reduce()
-        print("q1_sq: {}".format(q1_sq))
-        print("g_shift: {}".format(q_z))
-        print("g squared: {}".format(q_z2))
-        self.assertTrue(q_z2[1] != q1_sq[1])
-        self.assertTrue(q_z2[2] == q1_sq[2])
-        self.assertTrue(q_z2[3] == q1_sq[3])
-        self.assertTrue(q_z2[4] == q1_sq[4])
-        self.assertTrue(q_z2[5] == q1_sq[5])
-        self.assertTrue(q_z2[6] == q1_sq[6])
-        self.assertTrue(q_z2[7] == q1_sq[7])
-        
-    def test_exp(self):
-        self.assertTrue(Q8a([0, 0, 0, 0]).exp().equals(Q8a().q_1()))
-        Q_z = self.Q.exp()
-        P_z = self.P.exp()
-        R_z = self.R.exp()
-        C_z = self.C.exp()
-        print("exp(Q): ", Q_z)
-        print("exp(P): ", P_z)
-        print("exp(R): ", R_z)
-        print("exp(C): ", C_z)
-        self.assertTrue(Q_z.equals(Q8a([1.6939227236832994, 0.7895596245415588, 1.1843394368123383, 1.5791192490831176])))
-        self.assertTrue(P_z.equals(Q8a([0.2836621854632263, -0.7671394197305108, 0.5753545647978831, 0])))
-        self.assertTrue(R_z.equals(Q8a([20.0855369231876679, 0, 0, 0])))
-        self.assertTrue(C_z.equals(Q8a([-4.8298093832693851, -5.5920560936409816, 0, 0])))
-    
-    def test_ln(self):
-        Q_z = self.Q.ln()
-        P_z = self.P.ln()
-        R_z = self.R.ln()
-        C_z = self.C.ln()
-        print("ln(Q): ", Q_z)
-        print("ln(P): ", P_z)
-        print("ln(R): ", R_z)
-        print("ln(C): ", C_z)
-        self.assertTrue(Q_z.exp().equals(self.Q))
-        self.assertTrue(Q_z.equals(Q8a([1.7005986908310777, -0.5151902926640850, -0.7727854389961275, -1.0303805853281700])))
-        self.assertTrue(P_z.equals(Q8a([1.6094379124341003, 1.2566370614359172, -0.9424777960769379, 0])))
-        self.assertTrue(R_z.equals(Q8a([1.0986122886681098, 0, 0, 0])))
-        self.assertTrue(C_z.equals(Q8a([1.4978661367769954, 1.1071487177940904, 0, 0])))    
-    
-    @unittest.skip("Will have to investigate this one more.")
-    def test_q_2_p(self):
-        Q2P = self.Q.q_2_q(self.P)
-        print("Q^P: ", Q2P)
-        self.assertTrue(Q2P.equals(Q8a([-0.0197219653530713, -0.2613955437374326, 0.6496281248064009, -0.3265786562423951])))
-
-    def test_sin(self):
-        self.assertTrue(Q8a([0, 0, 0, 0]).sin().reduce().equals(Q8a().q_0()))
-        self.assertTrue(self.Q.sin().reduce().equals(Q8a([91.7837157840346691, -21.8864868530291758, -32.8297302795437673, -43.7729737060583517])))
-        self.assertTrue(self.P.sin().reduce().equals(Q8a([0,  59.3625684622310033, -44.5219263466732542, 0])))
-        self.assertTrue(self.R.sin().reduce().equals(Q8a([0.1411200080598672, 0, 0, 0])))
-        self.assertTrue(self.C.sin().reduce().equals(Q8a([24.8313058489463785, -11.3566127112181743, 0, 0])))
-     
-    def test_cos(self):
-        self.assertTrue(Q8a([0, 0, 0, 0]).cos().equals(Q8a().q_1()))
-        self.assertTrue(self.Q.cos().equals(Q8a([58.9336461679439481, 34.0861836904655959, 51.1292755356983974, 68.1723673809311919])))
-        self.assertTrue(self.P.cos().equals(Q8a([74.2099485247878476, 0, 0, 0])))
-        self.assertTrue(self.R.cos().equals(Q8a([-0.9899924966004454, 0, 0, 0])))
-        self.assertTrue(self.C.cos().equals(Q8a([-11.3642347064010600, -24.8146514856341867, 0, 0])))
-                            
-    def test_tan(self):
-        self.assertTrue(Q8a([0, 0, 0, 0]).tan().equals(Q8a().q_0()))
-        self.assertTrue(self.Q.tan().equals(Q8a([0.0000382163172501, -0.3713971716439372, -0.5570957574659058, -0.7427943432878743])))
-        self.assertTrue(self.P.tan().equals(Q8a([0, 0.7999273634100760, -0.5999455225575570, 0])))
-        self.assertTrue(self.R.tan().equals(Q8a([-0.1425465430742778, 0, 0, 0])))
-        self.assertTrue(self.C.tan().equals(Q8a([-0.0005079806234700, 1.0004385132020521, 0, 0])))
-        
-    def test_sinh(self):
-        self.assertTrue(Q8a([0, 0, 0, 0]).sinh().equals(Q8a().q_0()))
-        self.assertTrue(self.Q.sinh().equals(Q8a([0.7323376060463428, 0.4482074499805421, 0.6723111749708131, 0.8964148999610841])))
-        self.assertTrue(self.P.sinh().equals(Q8a([0, -0.7671394197305108, 0.5753545647978831, 0])))
-        self.assertTrue(self.R.sinh().equals(Q8a([10.0178749274099026, 0, 0, 0])))
-        self.assertTrue(self.C.sinh().equals(Q8a([-2.3706741693520015, -2.8472390868488278, 0, 0])))    
-        
-    def test_cosh(self):
-        self.assertTrue(Q8a([0, 0, 0, 0]).cosh().equals(Q8a().q_1()))
-        self.assertTrue(self.Q.cosh().equals(Q8a([0.9615851176369565, 0.3413521745610167, 0.5120282618415251, 0.6827043491220334])))
-        self.assertTrue(self.P.cosh().equals(Q8a([0.2836621854632263, 0, 0, 0])))
-        self.assertTrue(self.R.cosh().equals(Q8a([10.0676619957777653, 0, 0, 0])))
-        self.assertTrue(self.C.cosh().equals(Q8a([-2.4591352139173837, -2.7448170067921538, 0, 0])))    
-        
-    def test_tanh(self):
-        self.assertTrue(Q8a([0, 0, 0, 0]).tanh().equals(Q8a().q_0()))
-        self.assertTrue(self.Q.tanh().equals(Q8a([1.0248695360556623, 0.1022956817887642, 0.1534435226831462, 0.2045913635775283])))
-        self.assertTrue(self.P.tanh().equals(Q8a([0, -2.7044120049972684, 2.0283090037479505, 0])))
-        self.assertTrue(self.R.tanh().equals(Q8a([0.9950547536867305, 0, 0, 0])))
-        self.assertTrue(self.C.tanh().equals(Q8a([1.0046823121902353, 0.0364233692474038, 0, 0])))    
-    
-    def test_ops(self):
-        qs = []
-        for q in self.q_0.ops(q2=self.q_1, op="dif", dim=3):
-            qs.append(q)
-        print("ops dif -1, dim=3", qs[-1])
-        self.assertTrue(qs[-1].equals(Q8a().q_1(-3)))
-
-suite = unittest.TestLoader().loadTestsFromModule(TestNPArrayQ8a())
-unittest.TextTestRunner().run(suite);
-
-
-# In[25]:
-
-
+# class Q8aStates(Q8a):
 class Q8aStates(object):
-    """A class made up of many quaternions. If fed np.arrays, the obj.qs is an x,8 ndarray."""
+    """A class made up of many quaternions."""
     
     QS_TYPES = ["scalar", "bra", "ket", "op", "operator"]
     
@@ -2024,48 +1538,60 @@ class Q8aStates(object):
         self.rows = rows
         self.columns = columns
         
+        if qs_type not in self.QS_TYPES:
+            print("Oops, only know of these quaternion series types: {}".format(self.QS_TYPES))
+            return None
+        
         if qs is None:
             self.d, self.dim, self.dimensions = 0, 0, 0
-            self.qs = np.array([0])
         else:
-            dim = len(qs)
-            self.d, self.dim, self.dimensions = int(dim), int(dim), int(dim)
+            self.d, self.dim, self.dimensions = int(len(qs)), int(len(qs)), int(len(qs))
     
-        # Set the qs_type to something sensible.
+        self.set_qs_type(qs_type, rows, columns, copy=False)
+    
+    def set_qs_type(self, qs_type="", rows=0, columns=0, copy=True):
+        """Set the qs_type to something sensible."""
+    
+        # Checks.
         if (rows) and (columns) and rows * columns != self.dim:
             print("Oops, check those values again for rows:{} columns:{} dim:{}".format(
                 rows, columns, self.dim))
             self.qs, self.rows, self.columns = None, 0, 0
             return None
         
-        if qs_type == "ket" and not self.rows:
-            self.rows = self.dim
-            self.columns = 1
+        new_q = self
+        
+        if copy:
+            new_q = deepcopy(self)
+        
+        # Assign values if need be.
+        if new_q.qs_type != qs_type:
+            new_q.rows = 0
+        
+        if qs_type == "ket" and not new_q.rows:
+            new_q.rows = new_q.dim
+            new_q.columns = 1
             
-        elif qs_type == "bra" and not self.rows:
-            self.rows = 1
-            self.columns = self.dim
+        elif qs_type == "bra" and not new_q.rows:
+            new_q.rows = 1
+            new_q.columns = new_q.dim
 
-        elif qs_type in ["op", "operator"] and not self.rows:
+        elif qs_type in ["op", "operator"] and not new_q.rows:
             # Square series
-            root_dim = math.sqrt(self.dim)
+            root_dim = math.sqrt(new_q.dim)
             
             if root_dim.is_integer():
-                self.rows = int(root_dim)
-                self.columns = int(root_dim)
+                new_q.rows = int(root_dim)
+                new_q.columns = int(root_dim)
                 qs_type = "op"
         
-        elif rows * columns == self.dim and not self.qs_type:
-            if self.dim == 1:
+        elif rows * columns == new_q.dim and not new_q.qs_type:
+            if new_q.dim == 1:
                 qs_type = "scalar"
-                self.rows = 1
-                self.columns = 1
-            elif self.rows == 1:
+            elif new_q.rows == 1:
                 qs_type = "bra"
-                self.columns = self.dim
-            elif self.columns == 1:
+            elif new_q.columns == 1:
                 qs_type = "ket"
-                self.rows = self.dim
             else:
                 qs_type = "op"
             
@@ -2073,40 +1599,27 @@ class Q8aStates(object):
             print("Oops, please set rows and columns for this quaternion series operator. Thanks.")
             return None
         
-        if self.dim == 1:
+        if new_q.dim == 1:
             qs_type = "scalar"
-            self.rows = 1
-            self.columns = 1
             
-        self.qs_type = qs_type
+        new_q.qs_type = qs_type
+        
+        return new_q
         
     def bra(self):
-        """Quickly set the qs_type to bra."""
+        """Quickly set the qs_type to bra by calling set_qs_type()."""
         
-        self.qs_type = "bra"
-        self.rows = 1
-        self.columns = len(self.qs)
-        
-        return self
-        
+        return self.set_qs_type("bra")
+    
     def ket(self):
-        """Quickly set the qs_type to ket."""
+        """Quickly set the qs_type to ket by calling set_qs_type()."""
         
-        self.qs_type = "ket"
-        self.rows = len(self.qs)
-        self.columns = 1    
+        return self.set_qs_type("ket")
     
-        return self
-    
-    def op(self, rows, columns):
-        """Quickly set the qs_type to op."""
+    def op(self, rows=0, columns=0):
+        """Quickly set the qs_type to op by calling set_qs_type()."""
         
-        self.qs_type = "op"
-        self.rows = rows
-        self.columns = rows
-        
-        return self
-    
+        return self.set_qs_type("op", rows=rows, columns=columns)
     
     def __str__(self, quiet=False):
         """Print out all the states."""
@@ -2114,8 +1627,8 @@ class Q8aStates(object):
         states = ''
         
         for n, q in enumerate(self.qs, start=1):
-            states = states + "n={}: {}".format(n + 1, Q8a(q.tolist()).__str__(quiet))
-            
+            states = states + "n={}: {}\n".format(n, q.__str__(quiet))
+        
         return states.rstrip()
     
     def print_state(self, label, spacer=True, quiet=False, sum=False):
@@ -2123,9 +1636,8 @@ class Q8aStates(object):
 
         print(label)
         
-        for n, q in enumerate(self.qs, start=1):
-            
-            print("n={}: {}".format(n + 1, Q8a(q.tolist()).__str__(quiet)))
+        for n, q in enumerate(self.qs):
+            print("n={}: {}".format(n + 1, q.__str__(quiet)))
             
         if sum:
             print("sum= {ss}".format(ss=self.summation()))
@@ -2183,10 +1695,10 @@ class Q8aStates(object):
         """Take the conjgates of states, default is zero, but also can do 1 or 2."""
         
         new_states = []
-
+        
         for bra in self.qs:
             new_states.append(bra.conj(conj_type))
-        
+            
         return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
     
     def simple_q(self):
@@ -2209,11 +1721,11 @@ class Q8aStates(object):
             
         return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
     
-    def inverse(self, operator=False, additive=False):
+    def inverse(self, additive=False):
         """Inverseing bras and kets calls inverse() once for each.
         Inverseing operators is more tricky as one needs a diagonal identity matrix."""
     
-        if operator:
+        if self.qs_type in ["op", "operator"]:
         
             if additive:
                 q_flip = self.inverse(additive=True)
@@ -2417,7 +1929,7 @@ class Q8aStates(object):
         for i in range(dim):
             for j in range(dim):
                 if i == j:
-                    diagonal.append(q_values[i])
+                    diagonal.append(q_values.pop(0))
                 else:
                     diagonal.append(Q8a().q_0())
         
@@ -2514,17 +2026,7 @@ class Q8aStates(object):
         
         # Flatten the list.
         new_qs = [item for sublist in result for item in sublist]
-        
-        if outer_row_max == 1 and outer_column_max == 1:
-            qs_type = "scalar"
-        elif outer_row_max == 1 and outer_column_max > 1:
-            qs_type = "bra"
-        elif outer_row_max > 1 and outer_column_max == 1:
-            qs_type = "ket"
-        else:
-            qs_type = "op"
-            
-        new_states = Q8aStates(new_qs, qs_type=qs_type, rows=outer_row_max, columns=outer_column_max)
+        new_states = Q8aStates(new_qs, rows=outer_row_max, columns=outer_column_max)
 
         if projector_flag:
             return new_states.transpose()
@@ -2555,7 +2057,7 @@ class Q8aStates(object):
     def norm_squared(self):
         """Take the Euclidean product of each state and add it up, returning a scalar series."""
         
-        return self.bra().Euclidean_product(self.ket())
+        return self.set_qs_type("bra").Euclidean_product(self.set_qs_type("ket"))
     
     def transpose(self, m=None, n=None):
         """Transposes a series."""
@@ -2651,19 +2153,23 @@ class Q8aStates(object):
         
         return signma[kind].normalize()
     
-    @staticmethod
-    def ops(q1, q2=None, q3=None, op="add", dim=100, qtype="v"):
-        """Given a few quaternions and an operator, returns a ket quaternion series."""
+    def ops(self, q2=None, q3=None, op="add", dim=10):
         
         new_states = []
         
-        for q in q1.ops(q2=q2, q3=q3, op=op, dim=dim):
-            new_states.append(q)
+        for bra in self.qs:
+            for new_q in bra.ops(q2, q3, op, dim):
+                new_states.append(new_q)
+            
+        return Q8aStates(new_states, qs_type=self.qs_type, rows=dim, columns=1)
+    
+    def to_array(self):
+        """Given a Q8aState, returns a np.ndarray."""
         
-        return Q8aStates(new_states)
+        return np.array(self.qs)
 
 
-# In[26]:
+# In[30]:
 
 
 class TestQ8aStates(unittest.TestCase):
@@ -2756,19 +2262,19 @@ class TestQ8aStates(unittest.TestCase):
         self.assertTrue(qf.qs[1][3] == 1)
         
     def test_1060_inverse(self):
-        inv_v1123 = self.v1123.inverse(operator=True)
+        inv_v1123 = self.v1123.inverse()
         print("inv_v1123 operator", inv_v1123)
         vvinv = inv_v1123.product(self.v1123)
         vvinv.print_state("vinvD x v")
         self.assertTrue(vvinv.equals(self.q14))
 
-        inv_v33 = self.v33.inverse(operator=True)
+        inv_v33 = self.v33.inverse()
         print("inv_v33 operator", inv_v33)
         vv33 = inv_v33.product(self.v33)
         vv33.print_state("inv_v33D x v33")
         self.assertTrue(vv33.equals(self.q19))
         
-        Ainv = self.A.inverse(operator=True)
+        Ainv = self.A.inverse()
         print("A ket inverse, ", Ainv)
         AAinv = self.A.product(Ainv)
         AAinv.print_state("A x AinvD")
@@ -2978,6 +2484,10 @@ class TestQ8aStates(unittest.TestCase):
         self.assertTrue(q3.qs.shape == (3, 8))
         self.assertTrue(q3.qs[2][1] == 3.0)
         
+    def test_1370_to_array(self):
+        qa = self.q_1234.to_array()
+        print("q_1234 to np.ndarray: ", qa)
+        self.assertTrue(type(qa).__name__ == "ndarray")
         
 suite = unittest.TestLoader().loadTestsFromModule(TestQ8aStates())
 unittest.TextTestRunner().run(suite);
@@ -2989,1609 +2499,48 @@ unittest.TextTestRunner().run(suite);
 
 
 
-# In[24]:
-
-
-class Q8aStatesList(object):
-    """A class made up of many quaternions. If fed np.arrays, the obj.qs is an x,8 ndarray."""
-    
-    QS_TYPES = ["scalar", "bra", "ket", "op", "operator"]
-    
-    def __init__(self, qs=None, qs_type="ket", rows=0, columns=0):
-        
-        self.qs = qs
-        self.qs_type = qs_type
-        self.rows = rows
-        self.columns = columns
-        
-        if qs is None:
-            self.d, self.dim, self.dimensions = 0, 0, 0
-            self.qs = [0]
-        else:
-            dim = len(qs)
-            self.d, self.dim, self.dimensions = dim, dim, dim
-    
-        # Set the qs_type to something sensible.
-        if (rows) and (columns) and rows * columns != self.dim:
-            print("Oops, check those values again for rows:{} columns:{} dim:{}".format(
-                rows, columns, self.dim))
-            self.qs, self.rows, self.columns = 0, 0, 0
-            return None
-        
-        if qs_type == "ket":
-            self.rows = self.dim
-            self.columns = 1
-            
-        elif qs_type == "bra":
-            self.rows = 1
-            self.columns = self.dim
-
-        elif qs_type in ["op", "operator"] and not self.rows:
-            # Square series
-            root_dim = math.sqrt(self.dim)
-            
-            if root_dim.is_integer():
-                self.rows = int(root_dim)
-                self.columns = int(root_dim)
-                qs_type = "op"
-        
-        elif rows * columns == self.dim:
-            if self.dim == 1:
-                self.qs_type = "scalar"
-                self.rows = 1
-                self.columns = 1
-            elif self.rows == 1:
-                self.qs_type = "bra"
-                self.rows = 1
-                self.columns = self.dim
-            elif self.columns == 1:
-                self.qs_type = "ket"
-                self.rows = self.dim
-                self.columns = 1
-            else:
-                self.qs_type = "op"
-            
-        if not qs_type:
-            print("Oops, please set rows and columns for this quaternion series operator. Thanks.")
-            return None
-        
-        if self.dim == 1:
-            qs_type = "scalar"
-            
-        self.qs_type = qs_type
-        
-    def bra(self):
-        """Quickly set the qs_type to bra."""
-        
-        self.qs_type = "bra"
-        self.rows = 1
-        self.cols = self.dim
-        
-        return self
-    
-    def ket(self):
-        """Quickly set the qs_type to ket."""
-        
-        self.qs_type = "ket"
-        self.rows = self.dim
-        self.cols = 1
-    
-        return self
-    
-    def op(self, rows, columns):
-        """Quickly set the qs_type to op."""
-        
-        self.qs_type = "op"
-        self.rows = rows
-        self.columns= columns
-        
-        return self
-    
-    def __str__(self, quiet=False):
-        """Print out all the states."""
-        
-        states = ''
-        
-        for n, q in enumerate(self.qs, start=1):
-            states = states + "n={}: {}\n".format(n, Q8a(q.tolist()).__str__(quiet))
-            
-        return states.rstrip()
-    
-    def print_state(self, label, quiet=False, spacer=True, sum=False):
-        """Utility for printing states as a quaternion series."""
-
-        print(label)
-        
-        for n, q in enumerate(self.qs, start=1):
-            
-            print("n={}: {}".format(n, Q8a(q.tolist()).__str__(quiet)))
-            
-        if sum:
-            print("sum= {ss}".format(ss=self.summation()))
-            
-        print("{t}: {r}/{c}".format(t=self.qs_type, r=self.rows, c=self.columns))
-        
-        if spacer:
-            print("")
-
-    def equals(self, q1):
-        """Test if two states are equal."""
-   
-        if self.dim != q1.dim:
-            return False
-        
-        result = True
-    
-        for selfq, q1q in zip(self.qs, q1.qs):
-            if not selfq.equals(q1q):
-                result = False
-                
-        return result
-
-    def scalar(self, qtype="scalar"):
-        """Returns the scalar part of a quaternion."""
-    
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.scalar())
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def vector(self, qtype="v"):
-        """Returns the vector part of a quaternion."""
-        
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.vector())
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-      
-    def xyz(self):
-        """Returns the vector as an np.array."""
-        
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.xyz())
-            
-        return new_states
-    
-    def conj(self, conj_type=0):
-        """Take the conjgates of states, default is zero, but also can do 1 or 2."""
-        
-        new_states = []
-
-        for bra in self.qs:
-            new_states.append(bra.conj(conj_type))
-        
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def simple_q(self):
-        """Simplify the states."""
-        
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.simple_q())
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def flip_signs(self):
-        """Flip signs of all states."""
-        
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.flip_signs())
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def inverse(self, operator=False, additive=False):
-        """Inverseing bras and kets calls inverse() once for each.
-        Inverseing operators is more tricky as one needs a diagonal identity matrix."""
-    
-        if operator:
-        
-            if additive:
-                q_flip = self.inverse(additive=True)
-                q_inv = q_flip.diagonal(self.dim)
-                
-            else:
-                if self.dim == 1:
-                    q_inv =Q8aStates(self.qs[0].inverse())
-        
-                elif self.qs_type in ["bra", "ket"]:
-                    new_qs = []
-                    
-                    for q in self.qs:
-                        new_qs.append(q.inverse())
-                    
-                    q_inv = Q8aStates(new_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-        
-                elif self.dim == 4:
-                    det = self.determinant()
-                    detinv = det.inverse()
-
-                    q0 = self.qs[3].product(detinv)
-                    q1 = self.qs[1].flip_signs().product(detinv)
-                    q2 = self.qs[2].flip_signs().product(detinv)
-                    q3 = self.qs[0].product(detinv)
-
-                    q_inv =Q8aStates([q0, q1, q2, q3], qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-                elif self.dim == 9:
-                    det = self.determinant()
-                    detinv = det.inverse()
-        
-                    q0 = self.qs[4].product(self.qs[8]).dif(self.qs[5].product(self.qs[7])).product(detinv)
-                    q1 = self.qs[7].product(self.qs[2]).dif(self.qs[8].product(self.qs[1])).product(detinv)
-                    q2 = self.qs[1].product(self.qs[5]).dif(self.qs[2].product(self.qs[4])).product(detinv)
-                    q3 = self.qs[6].product(self.qs[5]).dif(self.qs[8].product(self.qs[3])).product(detinv)
-                    q4 = self.qs[0].product(self.qs[8]).dif(self.qs[2].product(self.qs[6])).product(detinv)
-                    q5 = self.qs[3].product(self.qs[2]).dif(self.qs[5].product(self.qs[0])).product(detinv)
-                    q6 = self.qs[3].product(self.qs[7]).dif(self.qs[4].product(self.qs[6])).product(detinv)
-                    q7 = self.qs[6].product(self.qs[1]).dif(self.qs[7].product(self.qs[0])).product(detinv)
-                    q8 = self.qs[0].product(self.qs[4]).dif(self.qs[1].product(self.qs[3])).product(detinv)
-        
-                    q_inv =Q8aStates([q0, q1, q2, q3, q4, q5, q6, q7, q8], qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-        
-                else:
-                    print("Oops, don't know how to inverse.")
-                    q_inv =Q8aStates([Q8a().q_0()])
-        
-        else:                
-            new_states = []
-        
-            for bra in self.qs:
-                new_states.append(bra.inverse(additive=additive))
-        
-            q_inv =Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-        return q_inv
-    
-    def norm(self):
-        """Norm of states."""
-        
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.norm())
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def normalize(self, n=1, states=None):
-        """Normalize all states."""
-        
-        new_states = []
-        
-        zero_norm_count = 0
-        
-        for bra in self.qs:
-            if bra.norm_squared()[0] == 0:
-                zero_norm_count += 1
-                new_states.append(Q8a().q_0())
-            else:
-                new_states.append(bra.normalize(n))
-        
-        new_states_normalized = []
-        
-        non_zero_states = self.dim - zero_norm_count
-        
-        for new_state in new_states:
-            new_states_normalized.append(new_state.product(Q8a([math.sqrt(1/non_zero_states), 0, 0, 0])))
-            
-        return Q8aStates(new_states_normalized, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-
-    def orthonormalize(self):
-        """Given a quaternion series, resturn a normalized orthoganl basis."""
-    
-        last_q = self.qs.pop(0).normalize(math.sqrt(1/self.dim))
-        orthonormal_qs = [last_q]
-    
-        for q in self.qs:
-            qp = q.Euclidean_product(last_q)
-            orthonormal_q = q.dif(qp).normalize(math.sqrt(1/self.dim))
-            orthonormal_qs.append(orthonormal_q)
-            last_q = orthonormal_q
-        
-        return Q8aStates(orthonormal_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def determinant(self):
-        """Calculate the determinant of a 'square' quaternion series."""
-    
-        if self.dim == 1:
-            q_det = self.qs[0]
-        
-        elif self.dim == 4:
-            ad =self.qs[0].product(self.qs[3])
-            bc = self.qs[1].product(self.qs[2])
-            q_det = ad.dif(bc)  
-        
-        elif self.dim == 9:
-            aei = self.qs[0].product(self.qs[4].product(self.qs[8]))
-            bfg = self.qs[3].product(self.qs[7].product(self.qs[2]))
-            cdh = self.qs[6].product(self.qs[1].product(self.qs[5]))
-            ceg = self.qs[6].product(self.qs[4].product(self.qs[2]))
-            bdi = self.qs[3].product(self.qs[1].product(self.qs[8]))
-            afh = self.qs[0].product(self.qs[7].product(self.qs[5]))
-        
-            sum_pos = aei.add(bfg.add(cdh))
-            sum_neg = ceg.add(bdi.add(afh))
-        
-            q_det = sum_pos.dif(sum_neg)
-        
-        else:
-            print("Oops, don't know how to calculate the determinant of this one.")
-            return None
-        
-        return q_det
-    
-    def add(self, ket):
-        """Add two states."""
-        
-        if ((self.rows != ket.rows) or (self.columns != ket.columns)):
-            print("Oops, can only add if rows and columns are the same.")
-            print("rows are: {}/{}, columns are: {}/{}".format(self.rows, ket.rows,
-                                                               self.columns, ket.columns))
-            return None
-        
-        new_states = []
-        
-        for bra, ket in zip(self.qs, ket.qs):
-            new_states.append(bra.add(ket))
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-
-    def summation(self):
-        """Add them all up, return one quaternion."""
-        
-        result = None
-    
-        for q in self.qs:
-            if result is None:
-                result = q
-            else:
-                result = result.add(q)
-            
-        return result    
-    
-    def dif(self, ket):
-        """Take the difference of two states."""
-        
-        new_states = []
-        
-        for bra, ket in zip(self.qs, ket.qs):
-            new_states.append(bra.dif(ket))
-            
-        return(Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns))  
-    
-    def reduce(self):
-        """Reduce the doublet values so one is zero."""
-        
-        new_states = []
-        
-        for ket in self.qs:
-            new_states.append(ket.reduce())
-            
-        return(Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns))  
-            
-    def diagonal(self, dim):
-        """Make a state dim*dim with q or qs along the 'diagonal'. Always returns an operator."""
-        
-        diagonal = []
-        
-        if len(self.qs) == 1:
-            q_values = [self.qs[0]] * dim
-        elif len(self.qs) == dim:
-            q_values = self.qs
-        elif self.qs is None:
-            print("Oops, the qs here is None.")
-            return None
-        else:
-            print("Oops, need the length to be equal to the dimensions.")
-            return None
-        
-        for i in range(dim):
-            for j in range(dim):
-                if i == j:
-                    diagonal.append(q_values[i])
-                else:
-                    diagonal.append(Q8a().q_0())
-        
-        return Q8aStates(diagonal, qs_type="op", rows=dim, columns=dim)
-        
-    @staticmethod    
-    def identity(dim, operator=False, additive=False, non_zeroes=None, qs_type="ket"):
-        """Identity operator for states or operators which are diagonal."""
-    
-        if additive:
-            id_q = [Q8a().q_0() for i in range(dim)]
-           
-        elif non_zeroes is not None:
-            id_q = []
-            
-            if len(non_zeroes) != dim:
-                print("Oops, len(non_zeroes)={nz}, should be: {d}".format(nz=len(non_zeroes), d=dim))
-                return Q8aStates([Q8a().q_0()])
-            
-            else:
-                for non_zero in non_zeroes:
-                    if non_zero:
-                        id_q.append(Q8a().q_1())
-                    else:
-                        id_q.append(Q8a().q_0())
-            
-        else:
-            id_q = [Q8a().q_1() for i in range(dim)]
-            
-        if operator:
-            q_1 = Q8aStates(id_q)
-            ident = Q8aStates.diagonal(q_1, dim)    
-    
-        else:
-            ident = Q8aStates(id_q, qs_type=qs_type)
-            
-        return ident
-    
-    def product(self, q1, kind="", reverse=False):
-        """Forms the quaternion product for each state."""
-        
-        self_copy = deepcopy(self)
-        q1_copy = deepcopy(q1)
-        
-        # Diagonalize if need be.
-        if ((self.rows == q1.rows) and (self.columns == q1.columns)) or             ("scalar" in [self.qs_type, q1.qs_type]):
-                
-            if self.columns == 1:
-                qs_right = q1_copy
-                qs_left = self_copy.diagonal(qs_right.rows)
-      
-            elif q1.rows == 1:
-                qs_left = self_copy
-                qs_right = q1_copy.diagonal(qs_left.columns)
-
-            else:
-                qs_left = self_copy
-                qs_right = q1_copy
-        
-        # Typical matrix multiplication criteria.
-        elif self.columns == q1.rows:
-            qs_left = self_copy
-            qs_right = q1_copy
-        
-        else:
-            print("Oops, cannot multiply series with row/column dimensions of {}/{} to {}/{}".format(
-                self.rows, self.columns, q1.rows, q1.columns))            
-            return None 
-        
-        outer_row_max = qs_left.rows
-        outer_column_max = qs_right.columns
-        shared_inner_max = qs_left.columns
-        projector_flag = (shared_inner_max == 1) and (outer_row_max > 1) and (outer_column_max > 1)
-        
-        result = [[Q8a().q_0(qtype='') for i in range(outer_column_max)] for j in range(outer_row_max)]
-        
-        for outer_row in range(outer_row_max):
-            for outer_column in range(outer_column_max):
-                for shared_inner in range(shared_inner_max):
-                    
-                    # For projection operators.
-                    left_index = outer_row
-                    right_index = outer_column
-                    
-                    if outer_row_max >= 1 and shared_inner_max > 1:
-                        left_index = outer_row + shared_inner * outer_row_max
-                        
-                    if outer_column_max >= 1 and shared_inner_max > 1:
-                        right_index = shared_inner + outer_column * shared_inner_max
-                            
-                    result[outer_row][outer_column] = result[outer_row][outer_column].add(
-                        qs_left.qs[left_index].product(
-                            qs_right.qs[right_index], kind=kind, reverse=reverse))
-        
-        # Flatten the list.
-        new_qs = [item for sublist in result for item in sublist]
-        
-        if outer_row_max == 1 and outer_column_max == 1:
-            qs_type = "scalar"
-        elif outer_row_max == 1 and outer_column_max > 1:
-            qs_type = "bra"
-        elif outer_row_max > 1 and outer_column_max == 1:
-            qs_type = "ket"
-        else:
-            qs_type = "op"
-            
-        new_states = Q8aStates(new_qs, qs_type=qs_type, rows=outer_row_max, columns=outer_column_max)
-
-        if projector_flag:
-            return new_states.transpose()
-        
-        else:
-            return new_states
-    
-    def Euclidean_product(self, q1, kind="", reverse=False):
-        """Forms the Euclidean product, what is used in QM all the time."""
-                    
-        return self.conj().product(q1, kind, reverse)
-    
-    def op_n(self, n, first=True, kind="", reverse=False):
-        """Mulitply an operator times a number, in that order. Set first=false for n * Op"""
-    
-        new_states = []
-    
-        for op in self.qs:
-        
-            if first:
-                new_states.append(op.product(n, kind, reverse))
-                              
-            else:
-                new_states.append(n.product(op, kind, reverse))
-    
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def norm_squared(self):
-        """Take the Euclidean product of each state and add it up, returning a scalar series."""
-        
-        return self.set_qs_type("bra").Euclidean_product(self.set_qs_type("ket"))
-    
-    def transpose(self, m=None, n=None):
-        """Transposes a series."""
-        
-        if m is None:
-            # test if it is square.
-            if math.sqrt(self.dim).is_integer():
-                m = int(sp.sqrt(self.dim))
-                n = m
-               
-        if n is None:
-            n = int(self.dim / m)
-            
-        if m * n != self.dim:
-            return None
-        
-        matrix = [[0 for x in range(m)] for y in range(n)] 
-        qs_t = []
-        
-        for mi in range(m):
-            for ni in range(n):
-                matrix[ni][mi] = self.qs[mi * n + ni]
-        
-        qs_t = []
-        
-        for t in matrix:
-            for q in t:
-                qs_t.append(q)
-                
-        # Switch rows and columns.
-        return Q8aStates(qs_t, rows=self.columns, columns=self.rows)
-        
-    def Hermitian_conj(self, m=None, n=None, conj_type=0):
-        """Returns the Hermitian conjugate."""
-        
-        return self.transpose(m, n).conj(conj_type)
-    
-    def dagger(self, m=None, n=None, conj_type=0):
-        """Just calls Hermitian_conj()"""
-        
-        return self.Hermitian_conj(m, n, conj_type)
-        
-    def is_square(self):
-        """Tests if a quaternion series is square, meaning the dimenion is n^2."""
-                
-        return math.sqrt(self.dim).is_integer()
-
-    def is_Hermitian(self):
-        """Tests if a series is Hermitian."""
-        
-        hc = self.Hermitian_conj()
-        
-        return self.equals(hc)
-    
-    @staticmethod
-    def sigma(kind, theta=None, phi=None):
-        """Returns a sigma when given a type like, x, y, z, xy, xz, yz, xyz, with optional angles theta and phi."""
-        
-        q0, q1, qi =Q8a().q_0(),Q8a().q_1(),Q8a().q_i()
-        
-        # Should work if given angles or not.
-        if theta is None:
-            sin_theta = 1
-            cos_theta = 1
-        else:
-            sin_theta = math.sin(theta)
-            cos_theta = math.cos(theta)
-            
-        if phi is None:
-            sin_phi = 1
-            cos_phi = 1
-        else:
-            sin_phi = math.sin(phi)
-            cos_phi = math.cos(phi)
-            
-        x_factor = q1.product(Q8a([sin_theta * cos_phi, 0, 0, 0]))
-        y_factor = qi.product(Q8a([sin_theta * sin_phi, 0, 0, 0]))
-        z_factor = q1.product(Q8a([cos_theta, 0, 0, 0]))
-
-        sigmas = {}
-        sigma['x'] = Q8aStates([q0, x_factor, x_factor, q0], "op")
-        sigma['y'] = Q8aStates([q0, y_factor, y_factor.flip_signs(), q0], "op") 
-        sigma['z'] = Q8aStates([z_factor, q0, q0, z_factor.flip_signs()], "op")
-  
-        sigmas['xy'] = sigma['x'].add(sigma['y'])
-        sigmas['xz'] = sigma['x'].add(sigma['z'])
-        sigmas['yz'] = sigma['y'].add(sigma['z'])
-        sigmas['xyz'] = sigma['x'].add(sigma['y']).add(sigma['z'])
-
-        if kind not in sigma:
-            print("Oops, I only know about x, y, z, and their combinations.")
-            return None
-        
-        return signma[kind].normalize()
-    
-    @staticmethod
-    def ops(q1, q2=None, q3=None, op="add", dim=100, qtype="v"):
-        """Given a few quaternions and an operator, returns a ket quaternion series."""
-        
-        new_states = []
-        
-        for q in q1.ops(q2=q2, q3=q3, op=op, dim=dim):
-            new_states.append(q)
-        
-        return Q8aStates(new_states)
-
-
-# In[45]:
-
-
-class Q8aStatesNPArray(object):
-    """A class made up of many quaternions. If fed np.arrays, the obj.qs is an x,8 ndarray."""
-    
-    QS_TYPES = ["scalar", "bra", "ket", "op", "operator"]
-    
-    def __init__(self, qs=None, qs_type="ket", rows=0, columns=0):
-        
-        self.qs = Q8a(qs).reshape(len(qs), 8)
-        self.qs_type = qs_type
-        self.rows = rows
-        self.columns = columns
-        
-        if qs is None:
-            self.d, self.dim, self.dimensions = 0, 0, 0
-            self.qs = np.array([0])
-        else:
-            dim = len(qs)
-            self.d, self.dim, self.dimensions = int(dim), int(dim), int(dim)
-    
-        # Set the qs_type to something sensible.
-        if (rows) and (columns) and rows * columns != self.dim:
-            print("Oops, check those values again for rows:{} columns:{} dim:{}".format(
-                rows, columns, self.dim))
-            self.qs, self.rows, self.columns = None, 0, 0
-            return None
-        
-        if qs_type == "ket" and not self.rows:
-            self.rows = len(self.qs)
-            self.columns = 1
-            
-        elif qs_type == "bra" and not self.rows:
-            self.rows = 1
-            self.columns = len(self.qs)
-
-        elif qs_type in ["op", "operator"] and not self.rows:
-            # Square series
-            root_dim = math.sqrt(len(self.qs))
-            
-            if root_dim.is_integer():
-                self.rows = int(root_dim)
-                self.columns = int(root_dim)
-                qs_type = "op"
-        
-        elif rows * columns == self.dim and not self.qs_type:
-            if self.dim == 1:
-                qs_type = "scalar"
-            elif self.rows == 1:
-                qs_type = "bra"
-            elif self.columns == 1:
-                qs_type = "ket"
-            else:
-                qs_type = "op"
-            
-        if not qs_type:
-            print("Oops, please set rows and columns for this quaternion series operator. Thanks.")
-            return None
-        
-        if self.dim == 1:
-            qs_type = "scalar"
-            
-        self.qs_type = qs_type
-        
-    def bra(self):
-        """Quickly set the qs_type to bra and adjust rows/columns."""
-        
-        self.qs_type = "bra"
-        self.rows = 1
-        self.columns = self.dim
-        
-        return self
-    
-    def ket(self):
-        """Quickly set the qs_type to ket and adjust rows/columns."""
-        
-        self.qs_type = "ket"
-        self.rows = self.dim
-        self.columns = 1
-    
-        return self
-    
-    def op(self, rows, columns):
-        """Quickly set the qs_type to op."""
-        
-        self.qs_type = "op"
-        self.rows = rows
-        self.columns = columns
-        
-        return self
-    
-    def __str__(self, quiet=False):
-        """Print out all the states."""
-        
-        states = ''
-        
-        for n, q in enumerate(self.qs, start=1):
-            states = states + "n={}: {}".format(n, Q8a(q.tolist()).__str__(quiet))
-            
-        return states.rstrip()
-    
-    def print_state(self, label, spacer=True, quiet=False, sum=False):
-        """Utility for printing states as a quaternion series."""
-
-        print(label)
-        
-        for n, q in enumerate(self.qs, start=1):
-            
-            print("n={}: {}".format(n, Q8a(q.tolist()).__str__(quiet)))
-            
-        if sum:
-            print("sum= {ss}".format(ss=self.summation()))
-            
-        print("{t}: {r}/{c}".format(t=self.qs_type, r=self.rows, c=self.columns))
-        
-        if spacer:
-            print("")
-
-    def equals(self, q1):
-        """Test if two states are equal."""
-   
-        if self.dim != q1.dim:
-            return False
-        
-        result = True
-    
-        for selfq, q1q in zip(self.qs, q1.qs):
-            if not selfq.equals(q1q):
-                result = False
-                
-        return result
-
-    def scalar(self, qtype="scalar"):
-        """Returns the scalar part of a quaternion."""
-    
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.scalar())
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def vector(self, qtype="v"):
-        """Returns the vector part of a quaternion."""
-        
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.vector())
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-      
-    def xyz(self):
-        """Returns the vector as an np.array."""
-        
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.xyz())
-            
-        return new_states
-    
-    def conj(self, conj_type=0):
-        """Take the conjgates of states, default is zero, but also can do 1 or 2."""
-        
-        new_states = np.array(list(map(Q8a.conj, self)))
-
-        #for bra in ndenumerate(self.qs):
-        #    new_states.append(bra.conj(conj_type))
-        
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def simple_q(self):
-        """Simplify the states."""
-        
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.simple_q())
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def flip_signs(self):
-        """Flip signs of all states."""
-        
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.flip_signs())
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def inverse(self, operator=False, additive=False):
-        """Inverseing bras and kets calls inverse() once for each.
-        Inverseing operators is more tricky as one needs a diagonal identity matrix."""
-    
-        if operator:
-        
-            if additive:
-                q_flip = self.inverse(additive=True)
-                q_inv = q_flip.diagonal(self.dim)
-                
-            else:
-                if self.dim == 1:
-                    q_inv =Q8aStates(self.qs[0].inverse())
-        
-                elif self.qs_type in ["bra", "ket"]:
-                    new_qs = []
-                    
-                    for q in self.qs:
-                        new_qs.append(q.inverse())
-                    
-                    q_inv = Q8aStates(new_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-        
-                elif self.dim == 4:
-                    det = self.determinant()
-                    detinv = det.inverse()
-
-                    q0 = self.qs[3].product(detinv)
-                    q1 = self.qs[1].flip_signs().product(detinv)
-                    q2 = self.qs[2].flip_signs().product(detinv)
-                    q3 = self.qs[0].product(detinv)
-
-                    q_inv =Q8aStates([q0, q1, q2, q3], qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-                elif self.dim == 9:
-                    det = self.determinant()
-                    detinv = det.inverse()
-        
-                    q0 = self.qs[4].product(self.qs[8]).dif(self.qs[5].product(self.qs[7])).product(detinv)
-                    q1 = self.qs[7].product(self.qs[2]).dif(self.qs[8].product(self.qs[1])).product(detinv)
-                    q2 = self.qs[1].product(self.qs[5]).dif(self.qs[2].product(self.qs[4])).product(detinv)
-                    q3 = self.qs[6].product(self.qs[5]).dif(self.qs[8].product(self.qs[3])).product(detinv)
-                    q4 = self.qs[0].product(self.qs[8]).dif(self.qs[2].product(self.qs[6])).product(detinv)
-                    q5 = self.qs[3].product(self.qs[2]).dif(self.qs[5].product(self.qs[0])).product(detinv)
-                    q6 = self.qs[3].product(self.qs[7]).dif(self.qs[4].product(self.qs[6])).product(detinv)
-                    q7 = self.qs[6].product(self.qs[1]).dif(self.qs[7].product(self.qs[0])).product(detinv)
-                    q8 = self.qs[0].product(self.qs[4]).dif(self.qs[1].product(self.qs[3])).product(detinv)
-        
-                    q_inv =Q8aStates([q0, q1, q2, q3, q4, q5, q6, q7, q8], qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-        
-                else:
-                    print("Oops, don't know how to inverse.")
-                    q_inv =Q8aStates([Q8a().q_0()])
-        
-        else:                
-            new_states = []
-        
-            for bra in self.qs:
-                new_states.append(bra.inverse(additive=additive))
-        
-            q_inv =Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-        return q_inv
-    
-    def norm(self):
-        """Norm of states."""
-        
-        new_states = []
-        
-        for bra in self.qs:
-            new_states.append(bra.norm())
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def normalize(self, n=1, states=None):
-        """Normalize all states."""
-        
-        new_states = []
-        
-        zero_norm_count = 0
-        
-        for bra in self.qs:
-            if bra.norm_squared()[0] == 0:
-                zero_norm_count += 1
-                new_states.append(Q8a().q_0())
-            else:
-                new_states.append(bra.normalize(n))
-        
-        new_states_normalized = []
-        
-        non_zero_states = self.dim - zero_norm_count
-        
-        for new_state in new_states:
-            new_states_normalized.append(new_state.product(Q8a([math.sqrt(1/non_zero_states), 0, 0, 0])))
-            
-        return Q8aStates(new_states_normalized, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-
-    def orthonormalize(self):
-        """Given a quaternion series, resturn a normalized orthoganl basis."""
-    
-        last_q = self.qs.pop(0).normalize(math.sqrt(1/self.dim))
-        orthonormal_qs = [last_q]
-    
-        for q in self.qs:
-            qp = q.Euclidean_product(last_q)
-            orthonormal_q = q.dif(qp).normalize(math.sqrt(1/self.dim))
-            orthonormal_qs.append(orthonormal_q)
-            last_q = orthonormal_q
-        
-        return Q8aStates(orthonormal_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def determinant(self):
-        """Calculate the determinant of a 'square' quaternion series."""
-    
-        if self.dim == 1:
-            q_det = self.qs[0]
-        
-        elif self.dim == 4:
-            ad =self.qs[0].product(self.qs[3])
-            bc = self.qs[1].product(self.qs[2])
-            q_det = ad.dif(bc)  
-        
-        elif self.dim == 9:
-            aei = self.qs[0].product(self.qs[4].product(self.qs[8]))
-            bfg = self.qs[3].product(self.qs[7].product(self.qs[2]))
-            cdh = self.qs[6].product(self.qs[1].product(self.qs[5]))
-            ceg = self.qs[6].product(self.qs[4].product(self.qs[2]))
-            bdi = self.qs[3].product(self.qs[1].product(self.qs[8]))
-            afh = self.qs[0].product(self.qs[7].product(self.qs[5]))
-        
-            sum_pos = aei.add(bfg.add(cdh))
-            sum_neg = ceg.add(bdi.add(afh))
-        
-            q_det = sum_pos.dif(sum_neg)
-        
-        else:
-            print("Oops, don't know how to calculate the determinant of this one.")
-            return None
-        
-        return q_det
-    
-    def add(self, ket):
-        """Add two states."""
-        
-        if ((self.rows != ket.rows) or (self.columns != ket.columns)):
-            print("Oops, can only add if rows and columns are the same.")
-            print("rows are: {}/{}, columns are: {}/{}".format(self.rows, ket.rows,
-                                                               self.columns, ket.columns))
-            return None
-        
-        new_states = []
-        
-        for bra, ket in zip(self.qs, ket.qs):
-            new_states.append(bra.add(ket))
-            
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-
-    def summation(self):
-        """Add them all up, return one quaternion."""
-        
-        result = None
-    
-        for q in self.qs:
-            if result is None:
-                result = q
-            else:
-                result = result.add(q)
-            
-        return result    
-    
-    def dif(self, ket):
-        """Take the difference of two states."""
-        
-        new_states = []
-        
-        for bra, ket in zip(self.qs, ket.qs):
-            new_states.append(bra.dif(ket))
-            
-        return(Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns))  
-    
-    def reduce(self):
-        """Reduce the doublet values so one is zero."""
-        
-        new_states = []
-        
-        for ket in self.qs:
-            new_states.append(ket.reduce())
-            
-        return(Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns))  
-            
-    def diagonal(self, dim):
-        """Make a state dim*dim with q or qs along the 'diagonal'. Always returns an operator."""
-        
-        diagonal = []
-        
-        if len(self.qs) == 1:
-            q_values = [self.qs[0]] * dim
-        elif len(self.qs) == dim:
-            q_values = self.qs
-        elif self.qs is None:
-            print("Oops, the qs here is None.")
-            return None
-        else:
-            print("Oops, need the length to be equal to the dimensions.")
-            return None
-        
-        for i in range(dim):
-            for j in range(dim):
-                if i == j:
-                    diagonal.append(q_values[i])
-                else:
-                    diagonal.append(Q8a().q_0())
-        
-        return Q8aStates(diagonal, qs_type="op", rows=dim, columns=dim)
-        
-    @staticmethod    
-    def identity(dim, operator=False, additive=False, non_zeroes=None, qs_type="ket"):
-        """Identity operator for states or operators which are diagonal."""
-    
-        if additive:
-            id_q = [Q8a().q_0() for i in range(dim)]
-           
-        elif non_zeroes is not None:
-            id_q = []
-            
-            if len(non_zeroes) != dim:
-                print("Oops, len(non_zeroes)={nz}, should be: {d}".format(nz=len(non_zeroes), d=dim))
-                return Q8aStates([Q8a().q_0()])
-            
-            else:
-                for non_zero in non_zeroes:
-                    if non_zero:
-                        id_q.append(Q8a().q_1())
-                    else:
-                        id_q.append(Q8a().q_0())
-            
-        else:
-            id_q = [Q8a().q_1() for i in range(dim)]
-            
-        if operator:
-            q_1 = Q8aStates(id_q)
-            ident = Q8aStates.diagonal(q_1, dim)    
-    
-        else:
-            ident = Q8aStates(id_q, qs_type=qs_type)
-            
-        return ident
-    
-    def product(self, q1, kind="", reverse=False):
-        """Forms the quaternion product for each state."""
-        
-        self_copy = deepcopy(self)
-        q1_copy = deepcopy(q1)
-        
-        # Diagonalize if need be.
-        if ((self.rows == q1.rows) and (self.columns == q1.columns)) or             ("scalar" in [self.qs_type, q1.qs_type]):
-                
-            if self.columns == 1:
-                qs_right = q1_copy
-                qs_left = self_copy.diagonal(qs_right.rows)
-      
-            elif q1.rows == 1:
-                qs_left = self_copy
-                qs_right = q1_copy.diagonal(qs_left.columns)
-
-            else:
-                qs_left = self_copy
-                qs_right = q1_copy
-        
-        # Typical matrix multiplication criteria.
-        elif self.columns == q1.rows:
-            qs_left = self_copy
-            qs_right = q1_copy
-        
-        else:
-            print("Oops, cannot multiply series with row/column dimensions of {}/{} to {}/{}".format(
-                self.rows, self.columns, q1.rows, q1.columns))            
-            return None 
-        
-        outer_row_max = qs_left.rows
-        outer_column_max = qs_right.columns
-        shared_inner_max = qs_left.columns
-        projector_flag = (shared_inner_max == 1) and (outer_row_max > 1) and (outer_column_max > 1)
-        
-        result = [[Q8a().q_0(qtype='') for i in range(outer_column_max)] for j in range(outer_row_max)]
-        
-        for outer_row in range(outer_row_max):
-            for outer_column in range(outer_column_max):
-                for shared_inner in range(shared_inner_max):
-                    
-                    # For projection operators.
-                    left_index = outer_row
-                    right_index = outer_column
-                    
-                    if outer_row_max >= 1 and shared_inner_max > 1:
-                        left_index = outer_row + shared_inner * outer_row_max
-                        
-                    if outer_column_max >= 1 and shared_inner_max > 1:
-                        right_index = shared_inner + outer_column * shared_inner_max
-                            
-                    result[outer_row][outer_column] = result[outer_row][outer_column].add(
-                        qs_left.qs[left_index].product(
-                            qs_right.qs[right_index], kind=kind, reverse=reverse))
-        
-        # Flatten the list.
-        new_qs = [item for sublist in result for item in sublist]
-        
-        if outer_row_max == 1 and outer_column_max == 1:
-            qs_type = "scalar"
-        elif outer_row_max == 1 and outer_column_max > 1:
-            qs_type = "bra"
-        elif outer_row_max > 1 and outer_column_max == 1:
-            qs_type = "ket"
-        else:
-            qs_type = "op"
-            
-        new_states = Q8aStates(new_qs, qs_type=qs_type, rows=outer_row_max, columns=outer_column_max)
-
-        if projector_flag:
-            return new_states.transpose()
-        
-        else:
-            return new_states
-    
-    def Euclidean_product(self, q1, kind="", reverse=False):
-        """Forms the Euclidean product, what is used in QM all the time."""
-                    
-        return self.conj().product(q1, kind, reverse)
-    
-    def op_n(self, n, first=True, kind="", reverse=False):
-        """Mulitply an operator times a number, in that order. Set first=false for n * Op"""
-    
-        new_states = []
-    
-        for op in self.qs:
-        
-            if first:
-                new_states.append(op.product(n, kind, reverse))
-                              
-            else:
-                new_states.append(n.product(op, kind, reverse))
-    
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
-    
-    def norm_squared(self):
-        """Take the Euclidean product of each state and add it up, returning a scalar series."""
-        
-        return self.set_qs_type("bra").Euclidean_product(self.set_qs_type("ket"))
-    
-    def transpose(self, m=None, n=None):
-        """Transposes a series."""
-        
-        if m is None:
-            # test if it is square.
-            if math.sqrt(self.dim).is_integer():
-                m = int(sp.sqrt(self.dim))
-                n = m
-               
-        if n is None:
-            n = int(self.dim / m)
-            
-        if m * n != self.dim:
-            return None
-        
-        matrix = [[0 for x in range(m)] for y in range(n)] 
-        qs_t = []
-        
-        for mi in range(m):
-            for ni in range(n):
-                matrix[ni][mi] = self.qs[mi * n + ni]
-        
-        qs_t = []
-        
-        for t in matrix:
-            for q in t:
-                qs_t.append(q)
-                
-        # Switch rows and columns.
-        return Q8aStates(qs_t, rows=self.columns, columns=self.rows)
-        
-    def Hermitian_conj(self, m=None, n=None, conj_type=0):
-        """Returns the Hermitian conjugate."""
-        
-        return self.transpose(m, n).conj(conj_type)
-    
-    def dagger(self, m=None, n=None, conj_type=0):
-        """Just calls Hermitian_conj()"""
-        
-        return self.Hermitian_conj(m, n, conj_type)
-        
-    def is_square(self):
-        """Tests if a quaternion series is square, meaning the dimenion is n^2."""
-                
-        return math.sqrt(self.dim).is_integer()
-
-    def is_Hermitian(self):
-        """Tests if a series is Hermitian."""
-        
-        hc = self.Hermitian_conj()
-        
-        return self.equals(hc)
-    
-    @staticmethod
-    def sigma(kind, theta=None, phi=None):
-        """Returns a sigma when given a type like, x, y, z, xy, xz, yz, xyz, with optional angles theta and phi."""
-        
-        q0, q1, qi =Q8a().q_0(),Q8a().q_1(),Q8a().q_i()
-        
-        # Should work if given angles or not.
-        if theta is None:
-            sin_theta = 1
-            cos_theta = 1
-        else:
-            sin_theta = math.sin(theta)
-            cos_theta = math.cos(theta)
-            
-        if phi is None:
-            sin_phi = 1
-            cos_phi = 1
-        else:
-            sin_phi = math.sin(phi)
-            cos_phi = math.cos(phi)
-            
-        x_factor = q1.product(Q8a([sin_theta * cos_phi, 0, 0, 0]))
-        y_factor = qi.product(Q8a([sin_theta * sin_phi, 0, 0, 0]))
-        z_factor = q1.product(Q8a([cos_theta, 0, 0, 0]))
-
-        sigmas = {}
-        sigma['x'] = Q8aStates([q0, x_factor, x_factor, q0], "op")
-        sigma['y'] = Q8aStates([q0, y_factor, y_factor.flip_signs(), q0], "op") 
-        sigma['z'] = Q8aStates([z_factor, q0, q0, z_factor.flip_signs()], "op")
-  
-        sigmas['xy'] = sigma['x'].add(sigma['y'])
-        sigmas['xz'] = sigma['x'].add(sigma['z'])
-        sigmas['yz'] = sigma['y'].add(sigma['z'])
-        sigmas['xyz'] = sigma['x'].add(sigma['y']).add(sigma['z'])
-
-        if kind not in sigma:
-            print("Oops, I only know about x, y, z, and their combinations.")
-            return None
-        
-        return signma[kind].normalize()
-    
-    @staticmethod
-    def ops(q1, q2=None, q3=None, op="add", dim=100, qtype="v"):
-        """Given a few quaternions and an operator, returns a ket quaternion series."""
-        
-        new_states = []
-        
-        for q in q1.ops(q2=q2, q3=q3, op=op, dim=dim):
-            new_states.append(q)
-        
-        return Q8aStates(new_states)
-
-
-# Use Q8aStates().ops() to generate buckets of quaternions.
-
-# In[46]:
-
-
-ij4prod = Q8aStates().ops(q1=Q8a([1, 2, 3, 4]), q2=Q8a([1, 0.01, 0.02, -0.03]), op="add", dim=5)
-ij4prod.print_state("ij40", quiet=True)
-
-
-# In[47]:
-
-
-ij4prod.xyz()
-
-
-# In[48]:
-
-
-x2 = np.array([[2, 3], [2, 4], [1, 1], [1, 1]])
-print("x2 shape", x2.shape)
-print("x2 shape", x2.shape[0])
-print("x2 shape", x2.shape[1])
-print(x2)
-
-
-# In[49]:
-
-
-len(x2)
-
-
-# In[50]:
-
-
-x2[0]
-
-
-# In[51]:
-
-
-x2[1]
-
-
-# In[52]:
-
-
-for i in (range(len(x2))):
-    print(x2[i])
-
-
-# In[53]:
-
-
-for n, q in enumerate(x2, start=1):
-    print("{} {}".format(n, q))
-
-
-# In[54]:
-
-
-q1=Q8a([1, 2, 3, 4])
-q2=Q8a([1, 0.01, 0.02, -0.03])
-
-
-# In[55]:
-
-
-q12list = Q8aStatesList([q1, q2])
-q12nparray = Q8aStatesNPArray([q1, q2])
-q12Q8a = Q8aStatesNPArray(Q8a([q1, q2]))
-
-
-q12list.print_state("wdf")
-q12list.conj().print_state("wdf")
-q12list.conj().bra().print_state("wdf")
-
-
-# In[57]:
-
-
-q12nparray.print_state("nparray wdf")
-print(q12nparray.qs.shape)
-q12nparray.conj().print_state("nparrayconf  wdf")
-q12nparray.conj().bra().print_state("nparray conf bra wdf")
-
-
-# In[38]:
-
-
-q12Q8a.print_state("Q8a wdf")
-q12Q8a.conj().print_state("Q8a  wdf")
-q12Q8a.conj().bra().print_state("Q8a conf bra wdf")
-
-
 # In[ ]:
 
 
 
 
 
-# In[19]:
+# In[31]:
 
 
-print(type(q12nparray))
-print(type(q12nparray.qs))
-q12nparray.qs
+q1 = Q8a([1,2,3, 4])
+q2 = Q8a([.1, -.2, -.3, .1])
 
+for q in q1.ops(q2, dim=4):
+    print(q)
 
-# In[ ]:
 
+# In[32]:
 
-print(type(q12list.conj().qs))
-print(type(q12nparray.conj().qs))
 
+q1s = Q8aStates([q1])
+q1s.print_state("q1s")
+q1sadd = q1s.ops(q2, dim=4)
+q1sadd.print_state("q1sadd")
 
-# In[ ]:
 
+# In[33]:
 
-print(q12list.conj().qs)
-print(q12nparray.conj().qs)
 
-
-# In[ ]:
-
-
-q12list.conj().print_state("list")
-q12nparray.conj().print_state("nparray")
-
-
-# In[ ]:
-
-
-q12list.bra().print_state("list")
-q12nparray.bra().print_state("nparray")
-
-
-# In[ ]:
-
-
-q12list.ket().print_state("list")
-q12nparray.ket().print_state("nparray")
-
-
-# In[ ]:
-
-
-print(type(q12nparray.qs))
-print(q12nparray.qs.shape)
-
-
-# In[ ]:
-
-
-q12list.dim
-
-
-# In[ ]:
-
-
-q12list.qs
-
-
-# In[ ]:
-
-
-print(q12list.bra())
-q12list.bra().print_state("bra")
-
-
-# In[ ]:
-
-
-q12list.print_state("q12list")
-print("dim: ", q12list.dim)
-print("rows: ", q12list.rows)
-print("columns: ", q12list.columns)
-
-
-# In[34]:
-
-
-q1=Q8a([1, 2, 3, 4])
-q2=Q8a([1, 0.01, 0.02, -0.03])
-
-
-# In[ ]:
-
-
-q12 = Q8a([q1, q2])
-
-
-# In[ ]:
-
-
-q1.print_state("q1")
-q12.print_state("q12")
-
-
-# In[ ]:
-
-
-print(q1.shape)
-print(q12.shape)
-
-
-# In[ ]:
-
-
-q11 = Q8a(q1)
-q11.shape
-
-
-# In[ ]:
-
-
-q11a = Q8a(np.array(q1))
-q11a.shape
+q1sadd.to_array()
 
 
 # In[35]:
 
 
-npq2 = np.array([q1, q2])
+q1saddarray = np.array(q1sadd.qs)
+q1saddarray
 
 
-# In[37]:
+# In[24]:
 
 
-npq2.shape
-
-
-# In[40]:
-
-
-npq2
-
-
-# In[41]:
-
-
-type(npq2[:])
-
-
-# In[45]:
-
-
-conj_vec = np.vectorize(Q8a.conj)
-
-
-# In[46]:
-
-
-conj_vec(npq2)
-
-
-# In[48]:
-
-
-print(type(q1))
-print(type(q2))
-
-
-# In[51]:
-
-
-print(q1.shape)
-print(q2.shape)
-
-
-# In[53]:
-
-
-q8anp = Q8aStatesNPArray(np.array([q1, q2]))
-
-
-# In[54]:
-
-
-q8anp
-
-
-# In[55]:
-
-
-q8anp.qs
-
-
-# In[56]:
-
-
-type(q8anp.qs)
-
-
-# In[57]:
-
-
-q8anp8a = Q8aStatesNPArray(Q8a([q1, q2]))
-
-
-# In[58]:
-
-
-q8anp8a.qs
+q1saddarray.shape
 
 
 # In[ ]:
