@@ -105,7 +105,7 @@ class QH(object):
 
         return string
 
-    def print_state(self, label, spacer=False, quiet=False):
+    def print_state(self, label, spacer=False, quiet=True):
         """Utility for printing a quaternion."""
 
         print(label)
@@ -1867,7 +1867,7 @@ class Q8(object):
             
         return string 
 
-    def print_state(self, label, spacer=False, quiet=False):
+    def print_state(self, label, spacer=False, quiet=True):
         """Utility for printing a quaternion."""
 
         print(label)
@@ -3386,7 +3386,7 @@ class Q8a(Doubleta):
     
         return string
     
-    def print_state(self, label, spacer=False, quiet=False):
+    def print_state(self, label, spacer=False, quiet=True):
         """Utility for printing a quaternion."""
 
         print(label)
@@ -5470,7 +5470,7 @@ class TestQHArray(unittest.TestCase):
         self.assertTrue(self.qha.q_max.z > 13.9)
 
 
-# In[25]:
+# In[23]:
 
 
 suite = unittest.TestLoader().loadTestsFromModule(TestQHArray())
@@ -5483,7 +5483,7 @@ unittest.TextTestRunner().run(suite);
 
 # Any quaternion can be viewed as the sum of n other quaternions. This is common to see in quantum mechanics, whose needs are driving the development of this class and its methods.
 
-# In[26]:
+# In[24]:
 
 
 class QHStates(QH):
@@ -5497,6 +5497,7 @@ class QHStates(QH):
         self.qs_type = qs_type
         self.rows = rows
         self.columns = columns
+        self.qtype = ""
         
         if qs_type not in self.QS_TYPES:
             print("Oops, only know of these quaternion series types: {}".format(self.QS_TYPES))
@@ -5591,7 +5592,7 @@ class QHStates(QH):
         
         return states.rstrip()
     
-    def print_state(self, label, spacer=True, quiet=False, sum=False):
+    def print_state(self, label, spacer=True, quiet=True, sum=False):
         """Utility for printing states as a quaternion series."""
 
         print(label)
@@ -6012,6 +6013,19 @@ class QHStates(QH):
                     
         return self.conj().product(q1, kind, reverse)
     
+    @staticmethod
+    def bracket(bra, op, ket):
+        """Forms <bra|op|ket>."""
+        
+        if bra.qs_type == 'ket':
+            bra = bra.bra()
+        if ket.qs_type == 'bra':
+            ket = ket.ket()
+            
+        b = bra.Euclidean_product(op).product(ket)
+        
+        return b
+    
     def op_n(self, n, first=True, kind="", reverse=False):
         """Mulitply an operator times a number, in that order. Set first=false for n * Op"""
     
@@ -6110,24 +6124,94 @@ class QHStates(QH):
         y_factor = qi.product(QH([sin_theta * sin_phi, 0, 0, 0]))
         z_factor = q1.product(QH([cos_theta, 0, 0, 0]))
 
-        sigmas = {}
+        sigma = {}
         sigma['x'] =QHStates([q0, x_factor, x_factor, q0], "op")
         sigma['y'] =QHStates([q0, y_factor, y_factor.flip_signs(), q0], "op") 
         sigma['z'] =QHStates([z_factor, q0, q0, z_factor.flip_signs()], "op")
   
-        sigmas['xy'] = sigma['x'].add(sigma['y'])
-        sigmas['xz'] = sigma['x'].add(sigma['z'])
-        sigmas['yz'] = sigma['y'].add(sigma['z'])
-        sigmas['xyz'] = sigma['x'].add(sigma['y']).add(sigma['z'])
+        sigma['xy'] = sigma['x'].add(sigma['y'])
+        sigma['xz'] = sigma['x'].add(sigma['z'])
+        sigma['yz'] = sigma['y'].add(sigma['z'])
+        sigma['xyz'] = sigma['x'].add(sigma['y']).add(sigma['z'])
 
         if kind not in sigma:
             print("Oops, I only know about x, y, z, and their combinations.")
             return None
         
-        return signma[kind].normalize()
+        return sigma[kind].normalize()
+  
+    def sin(self):
+        """sine of states."""
+                
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.sin(qtype=""))
+            
+        return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+    
+    def cos(self):
+        """cosine of states."""
+                
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.cos(qtype=""))
+            
+        return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+    
+    def tan(self):
+        """tan of states."""
+                
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.tan(qtype=""))
+            
+        return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+    
+    def sinh(self):
+        """sinh of states."""
+                
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.sinh(qtype=""))
+            
+        return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+    
+    def cosh(self):
+        """cosh of states."""
+                
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.cosh(qtype=""))
+            
+        return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+    
+    def tanh(self):
+        """tanh of states."""
+                
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.tanh(qtype=""))
+            
+        return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+
+    def exp(self):
+        """exponential of states."""
+                
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.exp(qtype=""))
+            
+        return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
 
 
-# In[27]:
+# In[25]:
 
 
 class TestQHStates(unittest.TestCase):
@@ -6421,6 +6505,11 @@ class TestQHStates(unittest.TestCase):
         print("A* Op4i B: ", AOp4iB)
         self.assertTrue(AOp4iB.equals(QHStates([QH([9, 24, 0, 24])])))
 
+    def test_1305_bracket(self):
+        bracket1234 = QHStates().bracket(self.q_1234, QHStates().identity(4, operator=True), self.q_1234)
+        print("bracket <1234|I|1234>: ", bracket1234)
+        self.assertTrue(bracket1234.equals(QHStates([QH([34, 0, 0, 0])])))
+    
     def test_1310_op_n(self):
         opn = self.Op.op_n(n=self.q_i)
         print("op_n: ", opn)
@@ -6472,7 +6561,7 @@ unittest.TextTestRunner().run(suite);
 # 
 # by old fashioned cut and paste with minor tweaks (boring).
 
-# In[29]:
+# In[26]:
 
 
 class Q8States(Q8):
@@ -6580,7 +6669,7 @@ class Q8States(Q8):
         
         return states.rstrip()
     
-    def print_state(self, label, spacer=True, quiet=False, sum=False):
+    def print_state(self, label, spacer=True, quiet=True, sum=False):
         """Utility for printing states as a quaternion series."""
 
         print(label)
@@ -6988,6 +7077,19 @@ class Q8States(Q8):
                     
         return self.conj().product(q1, kind, reverse)
     
+    @staticmethod
+    def bracket(bra, op, ket):
+        """Forms <bra|op|ket>."""
+        
+        if bra.qs_type == 'ket':
+            bra = bra.bra()
+        if ket.qs_type == 'bra':
+            ket = ket.ket()
+            
+        b = bra.Euclidean_product(op).product(ket)
+        
+        return b
+    
     def op_n(self, n, first=True, kind="", reverse=False):
         """Mulitply an operator times a number, in that order. Set first=false for n * Op"""
     
@@ -7086,24 +7188,24 @@ class Q8States(Q8):
         y_factor = qi.product(Q8([sin_theta * sin_phi, 0, 0, 0]))
         z_factor = q1.product(Q8([cos_theta, 0, 0, 0]))
 
-        sigmas = {}
+        sigma = {}
         sigma['x'] =Q8States([q0, x_factor, x_factor, q0], "op")
         sigma['y'] =Q8States([q0, y_factor, y_factor.flip_signs(), q0], "op") 
         sigma['z'] =Q8States([z_factor, q0, q0, z_factor.flip_signs()], "op")
   
-        sigmas['xy'] = sigma['x'].add(sigma['y'])
-        sigmas['xz'] = sigma['x'].add(sigma['z'])
-        sigmas['yz'] = sigma['y'].add(sigma['z'])
-        sigmas['xyz'] = sigma['x'].add(sigma['y']).add(sigma['z'])
+        sigma['xy'] = sigma['x'].add(sigma['y'])
+        sigma['xz'] = sigma['x'].add(sigma['z'])
+        sigma['yz'] = sigma['y'].add(sigma['z'])
+        sigma['xyz'] = sigma['x'].add(sigma['y']).add(sigma['z'])
 
         if kind not in sigma:
             print("Oops, I only know about x, y, z, and their combinations.")
             return None
         
-        return signma[kind].normalize()
+        return sigma[kind].normalize()
 
 
-# In[30]:
+# In[27]:
 
 
 class TestQ8States(unittest.TestCase):
@@ -7397,6 +7499,11 @@ class TestQ8States(unittest.TestCase):
         print("A* Op4i B: ", AOp4iB)
         self.assertTrue(AOp4iB.equals(Q8States([Q8([9, 24, 0, 24])])))
 
+    def test_1305_bracket(self):
+        bracket1234 = Q8States().bracket(self.q_1234, Q8States().identity(4, operator=True), self.q_1234)
+        print("bracket <1234|I|1234>: ", bracket1234)
+        self.assertTrue(bracket1234.equals(Q8States([Q8([34, 0, 0, 0])])))
+    
     def test_1310_op_n(self):
         opn = self.Op.op_n(n=self.q_i)
         print("op_n: ", opn)
@@ -7441,7 +7548,7 @@ suite = unittest.TestLoader().loadTestsFromModule(TestQ8States())
 unittest.TextTestRunner().run(suite);
 
 
-# In[31]:
+# In[28]:
 
 
 class Q8aStates(Q8a):
@@ -7549,7 +7656,7 @@ class Q8aStates(Q8a):
         
         return states.rstrip()
     
-    def print_state(self, label, spacer=True, quiet=False, sum=False):
+    def print_state(self, label, spacer=True, quiet=True, sum=False):
         """Utility for printing states as a quaternion series."""
 
         print(label)
@@ -7957,6 +8064,19 @@ class Q8aStates(Q8a):
                     
         return self.conj().product(q1, kind, reverse)
     
+    @staticmethod
+    def bracket(bra, op, ket):
+        """Forms <bra|op|ket>."""
+        
+        if bra.qs_type == 'ket':
+            bra = bra.bra()
+        if ket.qs_type == 'bra':
+            ket = ket.ket()
+            
+        b = bra.Euclidean_product(op).product(ket)
+        
+        return b
+    
     def op_n(self, n, first=True, kind="", reverse=False):
         """Mulitply an operator times a number, in that order. Set first=false for n * Op"""
     
@@ -8055,24 +8175,24 @@ class Q8aStates(Q8a):
         y_factor = qi.product(Q8a([sin_theta * sin_phi, 0, 0, 0]))
         z_factor = q1.product(Q8a([cos_theta, 0, 0, 0]))
 
-        sigmas = {}
+        sigma = {}
         sigma['x'] = Q8aStates([q0, x_factor, x_factor, q0], "op")
         sigma['y'] = Q8aStates([q0, y_factor, y_factor.flip_signs(), q0], "op") 
         sigma['z'] = Q8aStates([z_factor, q0, q0, z_factor.flip_signs()], "op")
   
-        sigmas['xy'] = sigma['x'].add(sigma['y'])
-        sigmas['xz'] = sigma['x'].add(sigma['z'])
-        sigmas['yz'] = sigma['y'].add(sigma['z'])
-        sigmas['xyz'] = sigma['x'].add(sigma['y']).add(sigma['z'])
+        sigma['xy'] = sigma['x'].add(sigma['y'])
+        sigma['xz'] = sigma['x'].add(sigma['z'])
+        sigma['yz'] = sigma['y'].add(sigma['z'])
+        sigma['xyz'] = sigma['x'].add(sigma['y']).add(sigma['z'])
 
         if kind not in sigma:
             print("Oops, I only know about x, y, z, and their combinations.")
             return None
         
-        return signma[kind].normalize()
+        return sigma[kind].normalize()
 
 
-# In[32]:
+# In[29]:
 
 
 class TestQ8aStates(unittest.TestCase):
@@ -8366,6 +8486,11 @@ class TestQ8aStates(unittest.TestCase):
         print("A* Op4i B: ", AOp4iB)
         self.assertTrue(AOp4iB.equals(Q8aStates([Q8a([9, 24, 0, 24])])))
 
+    def test_1305_bracket(self):
+        bracket1234 = Q8aStates().bracket(self.q_1234, Q8aStates().identity(4, operator=True), self.q_1234)
+        print("bracket <1234|I|1234>: ", bracket1234)
+        self.assertTrue(bracket1234.equals(Q8aStates([Q8a([34, 0, 0, 0])])))
+    
     def test_1310_op_n(self):
         opn = self.Op.op_n(n=self.q_i)
         print("op_n: ", opn)
@@ -8410,7 +8535,7 @@ suite = unittest.TestLoader().loadTestsFromModule(TestQ8aStates())
 unittest.TextTestRunner().run(suite);
 
 
-# In[33]:
+# In[30]:
 
 
 class EigenQH(object):
@@ -8448,7 +8573,7 @@ class EigenQH(object):
         return M
 
 
-# In[34]:
+# In[31]:
 
 
 class EigenQHTest(unittest.TestCase):
@@ -8537,10 +8662,26 @@ suite = unittest.TestLoader().loadTestsFromModule(EigenQHTest())
 unittest.TextTestRunner().run(suite);
 
 
-# In[35]:
+# In[38]:
 
 
 get_ipython().system('jupyter nbconvert --to script Q_tools.ipynb')
+
+
+# In[35]:
+
+
+q1 = QH([0,1,2,3])
+q1exp = q1.exp()
+q1exp.print_state("q exp 0123")
+
+
+# In[37]:
+
+
+q1s = QHStates([QH([0,1,2,3])])
+q1sexp = q1s.exp()
+q1sexp.print_state("qs exp 0123")
 
 
 # In[ ]:
