@@ -42,7 +42,7 @@ def sr_gamma_betas(beta_x=0, beta_y=0, beta_z=0):
     return [g, g * beta_x, g * beta_y, g * beta_z]
 
 
-# In[3]:
+# In[143]:
 
 
 class Q8a(np.ndarray):
@@ -53,6 +53,7 @@ class Q8a(np.ndarray):
                 strides=None, order=None):
         
         obj = super(Q8a, subtype).__new__(subtype, shape, dtype, buffer, offset, strides, order)
+        #obj = super().__new__(subtype, shape, dtype, buffer, offset, strides, order)
         obj.values = values
         obj.qtype = qtype
         obj.representation = representation
@@ -1046,7 +1047,7 @@ class Q8a(np.ndarray):
     trinary_op["triple_product"] = triple_product
 
 
-# In[4]:
+# In[144]:
 
 
 class TestQ8a(unittest.TestCase):
@@ -1522,7 +1523,7 @@ suite = unittest.TestLoader().loadTestsFromModule(TestQ8a())
 unittest.TextTestRunner().run(suite);
 
 
-# In[29]:
+# In[109]:
 
 
 # class Q8aStates(Q8a):
@@ -1534,6 +1535,7 @@ class Q8aStates(object):
     def __init__(self, qs=None, qs_type="ket", rows=0, columns=0):
         
         self.qs = qs
+        self.array = np.array(qs)
         self.qs_type = qs_type
         self.rows = rows
         self.columns = columns
@@ -1548,6 +1550,9 @@ class Q8aStates(object):
             self.d, self.dim, self.dimensions = int(len(qs)), int(len(qs)), int(len(qs))
     
         self.set_qs_type(qs_type, rows, columns, copy=False)
+ 
+        if self.dim > 0:
+            self.array = self.array.reshape(self.rows, self.columns, 8)
     
     def set_qs_type(self, qs_type="", rows=0, columns=0, copy=True):
         """Set the qs_type to something sensible."""
@@ -1603,6 +1608,9 @@ class Q8aStates(object):
             qs_type = "scalar"
             
         new_q.qs_type = qs_type
+        
+        #if self.dim > 0:
+        #    self.array.reshape(self.rows, self.columns, 8)
         
         return new_q
         
@@ -1733,7 +1741,7 @@ class Q8aStates(object):
                 
             else:
                 if self.dim == 1:
-                    q_inv =Q8aStates(self.qs[0].inverse())
+                    q_inv = Q8aStates(self.qs[0].inverse())
         
                 elif self.qs_type in ["bra", "ket"]:
                     new_qs = []
@@ -1936,18 +1944,28 @@ class Q8aStates(object):
         return Q8aStates(diagonal, qs_type="op", rows=dim, columns=dim)
         
     @staticmethod    
-    def identity(dim, operator=False, additive=False, non_zeroes=None, qs_type="ket"):
+    def identity(dim, additive=False, non_zeroes=None, qs_type="ket"):
         """Identity operator for states or operators which are diagonal."""
+    
+        if qs_type == "ket":
+            rows, columns = dim, 1
+            
+        elif qs_type == "bra":
+            rows, columns = 1, dim
+            
+        else:
+            rows, columns = dim, 1
     
         if additive:
             id_q = [Q8a().q_0() for i in range(dim)]
            
         elif non_zeroes is not None:
+            
             id_q = []
             
             if len(non_zeroes) != dim:
                 print("Oops, len(non_zeroes)={nz}, should be: {d}".format(nz=len(non_zeroes), d=dim))
-                return Q8aStates([Q8a().q_0()])
+                return Q8aStates([Q8a().q_0()], qs_type=qs_type, rows=rows, columns=columns)
             
             else:
                 for non_zero in non_zeroes:
@@ -1958,13 +1976,13 @@ class Q8aStates(object):
             
         else:
             id_q = [Q8a().q_1() for i in range(dim)]
-            
-        if operator:
-            q_1 = Q8aStates(id_q)
+                    
+        if qs_type in ["op", "operator", "scalar"]:
+            q_1 = Q8aStates(id_q, qs_type=qs_type, rows=rows, columns=columns)
             ident = Q8aStates.diagonal(q_1, dim)    
     
         else:
-            ident = Q8aStates(id_q, qs_type=qs_type)
+            ident = Q8aStates(id_q, qs_type=qs_type, rows=rows, columns=columns)
             
         return ident
     
@@ -2153,15 +2171,27 @@ class Q8aStates(object):
         
         return signma[kind].normalize()
     
-    def ops(self, q2=None, q3=None, op="add", dim=10):
+    @staticmethod
+    def ops(q1, q2=None, q3=None, op="add", qs_type="ket", dim=10):
         
         new_states = []
         
-        for bra in self.qs:
-            for new_q in bra.ops(q2, q3, op, dim):
-                new_states.append(new_q)
+        for new_q in q1.ops(q2, q3, op, dim):
+            new_states.append(new_q)
             
-        return Q8aStates(new_states, qs_type=self.qs_type, rows=dim, columns=1)
+        return Q8aStates(new_states, qs_type=qs_type, rows=dim, columns=1)
+    
+    def min(self, axis=0):
+        """Return min values for all 8 positions as an ndarray.
+           Pass axis=None to get the smallest value of all."""
+        
+        return np.min(self.array.reshape(self.dim, 8), axis=axis)
+    
+    def max(self, axis=0):
+        """Return max values for all 8 positions as an ndarray.
+           Pass axis=None to get the biggest value of all."""
+        
+        return np.max(self.array.reshape(self.dim, 8), axis=axis)
     
     def to_array(self):
         """Given a Q8aState, returns a np.ndarray."""
@@ -2169,7 +2199,7 @@ class Q8aStates(object):
         return np.array(self.qs)
 
 
-# In[30]:
+# In[110]:
 
 
 class TestQ8aStates(unittest.TestCase):
@@ -2210,7 +2240,7 @@ class TestQ8aStates(unittest.TestCase):
     q_i3 = Q8aStates([q_1, q_1, q_1])
     q_i2d = Q8aStates([q_1, q_0, q_0, q_1])
     q_i3_bra = Q8aStates([q_1, q_1, q_1], "bra")
-    q_6_op = Q8aStates([q_1, q_0, q_0, q_1, q_i, q_i], "op")    
+    # q_6_op = Q8aStates([q_1, q_0, q_0, q_1, q_i, q_i], "op")    
     q_6_op_32 = Q8aStates([q_1, q_0, q_0, q_1, q_i, q_i], "op", rows=3, columns=2)
     q_i2d_op = Q8aStates([q_1, q_0, q_0, q_1], "op")
     q_i4 = Q8a([0,4,0,0])
@@ -2221,11 +2251,11 @@ class TestQ8aStates(unittest.TestCase):
     B = Q8aStates([Q8a([0,0,1,0]), Q8a([0,0,0,2]), Q8a([0,3,0,0])])
     Op = Q8aStates([Q8a([3,0,0,0]), Q8a([0,1,0,0]), Q8a([0,0,2,0]), Q8a([0,0,0,3]), Q8a([2,0,0,0]), Q8a([0,4,0,0])], "op", rows=2, columns=3)
     Op4i = Q8aStates([q_i4, q_0, q_0, q_i4, q_2, q_3], "op", rows=2, columns=3) 
-    Op_scalar = Q8aStates([q_i4], "scalar")
+    Op_scalar = Q8aStates([q_i4], "scalar", rows=1, columns=1)
     q_1234 = Q8aStates([Q8a([1, 1, 0, 0]), Q8a([2, 1, 0, 0]), Q8a([3, 1, 0, 0]), Q8a([4, 1, 0, 0])])
     sigma_y = Q8aStates([Q8a([1, 0, 0, 0]), Q8a([0, -1, 0, 0]), Q8a([0, 1, 0, 0]), Q8a([-1, 0, 0, 0])])
     qn = Q8aStates([Q8a([3,0,0,4])])
-    q_bad = Q8aStates([q_1], rows=2, columns=3)
+    # q_bad = Q8aStates([q_1], rows=2, columns=3)
     
     b = Q8aStates([q_1, q_2, q_3], qs_type="bra")
     k = Q8aStates([q_4, q_5, q_6], qs_type="ket")
@@ -2325,7 +2355,7 @@ class TestQ8aStates(unittest.TestCase):
         self.assertTrue(Op4iDiag2.qs[1].equals(Q8a().q_0()))
         
     def test_1130_identity(self):
-        I2 = Q8aStates().identity(2, operator=True)
+        I2 = Q8aStates().identity(2, qs_type="operator")
         print("Operator Idenity, diagonal 2x2", I2)    
         self.assertTrue(I2.qs[0].equals(Q8a().q_1()))
         self.assertTrue(I2.qs[1].equals(Q8a().q_0()))
@@ -2479,33 +2509,34 @@ class TestQ8aStates(unittest.TestCase):
         self.assertTrue(self.Op_scalar.is_square())    
     
     def test_1360_ops(self):
-        q3 = Q8aStates().ops(q1=self.q_0, q2=self.q_1, op="dif", dim=3)
+        q3 = Q8aStates().ops(q1=self.q_1, q2=self.q_1, op="dif", dim=3)
         q3.print_state("ops dif -1, dim=3")
-        self.assertTrue(q3.qs.shape == (3, 8))
         self.assertTrue(q3.qs[2][1] == 3.0)
         
     def test_1370_to_array(self):
         qa = self.q_1234.to_array()
-        print("q_1234 to np.ndarray: ", qa)
+        print("q_1234 to np.ndarray: \n", qa)
         self.assertTrue(type(qa).__name__ == "ndarray")
+        
+    def test_1380_min(self):
+        qa = self.q_1234.min()
+        print("q_1234.min(): ", qa)
+        self.assertTrue(qa[0] == 1)
+        qa = self.q_1234.min(axis=None)
+        self.assertTrue(qa == 0)
+        
+    def test_1390_max(self):
+        qa = self.q_1234.max()
+        print("q_1234.max(): ", qa)
+        self.assertTrue(qa[0] == 4)
+        qa = self.q_1234.max(axis=None)
+        self.assertTrue(qa == 4)
         
 suite = unittest.TestLoader().loadTestsFromModule(TestQ8aStates())
 unittest.TextTestRunner().run(suite);
 
 
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[31]:
+# In[111]:
 
 
 q1 = Q8a([1,2,3, 4])
@@ -2513,34 +2544,6 @@ q2 = Q8a([.1, -.2, -.3, .1])
 
 for q in q1.ops(q2, dim=4):
     print(q)
-
-
-# In[32]:
-
-
-q1s = Q8aStates([q1])
-q1s.print_state("q1s")
-q1sadd = q1s.ops(q2, dim=4)
-q1sadd.print_state("q1sadd")
-
-
-# In[33]:
-
-
-q1sadd.to_array()
-
-
-# In[35]:
-
-
-q1saddarray = np.array(q1sadd.qs)
-q1saddarray
-
-
-# In[24]:
-
-
-q1saddarray.shape
 
 
 # In[ ]:
