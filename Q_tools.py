@@ -11,7 +11,6 @@
 # 
 # This set of tools is done 4x:
 # 1. QH - Quaternions for Hamilton, can do symbolic manipulations
-# 1. QHa - Quaternions for Hamilton numpy arrays
 # 1. Q8 - Quaternions that are represented by 8 numbers
 # 1. Q8a - Quaternions that are represented by 8 numbers that are numpy arrays
 # 
@@ -5636,17 +5635,49 @@ class QHStates(QH):
     def bra(self):
         """Quickly set the qs_type to bra by calling set_qs_type()."""
         
-        return self.set_qs_type("bra")
+        if self.qs_type == "bra":
+            return self
+        
+        bra = deepcopy(self).conj()
+        bra.rows = 1
+        bra.columns = self.dim
+        
+        if self.dim > 1:
+            bra.qs_type = "bra"
+        
+        return bra
     
     def ket(self):
         """Quickly set the qs_type to ket by calling set_qs_type()."""
-        
-        return self.set_qs_type("ket")
     
-    def op(self, rows=0, columns=0):
-        """Quickly set the qs_type to op by calling set_qs_type()."""
+        if self.qs_type == "ket":
+            return self
         
-        return self.set_qs_type("op", rows=rows, columns=columns)
+        ket = deepcopy(self).conj()
+        ket.rows = self.dim
+        ket.columns = 1
+        
+        if self.dim > 1:
+            ket.qs_type = "ket"
+        
+        return ket
+    
+    def op(self, rows, columns):
+        """Quickly set the qs_type to op by calling set_qs_type()."""
+ 
+        if rows * columns != self.dim:
+            print("Oops, rows * columns != dim: {} * {}, {}".formaat(rows, columns, self.dim))
+            return None
+        
+        op_q = deepcopy(self)
+        
+        op_q.rows = rows
+        op_q.columns = columns
+        
+        if self.dim > 1:
+            op_q.qs_type = "op"
+        
+        return op_q
     
     def __str__(self, quiet=False):
         """Print out all the states."""
@@ -6091,14 +6122,24 @@ class QHStates(QH):
     
     @staticmethod
     def bracket(bra, op, ket):
-        """Forms <bra|op|ket>."""
+        """Forms <bra|op|ket>. Note: if fed 2 k"""
+        
+        flip = 0
         
         if bra.qs_type == 'ket':
             bra = bra.bra()
+            flip += 1
+            
         if ket.qs_type == 'bra':
             ket = ket.ket()
+            flip += 1
             
-        b = bra.Euclidean_product(op).product(ket)
+        if flip == 1:
+            print("fed 2 bras or kets, taking the conjugate as need be. Check result though.")
+            b = bra.product(op).product(ket)
+        
+        else:
+            b = bra.Euclidean_product(op).product(ket)
         
         return b
     
@@ -6732,17 +6773,49 @@ class Q8States(Q8):
     def bra(self):
         """Quickly set the qs_type to bra by calling set_qs_type()."""
         
-        return self.set_qs_type("bra")
+        if self.qs_type == "bra":
+            return self
+        
+        bra = deepcopy(self).conj()
+        bra.rows = 1
+        bra.columns = self.dim
+        
+        if self.dim > 1:
+            bra.qs_type = "bra"
+        
+        return bra
     
     def ket(self):
         """Quickly set the qs_type to ket by calling set_qs_type()."""
-        
-        return self.set_qs_type("ket")
     
-    def op(self, rows=0, columns=0):
-        """Quickly set the qs_type to op by calling set_qs_type()."""
+        if self.qs_type == "ket":
+            return self
         
-        return self.set_qs_type("op", rows=rows, columns=columns)
+        ket = deepcopy(self).conj()
+        ket.rows = self.dim
+        ket.columns = 1
+        
+        if self.dim > 1:
+            ket.qs_type = "ket"
+        
+        return ket
+    
+    def op(self, rows, columns):
+        """Quickly set the qs_type to op by calling set_qs_type()."""
+ 
+        if rows * columns != self.dim:
+            print("Oops, rows * columns != dim: {} * {}, {}".formaat(rows, columns, self.dim))
+            return None
+        
+        op_q = deepcopy(self)
+        
+        op_q.rows = rows
+        op_q.columns = columns
+        
+        if self.dim > 1:
+            op_q.qs_type = "op"
+        
+        return op_q
     
     def __str__(self, quiet=False):
         """Print out all the states."""
@@ -7174,14 +7247,24 @@ class Q8States(Q8):
     
     @staticmethod
     def bracket(bra, op, ket):
-        """Forms <bra|op|ket>."""
+        """Forms <bra|op|ket>. Note: if fed 2 k"""
+        
+        flip = 0
         
         if bra.qs_type == 'ket':
             bra = bra.bra()
+            flip += 1
+            
         if ket.qs_type == 'bra':
             ket = ket.ket()
+            flip += 1
             
-        b = bra.Euclidean_product(op).product(ket)
+        if flip == 1:
+            print("fed 2 bras or kets, taking the conjugate as need be. Check result though.")
+            b = bra.product(op).product(ket)
+        
+        else:
+            b = bra.Euclidean_product(op).product(ket)
         
         return b
     
@@ -7738,17 +7821,49 @@ class Q8aStates(Q8a):
     def bra(self):
         """Quickly set the qs_type to bra by calling set_qs_type()."""
         
-        return self.set_qs_type("bra")
+        if self.qs_type == "bra":
+            return self
+        
+        bra = deepcopy(self).conj()
+        bra.rows = 1
+        bra.columns = self.dim
+        
+        if self.dim > 1:
+            bra.qs_type = "bra"
+        
+        return bra
     
     def ket(self):
         """Quickly set the qs_type to ket by calling set_qs_type()."""
-        
-        return self.set_qs_type("ket")
     
-    def op(self, rows=0, columns=0):
-        """Quickly set the qs_type to op by calling set_qs_type()."""
+        if self.qs_type == "ket":
+            return self
         
-        return self.set_qs_type("op", rows=rows, columns=columns)
+        ket = deepcopy(self).conj()
+        ket.rows = self.dim
+        ket.columns = 1
+        
+        if self.dim > 1:
+            ket.qs_type = "ket"
+        
+        return ket
+    
+    def op(self, rows, columns):
+        """Quickly set the qs_type to op by calling set_qs_type()."""
+ 
+        if rows * columns != self.dim:
+            print("Oops, rows * columns != dim: {} * {}, {}".formaat(rows, columns, self.dim))
+            return None
+        
+        op_q = deepcopy(self)
+        
+        op_q.rows = rows
+        op_q.columns = columns
+        
+        if self.dim > 1:
+            op_q.qs_type = "op"
+        
+        return op_q
     
     def __str__(self, quiet=False):
         """Print out all the states."""
@@ -8180,14 +8295,24 @@ class Q8aStates(Q8a):
     
     @staticmethod
     def bracket(bra, op, ket):
-        """Forms <bra|op|ket>."""
+        """Forms <bra|op|ket>. Note: if fed 2 k"""
+        
+        flip = 0
         
         if bra.qs_type == 'ket':
             bra = bra.bra()
+            flip += 1
+            
         if ket.qs_type == 'bra':
             ket = ket.ket()
+            flip += 1
             
-        b = bra.Euclidean_product(op).product(ket)
+        if flip == 1:
+            print("fed 2 bras or kets, taking the conjugate as need be. Check result though.")
+            b = bra.product(op).product(ket)
+        
+        else:
+            b = bra.Euclidean_product(op).product(ket)
         
         return b
     
