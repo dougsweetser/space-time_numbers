@@ -5548,7 +5548,7 @@ unittest.TextTestRunner().run(suite);
 
 # Any quaternion can be viewed as the sum of n other quaternions. This is common to see in quantum mechanics, whose needs are driving the development of this class and its methods.
 
-# In[24]:
+# In[35]:
 
 
 class QHStates(QH):
@@ -6122,7 +6122,7 @@ class QHStates(QH):
     
     @staticmethod
     def bracket(bra, op, ket):
-        """Forms <bra|op|ket>. Note: if fed 2 k"""
+        """Forms <bra|op|ket>. Note: if fed 2 kets, will take a conjugate."""
         
         flip = 0
         
@@ -6135,11 +6135,12 @@ class QHStates(QH):
             flip += 1
             
         if flip == 1:
-            print("fed 2 bras or kets, taking the conjugate as need be. Check result though.")
-            b = bra.product(op).product(ket)
+            print("fed 2 bras or kets, took a conjugate. Double check.")
         
         else:
-            b = bra.Euclidean_product(op).product(ket)
+            print("Assumes your <bra| already has been conjugated. Double check.")
+            
+        b = bra.product(op).product(ket)
         
         return b
     
@@ -6328,7 +6329,7 @@ class QHStates(QH):
         return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
 
 
-# In[25]:
+# In[36]:
 
 
 class TestQHStates(unittest.TestCase):
@@ -6687,7 +6688,7 @@ unittest.TextTestRunner().run(suite);
 # 
 # by old fashioned cut and paste with minor tweaks (boring).
 
-# In[26]:
+# In[37]:
 
 
 class Q8States(Q8):
@@ -7260,11 +7261,12 @@ class Q8States(Q8):
             flip += 1
             
         if flip == 1:
-            print("fed 2 bras or kets, taking the conjugate as need be. Check result though.")
-            b = bra.product(op).product(ket)
+            print("Fed 2 bras or kets, took a conjugate. Double check.")
         
         else:
-            b = bra.Euclidean_product(op).product(ket)
+            print("Assumes <bra| is already conjugated. Double check.")
+        
+        b = bra.product(op).product(ket)
         
         return b
     
@@ -7383,7 +7385,7 @@ class Q8States(Q8):
         return sigma[kind].normalize()
 
 
-# In[27]:
+# In[38]:
 
 
 class TestQ8States(unittest.TestCase):
@@ -7735,7 +7737,7 @@ suite = unittest.TestLoader().loadTestsFromModule(TestQ8States())
 unittest.TextTestRunner().run(suite);
 
 
-# In[28]:
+# In[41]:
 
 
 class Q8aStates(Q8a):
@@ -8295,7 +8297,7 @@ class Q8aStates(Q8a):
     
     @staticmethod
     def bracket(bra, op, ket):
-        """Forms <bra|op|ket>. Note: if fed 2 k"""
+        """Forms <bra|op|ket>. Note: if fed 2 bras or kets, will take a conjugate."""
         
         flip = 0
         
@@ -8308,11 +8310,12 @@ class Q8aStates(Q8a):
             flip += 1
             
         if flip == 1:
-            print("fed 2 bras or kets, taking the conjugate as need be. Check result though.")
-            b = bra.product(op).product(ket)
-        
+            print("Fed 2 bras or kets, took a conjugate. Double check.")
+            
         else:
-            b = bra.Euclidean_product(op).product(ket)
+            print("Assumes <bra| has conjugate taken already. Double check.")
+            
+        b = bra.product(op).product(ket)
         
         return b
     
@@ -8431,7 +8434,7 @@ class Q8aStates(Q8a):
         return sigma[kind].normalize()
 
 
-# In[29]:
+# In[42]:
 
 
 class TestQ8aStates(unittest.TestCase):
@@ -8783,7 +8786,7 @@ suite = unittest.TestLoader().loadTestsFromModule(TestQ8aStates())
 unittest.TextTestRunner().run(suite);
 
 
-# In[30]:
+# In[43]:
 
 
 class EigenQH(object):
@@ -8821,7 +8824,7 @@ class EigenQH(object):
         return M
 
 
-# In[31]:
+# In[44]:
 
 
 class EigenQHTest(unittest.TestCase):
@@ -8910,7 +8913,7 @@ suite = unittest.TestLoader().loadTestsFromModule(EigenQHTest())
 unittest.TextTestRunner().run(suite);
 
 
-# In[32]:
+# In[45]:
 
 
 get_ipython().system('jupyter nbconvert --to script Q_tools.ipynb')
