@@ -42,7 +42,7 @@ def sr_gamma_betas(beta_x=0, beta_y=0, beta_z=0):
     return [g, g * beta_x, g * beta_y, g * beta_z]
 
 
-# In[143]:
+# In[3]:
 
 
 class Q8a(np.ndarray):
@@ -266,8 +266,13 @@ class Q8a(np.ndarray):
         v = Q8a([0, 0, self[2], self[3], self[4], self[5], self[6], self[7]], qtype=end_qtype, representation=self.representation)
         return v
     
+    def t(self):
+        """Returns a real-value as an np.array."""
+        
+        return np.array([self[0] - self[1]])
+    
     def xyz(self):
-        """Returns the vector as an np.array."""
+        """Returns a real-valued 3-vector as an np.array."""
         
         return np.array([self[2] - self[3], self[4] - self[5], self[6] - self[7]])
     
@@ -1008,6 +1013,7 @@ class Q8a(np.ndarray):
     unary_op["reduce"] = reduce
     unary_op["scalar"] = scalar
     unary_op["vector"] = vector
+    unary_op["t"] = t
     unary_op["xyz"] = xyz
     unary_op["conj"] = conj
     unary_op["vahlen_conj"] = vahlen_conj
@@ -1047,7 +1053,7 @@ class Q8a(np.ndarray):
     trinary_op["triple_product"] = triple_product
 
 
-# In[144]:
+# In[4]:
 
 
 class TestQ8a(unittest.TestCase):
@@ -1083,6 +1089,11 @@ class TestQ8a(unittest.TestCase):
         self.assertTrue(q_z[5] == 3)
         self.assertTrue(q_z[7] == 4)
         
+    def test_t(self):
+        q_z = self.q1.t()
+        print("q.t()): ", q_z)
+        self.assertTrue(q_z[0] == 1)
+    
     def test_xyz(self):
         q_z = self.q1.xyz()
         print("q.xyz()): ", q_z)
@@ -1523,7 +1534,7 @@ suite = unittest.TestLoader().loadTestsFromModule(TestQ8a())
 unittest.TextTestRunner().run(suite);
 
 
-# In[109]:
+# In[5]:
 
 
 # class Q8aStates(Q8a):
@@ -1689,8 +1700,18 @@ class Q8aStates(object):
             
         return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
       
+    def t(self):
+        """Returns a real-valued t as an np.array."""
+        
+        new_states = []
+        
+        for bra in self.qs:
+            new_states.append(bra.t())
+            
+        return new_states
+    
     def xyz(self):
-        """Returns the vector as an np.array."""
+        """Returns a real-valued 3-vector as an np.array."""
         
         new_states = []
         
@@ -2199,7 +2220,7 @@ class Q8aStates(object):
         return np.array(self.qs)
 
 
-# In[110]:
+# In[6]:
 
 
 class TestQ8aStates(unittest.TestCase):
@@ -2277,6 +2298,34 @@ class TestQ8aStates(unittest.TestCase):
     def test_1030_equals(self):
         self.assertTrue(self.A.equals(self.A))
         self.assertFalse(self.A.equals(self.B))
+        
+    def test_1031_scalar(self):
+        q_z = self.A.scalar()
+        print("scalar(q): ", q_z)
+        self.assertTrue(q_z.qs[0][0] == 4)
+        self.assertTrue(q_z.qs[0][2] == 0)
+        self.assertTrue(q_z.qs[0][4] == 0)
+        self.assertTrue(q_z.qs[0][6] == 0)
+        
+    def test_1032_vector(self):
+        q_z = self.B.vector()
+        print("vector(q): ", q_z)
+        self.assertTrue(q_z.qs[0][0] == 0)
+        self.assertTrue(q_z.qs[0][2] == 0)
+        self.assertTrue(q_z.qs[0][4] == 1)
+        self.assertTrue(q_z.qs[0][6] == 0)
+        
+    def test_1033_t(self):
+        q_z = self.A.t()
+        print("q.t()): ", q_z)
+        self.assertTrue(q_z[0] == 4)
+    
+    def test_1034_xyz(self):
+        q_z = self.B.xyz()
+        print("q.xyz()): ", q_z)
+        self.assertTrue(q_z[0][0] == 0)
+        self.assertTrue(q_z[0][1] == 1)
+        self.assertTrue(q_z[0][2] == 0)
         
     def test_1040_conj(self):
         qc = self.q_1_q_i.conj()
@@ -2536,7 +2585,7 @@ suite = unittest.TestLoader().loadTestsFromModule(TestQ8aStates())
 unittest.TextTestRunner().run(suite);
 
 
-# In[111]:
+# In[7]:
 
 
 q1 = Q8a([1,2,3, 4])
@@ -2544,6 +2593,12 @@ q2 = Q8a([.1, -.2, -.3, .1])
 
 for q in q1.ops(q2, dim=4):
     print(q)
+
+
+# In[10]:
+
+
+get_ipython().system('jupyter nbconvert --to python Q8nparray.ipynb')
 
 
 # In[ ]:
