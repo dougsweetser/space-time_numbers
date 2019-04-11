@@ -276,6 +276,11 @@ class Q8a(np.ndarray):
         
         return np.array([self[2] - self[3], self[4] - self[5], self[6] - self[7]])
     
+    def txyz(self):
+        """Returns a real-valued 4-vector as an np.array."""
+        
+        return np.array([self[0] - self[1], self[2] - self[3], self[4] - self[5], self[6] - self[7]])
+    
     
     ### Conjugation.
     
@@ -1015,6 +1020,7 @@ class Q8a(np.ndarray):
     unary_op["vector"] = vector
     unary_op["t"] = t
     unary_op["xyz"] = xyz
+    unary_op["txyz"] = txyz
     unary_op["conj"] = conj
     unary_op["vahlen_conj"] = vahlen_conj
     unary_op["flip_signs"] = flip_signs
@@ -1100,6 +1106,14 @@ class TestQ8a(unittest.TestCase):
         self.assertTrue(q_z[0] == -2)
         self.assertTrue(q_z[1] == -3)
         self.assertTrue(q_z[2] == -4)
+    
+    def test_txyz(self):
+        q_z = self.q1.txyz()
+        print("q.txyz()): ", q_z)
+        self.assertTrue(q_z[0] == 1)
+        self.assertTrue(q_z[1] == -2)
+        self.assertTrue(q_z[2] == -3)
+        self.assertTrue(q_z[3] == -4)
         
     def test_q_zero(self):
         q_z = self.q1.q_0()
@@ -1720,6 +1734,16 @@ class Q8aStates(object):
             
         return new_states
     
+    def txyz(self):
+        """Returns a real-valued 4-vector as an np.array."""
+        
+        new_states = []
+        
+        for bra in self.qs:
+            new_states.append(bra.txyz())
+            
+        return new_states
+    
     def conj(self, conj_type=0):
         """Take the conjgates of states, default is zero, but also can do 1 or 2."""
         
@@ -2327,6 +2351,14 @@ class TestQ8aStates(unittest.TestCase):
         self.assertTrue(q_z[0][1] == 1)
         self.assertTrue(q_z[0][2] == 0)
         
+    def test_1035_txyz(self):
+        q_z = self.B.txyz()
+        print("q.txyz()): ", q_z)
+        self.assertTrue(q_z[0][0] == 0)
+        self.assertTrue(q_z[0][1] == 0)
+        self.assertTrue(q_z[0][2] == 1)
+        self.assertTrue(q_z[0][3] == 0)
+        
     def test_1040_conj(self):
         qc = self.q_1_q_i.conj()
         qc1 = self.q_1_q_i.conj(1)
@@ -2595,7 +2627,7 @@ for q in q1.ops(q2, dim=4):
     print(q)
 
 
-# In[10]:
+# In[8]:
 
 
 get_ipython().system('jupyter nbconvert --to python Q8nparray.ipynb')
