@@ -29,7 +29,7 @@ import sympy as sp
 import os
 import unittest
 from copy import deepcopy
-
+import pdb
 from IPython.display import display
 from os.path import basename
 from glob import glob
@@ -395,6 +395,26 @@ class QH(object):
         conj_q.representation = self.representation
         
         return conj_q
+    
+    def conj_q(self, q1):
+        """Given a quaternion with 0's or 1's, will do the standard conjugate, first conjugate
+           second conjugate, sign flip, or all combinations of the above."""
+        
+        _conj = deepcopy(self)
+    
+        if q1.t:
+            _conj = _conj.conj(conj_type=0)
+            
+        if q1.x:
+            _conj = _conj.conj(conj_type=1)    
+        
+        if q1.y:
+            _conj = _conj.conj(conj_type=2)    
+        
+        if q1.z:
+            _conj = _conj.flip_signs()
+    
+        return _conj
     
     def flip_signs(self, qtype="-"):
         """Flip the signs of all terms."""
@@ -1119,6 +1139,14 @@ class TestQH(unittest.TestCase):
         self.assertTrue(q_z.x == 2)
         self.assertTrue(q_z.y == -3)
         self.assertTrue(q_z.z == 4)
+        
+    def test_conj_q(self):
+        q_z = self.Q.conj_q(self.Q)
+        print("conj_q(conj_q): ", q_z)
+        self.assertTrue(q_z.t == -1)
+        self.assertTrue(q_z.x == 2)
+        self.assertTrue(q_z.y == 3)
+        self.assertTrue(q_z.z == -4)
         
     def sign_flips(self):
         q_z = self.Q.sign_flips()
@@ -2198,6 +2226,26 @@ class Q8(object):
         
         return conj_q
 
+    def conj_q(self, q1):
+        """Given a quaternion with 0's or 1's, will do the standard conjugate, first conjugate
+           second conjugate, sign flip, or all combinations of the above."""
+        
+        _conj = deepcopy(self)
+    
+        if q1.dt.p or q1.dt.n:
+            _conj = _conj.conj(conj_type=0)
+            
+        if q1.dx.p or q1.dx.n:
+            _conj = _conj.conj(conj_type=1)    
+        
+        if q1.dy.p or q1.dy.n:
+            _conj = _conj.conj(conj_type=2)    
+        
+        if q1.dz.p or q1.dz.n:
+            _conj = _conj.flip_signs()
+    
+        return _conj
+    
     def flip_signs(self, qtype=""):
         """Flip all the signs, just like multipying by -1."""
 
@@ -2987,7 +3035,15 @@ class TestQ8(unittest.TestCase):
         self.assertTrue(q_z.dx.n == 2)
         self.assertTrue(q_z.dy.n == 3)
         self.assertTrue(q_z.dz.p == 4)
-        
+    
+    def test_conj_q(self):
+        q_z = self.Q.conj_q(self.Q)
+        print("conj_q(conj_q): ", q_z)
+        self.assertTrue(q_z.dt.n == 1)
+        self.assertTrue(q_z.dx.p == 2)
+        self.assertTrue(q_z.dy.p == 3)
+        self.assertTrue(q_z.dz.n == 4)
+    
     def test_square(self):
         q_sq = self.Q.square()
         q_sq_red = q_sq.reduce()
@@ -3804,6 +3860,26 @@ class Q8a(Doubleta):
         
         return conj_q
 
+    def conj_q(self, q1):
+        """Given a quaternion with 0's or 1's, will do the standard conjugate, first conjugate
+           second conjugate, sign flip, or all combinations of the above."""
+        
+        _conj = deepcopy(self)
+    
+        if q1.a[0] or q1.a[1]:
+            _conj = _conj.conj(conj_type=0)
+            
+        if q1.a[2] or q1.a[3]:
+            _conj = _conj.conj(conj_type=1)    
+        
+        if q1.a[4] or q1.a[5]:
+            _conj = _conj.conj(conj_type=2)    
+        
+        if q1.a[6] or q1.a[7]:
+            _conj = _conj.flip_signs()
+    
+        return _conj
+    
     def flip_signs(self, conj_type=0, qtype="-"):
         """Flip all the signs, just like multipying by -1."""
 
@@ -4663,7 +4739,15 @@ class TestQ8a(unittest.TestCase):
         self.assertTrue(q_z.a[3] == 2)
         self.assertTrue(q_z.a[5] == 3)
         self.assertTrue(q_z.a[6] == 4)
-        
+    
+    def test_conj_q(self):
+        q_z = self.q1.conj_q(self.q1)
+        print("conj_q(conj_q): ", q_z)
+        self.assertTrue(q_z.a[1] == 1)
+        self.assertTrue(q_z.a[2] == 2)
+        self.assertTrue(q_z.a[4] == 3)
+        self.assertTrue(q_z.a[7] == 4)
+    
     def test_square(self):
         q_sq = self.q1.square()
         q_sq_red = q_sq.reduce()
@@ -5548,7 +5632,7 @@ unittest.TextTestRunner().run(suite);
 
 # Any quaternion can be viewed as the sum of n other quaternions. This is common to see in quantum mechanics, whose needs are driving the development of this class and its methods.
 
-# In[46]:
+# In[24]:
 
 
 class QHStates(QH):
@@ -5731,6 +5815,16 @@ class QHStates(QH):
         
         for ket in self.qs:
             new_states.append(ket.conj(conj_type))
+            
+        return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+    
+    def conj_q(self, q1):
+        """Does multicate conjugate operators."""
+        
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.conj_q(q1))
             
         return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
     
@@ -6353,7 +6447,7 @@ class QHStates(QH):
         return QHStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
 
 
-# In[47]:
+# In[25]:
 
 
 class TestQHStates(unittest.TestCase):
@@ -6473,6 +6567,14 @@ class TestQHStates(unittest.TestCase):
         print("q_1_qc*1: ", qc1)
         self.assertTrue(qc.qs[1].x == -1)
         self.assertTrue(qc1.qs[1].x == 1)
+    
+    def test_1042_conj_q(self):
+        qc = self.q_1_q_i.conj_q(self.q_1)
+        qc1 = self.q_1_q_i.conj_q(self.q_1)
+        print("q_1_q_i conj_q: ", qc)
+        print("q_1_qc*1 conj_q: ", qc1)
+        self.assertTrue(qc.qs[1].x == -1)
+        self.assertTrue(qc1.qs[1].x == -1)
     
     def test_1050_flip_signs(self):
         qf = self.q_1_q_i.flip_signs()
@@ -6712,7 +6814,7 @@ unittest.TextTestRunner().run(suite);
 # 
 # by old fashioned cut and paste with minor tweaks (boring).
 
-# In[48]:
+# In[26]:
 
 
 class Q8States(Q8):
@@ -6929,6 +7031,16 @@ class Q8States(Q8):
         
         for ket in self.qs:
             new_states.append(ket.conj(conj_type))
+            
+        return Q8States(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+    
+    def conj_q(self, q1):
+        """Takes multiple conjgates of states, depending on true/false value of q1 parameter."""
+        
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.conj_q(q1))
             
         return Q8States(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
     
@@ -7433,7 +7545,7 @@ class Q8States(Q8):
         return sigma[kind].normalize()
 
 
-# In[49]:
+# In[27]:
 
 
 class TestQ8States(unittest.TestCase):
@@ -7553,6 +7665,14 @@ class TestQ8States(unittest.TestCase):
         print("q_1_qc*1: ", qc1)
         self.assertTrue(qc.qs[1].dx.n == 1)
         self.assertTrue(qc1.qs[1].dx.p == 1)
+    
+    def test_1042_conj(self):
+        qc = self.q_1_q_i.conj_q(self.q_1)
+        qc1 = self.q_1_q_i.conj_q(self.q_1)
+        print("q_1_q_i* conj_q: ", qc)
+        print("q_1_qc*1 conj_q: ", qc1)
+        self.assertTrue(qc.qs[1].dx.n == 1)
+        self.assertTrue(qc1.qs[1].dx.n == 1)
     
     def test_1050_flip_signs(self):
         qf = self.q_1_q_i.flip_signs()
@@ -7785,7 +7905,7 @@ suite = unittest.TestLoader().loadTestsFromModule(TestQ8States())
 unittest.TextTestRunner().run(suite);
 
 
-# In[50]:
+# In[28]:
 
 
 class Q8aStates(Q8a):
@@ -8002,6 +8122,16 @@ class Q8aStates(Q8a):
         
         for ket in self.qs:
             new_states.append(ket.conj(conj_type))
+            
+        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+    
+    def conj_q(self, q1):
+        """Takes multiple conjugates of states, depending on true/false value of q1 parameter."""
+        
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.conj_q(q1))
             
         return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
     
@@ -8506,7 +8636,7 @@ class Q8aStates(Q8a):
         return sigma[kind].normalize()
 
 
-# In[51]:
+# In[29]:
 
 
 class TestQ8aStates(unittest.TestCase):
@@ -8626,6 +8756,14 @@ class TestQ8aStates(unittest.TestCase):
         print("q_1_qc*1: ", qc1)
         self.assertTrue(qc.qs[1].a[3] == 1)
         self.assertTrue(qc1.qs[1].a[2] == 1)
+    
+    def test_1042_conj_q(self):
+        qc = self.q_1_q_i.conj_q(self.q_1)
+        qc1 = self.q_1_q_i.conj_q(self.q_1)
+        print("q_1_q_i* conj_q: ", qc)
+        print("q_1_qc*1 conj_q: ", qc1)
+        self.assertTrue(qc.qs[1].a[3] == 1)
+        self.assertTrue(qc1.qs[1].a[3] == 1)
     
     def test_1050_flip_signs(self):
         qf = self.q_1_q_i.flip_signs()
@@ -8858,7 +8996,7 @@ suite = unittest.TestLoader().loadTestsFromModule(TestQ8aStates())
 unittest.TextTestRunner().run(suite);
 
 
-# In[52]:
+# In[30]:
 
 
 class EigenQH(object):
@@ -8896,7 +9034,7 @@ class EigenQH(object):
         return M
 
 
-# In[53]:
+# In[31]:
 
 
 class EigenQHTest(unittest.TestCase):
@@ -8985,13 +9123,13 @@ suite = unittest.TestLoader().loadTestsFromModule(EigenQHTest())
 unittest.TextTestRunner().run(suite);
 
 
-# In[57]:
+# In[32]:
 
 
 get_ipython().system('jupyter nbconvert --to script Q_tools.ipynb')
 
 
-# In[55]:
+# In[33]:
 
 
 q1 = QH([0,1,2,3])
@@ -8999,7 +9137,7 @@ q1exp = q1.exp()
 q1exp.print_state("q exp 0123")
 
 
-# In[56]:
+# In[34]:
 
 
 q1s = QHStates([QH([0,1,2,3])])
