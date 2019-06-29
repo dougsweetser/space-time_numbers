@@ -3,12 +3,13 @@
 
 # # Q8 Designed for nparray
 
+# This notebook is designed to provide tools for doing basic math with a new type of number I call **space-time numbers**. They are quite similar to quaternions which are commonly defined over 4 real numbers (but a pair of complex numbers can also do the job). Instead, 8 numbers are used: one for the past, the future, left, right, up, down, near and far.
+# 
+# To be honest, this is a pain. Why bother? The motivation for this project is theoretically rooted in physics. 
+
 # In[1]:
 
 
-import IPython
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import math
 import numpy as np
 import random
@@ -16,12 +17,9 @@ import sympy as sp
 import os
 import unittest
 from copy import deepcopy
-from pprint import pprint
 
-from IPython.display import display
 from os.path import basename
 from glob import glob
-get_ipython().run_line_magic('matplotlib', 'inline')
 
 
 # Define the stretch factor $\gamma$ and the $\gamma \beta$ used in special relativity.
@@ -338,6 +336,26 @@ class Q8a(np.ndarray):
         
         return conj_q
 
+    def conj_q(self, q1):
+        """Given a quaternion with 0's or 1's, will do the standard conjugate, first conjugate
+           second conjugate, sign flip, or all combinations of the above."""
+        
+        _conj = deepcopy(self)
+    
+        if q1[0] or q1[1]:
+            _conj = _conj.conj(conj_type=0)
+            
+        if q1[2] or q1[3]:
+            _conj = _conj.conj(conj_type=1)    
+        
+        if q1[4] or q1[5]:
+            _conj = _conj.conj(conj_type=2)    
+        
+        if q1[6] or q1[7]:
+            _conj = _conj.flip_signs()
+    
+        return _conj
+    
     def flip_signs(self, conj_type=0, qtype="-"):
         """Flip all the signs, just like multipying by -1."""
 
@@ -1223,6 +1241,14 @@ class TestQ8a(unittest.TestCase):
         self.assertTrue(q_z[5] == 3)
         self.assertTrue(q_z[6] == 4)
         
+    def test_conj_q(self):
+        q_z = self.q1.conj_q(self.q1)
+        print("conj_q(conj_q): ", q_z)
+        self.assertTrue(q_z[1] == 1)
+        self.assertTrue(q_z[2] == 2)
+        self.assertTrue(q_z[4] == 3)
+        self.assertTrue(q_z[7] == 4)
+        
     def test_reduce(self):
         q_z = self.q_big.reduce()
         print("q_big reduced: {}".format(q_z))
@@ -1751,6 +1777,16 @@ class Q8aStates(object):
         
         for bra in self.qs:
             new_states.append(bra.conj(conj_type))
+            
+        return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
+    
+    def conj_q(self, q1):
+        """Takes multiple conjugates of states, depending on true/false value of q1 parameter."""
+        
+        new_states = []
+        
+        for ket in self.qs:
+            new_states.append(ket.conj_q(q1))
             
         return Q8aStates(new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns)
     
@@ -2367,6 +2403,14 @@ class TestQ8aStates(unittest.TestCase):
         self.assertTrue(qc.qs[1][3] == 1)
         self.assertTrue(qc1.qs[1][2] == 1)
     
+    def test_1042_conj_q(self):
+        qc = self.q_1_q_i.conj_q(self.q_1)
+        qc1 = self.q_1_q_i.conj_q(self.q_1)
+        print("q_1_q_i* conj_q: ", qc)
+        print("q_1_qc*1 conj_q: ", qc1)
+        self.assertTrue(qc.qs[1][3] == 1)
+        self.assertTrue(qc1.qs[1][3] == 1)
+        
     def test_1050_flip_signs(self):
         qf = self.q_1_q_i.flip_signs()
         print("-q_1_q_i: ", qf)
