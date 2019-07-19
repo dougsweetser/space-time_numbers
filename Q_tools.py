@@ -240,18 +240,22 @@ class QH(object):
             raise Exception("Oops, 2 quaternions have different representations: {}, {}".format(self.representation, q1.representation))
             return False
         
-    def display_q(self):
+    def display_q(self, label = ""):
         """Display each terms in a pretty way."""
-
+    
+        if label:
+            print(label)
         display(self.t)
         display(self.x)
         display(self.y)
         display(self.z)
         return
     
-    def simple_q(self):
+    def simple_q(self, label=""):
         """Simplify each term."""
         
+        if label:
+            print(label)
         self.t = sp.simplify(self.t)
         self.x = sp.simplify(self.x)
         self.y = sp.simplify(self.y)
@@ -735,14 +739,12 @@ class QH(object):
         
         return triple
 
-    # Quaternion rotation involves a triple product:  UQU∗
-    # where the U is a unitary quaternion (having a norm_squared of one).
-    def rotate(self, a_1=0, a_2=0, a_3=0, qtype="rot"):
-        """Do a rotation given up to three angles."""
+    # Quaternion rotation involves a triple product:  u R 1/u
+    def rotate(self, u, qtype="rot"):
+        """Do a rotation using a triple product: u R 1/u."""
 
         end_qtype = "{}{}".format(self.qtype, qtype)
         
-        u = QH([0, a_1, a_2, a_3])
         u_abs = u.abs_of_q()
         u_norm_squaredalized = u.divide_by(u_abs)
 
@@ -755,13 +757,13 @@ class QH(object):
     # A boost also uses triple products like a rotation, but more of them.
     # This is not a well-known result, but does work.
     # b -> b' = h b h* + 1/2 ((hhb)* -(h*h*b)*)
-    # where h is of the form (cosh(a), sinh(a))
-    def boost(self, beta_x=0, beta_y=0, beta_z=0, qtype="boost"):
-        """A boost along the x, y, and/or z axis."""
+    # where h is of the form (cosh(a), sinh(a)) OR (0, a, b, c)
+    def boost(self, h, qtype="boost"):
+        """A boost or rotation or both."""
 
         end_qtype = "{}{}".format(self.qtype, qtype)
         
-        boost = QH(sr_gamma_betas(beta_x, beta_y, beta_z))      
+        boost = h      
         b_conj = boost.conj()
 
         triple_1 = boost.triple_product(self, b_conj)
@@ -1314,7 +1316,7 @@ class TestQH(unittest.TestCase):
         self.assertTrue(q_z.z == 8)
         
     def test_rotate(self):
-        q_z = self.Q.rotate(1)
+        q_z = self.Q.rotate(QH([0, 1, 0, 0]))
         print("rotate: ", q_z)
         self.assertTrue(q_z.t == 1)
         self.assertTrue(q_z.x == -2)
@@ -1323,7 +1325,8 @@ class TestQH(unittest.TestCase):
         
     def test_boost(self):
         q1_sq = self.Q.square()
-        q_z = self.Q.boost(0.003)
+        h = QH(sr_gamma_betas(0.003))
+        q_z = self.Q.boost(h)
         q_z2 = q_z.square()
         print("q1_sq: ", q1_sq)
         print("boosted: ", q_z)
@@ -2543,12 +2546,10 @@ class Q8(object):
         
         return triple
     
-    # Quaternion rotation involves a triple product:  UQU∗
-    # where the U is a unitary quaternion (having a norm_squared of one).
-    def rotate(self, a_1p=0, a_1n=0, a_2p=0, a_2n=0, a_3p=0, a_3n=0):
-        """Do a rotation given up to three angles."""
+    # Quaternion rotation involves a triple product:  u R 1/u
+    def rotate(self, u):
+        """Do a rotation using a triple product: u R 1/u."""
     
-        u = Q8([0, 0, a_1p, a_1n, a_2p, a_2n, a_3p, a_3n])
         u_abs = u.abs_of_q()
         u_norm_squaredalized = u.divide_by(u_abs)
         q_rot = u_norm_squaredalized.triple_product(self, u_norm_squaredalized.conj())
@@ -2558,12 +2559,14 @@ class Q8(object):
     
     # A boost also uses triple products like a rotation, but more of them.
     # This is not a well-known result, but does work.
-    def boost(self, beta_x=0, beta_y=0, beta_z=0, qtype="Boost!"):
+    # b -> b' = h b h* + 1/2 ((hhb)* -(h*h*b)*)
+    # where h is of the form (cosh(a), sinh(a)) OR (0, a, b, c)
+    def boost(self, h, qtype="Boost!"):
         """A boost along the x, y, and/or z axis."""
     
         end_qtype = "{st}{qt}".format(st=self.qtype, qt=qtype)
         
-        boost = Q8(sr_gamma_betas(beta_x, beta_y, beta_z))
+        boost = h
         b_conj = boost.conj()
         
         triple_1 = boost.triple_product(self, b_conj)
@@ -3267,7 +3270,7 @@ class TestQ8(unittest.TestCase):
         self.assertTrue(q_z.dz.n == 0)
         
     def test_rotate(self):
-        q_z = self.Q.rotate(1).reduce()
+        q_z = self.Q.rotate(Q8([0, 1, 0, 0])).reduce()
         print("rotate: {}", q_z)
         self.assertTrue(q_z.dt.p == 1)
         self.assertTrue(q_z.dt.n == 0)
@@ -3280,7 +3283,8 @@ class TestQ8(unittest.TestCase):
         
     def test_boost(self):
         Q_sq = self.Q.square().reduce()
-        q_z = self.Q.boost(0.003)
+        h = Q8(sr_gamma_betas(0.003))
+        q_z = self.Q.boost(h)
         q_z2 = q_z.square().reduce()
         print("Q_sq: {}".format(Q_sq))
         print("boosted: {}", q_z)
@@ -4241,12 +4245,10 @@ class Q8a(Doubleta):
         
         return triple
     
-    # Quaternion rotation involves a triple product:  UQU∗
-    # where the U is a unitary quaternion (having a norm_squared of one).
-    def rotate(self, a_1p=0, a_1n=0, a_2p=0, a_2n=0, a_3p=0, a_3n=0):
-        """Do a rotation given up to three angles."""
+    # Quaternion rotation involves a triple product:  u R 1/u
+    def rotate(self, u):
+        """Do a rotation using a triple product: u R 1/u."""
     
-        u = Q8a([0, 0, a_1p, a_1n, a_2p, a_2n, a_3p, a_3n])
         u_abs = u.abs_of_q()
         u_norm_squaredalized = u.divide_by(u_abs)
         q_rot = u_norm_squaredalized.triple_product(self, u_norm_squaredalized.conj())
@@ -4256,12 +4258,14 @@ class Q8a(Doubleta):
     
     # A boost also uses triple products like a rotation, but more of them.
     # This is not a well-known result, but does work.
-    def boost(self, beta_x=0, beta_y=0, beta_z=0, qtype="boost"):
+    # b -> b' = h b h* + 1/2 ((hhb)* -(h*h*b)*)
+    # where h is of the form (cosh(a), sinh(a)) OR (0, a, b, c)
+    def boost(self, h, qtype="boost"):
         """A boost along the x, y, and/or z axis."""
         
         end_qtype = "{}{}".format(self.qtype, qtype)
         
-        boost = Q8a(sr_gamma_betas(beta_x, beta_y, beta_z))
+        boost = h
         b_conj = boost.conj()
         
         triple_1 = boost.triple_product(self, b_conj)
@@ -4959,7 +4963,7 @@ class TestQ8a(unittest.TestCase):
         self.assertTrue(q_z.a[7] == 0)
         
     def test_rotate(self):
-        q_z = self.q1.rotate(1).reduce()
+        q_z = self.q1.rotate(Q8a([0, 1, 0, 0])).reduce()
         print("rotate: {}".format(q_z))
         self.assertTrue(q_z.a[0] == 1)
         self.assertTrue(q_z.a[1] == 0)
@@ -4972,7 +4976,7 @@ class TestQ8a(unittest.TestCase):
         
     def test_boost(self):
         q1_sq = self.q1.square().reduce()
-        q_z = self.q1.boost(0.003)
+        q_z = self.q1.boost(Q8a(sr_gamma_betas(0.003)))
         q_z2 = q_z.square().reduce()
         print("q1_sq: {}".format(q1_sq))
         print("boosted: {}".format(q_z))

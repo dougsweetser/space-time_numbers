@@ -681,12 +681,10 @@ class Q8a(np.ndarray):
         
         return triple
     
-    # Quaternion rotation involves a triple product:  UQU∗
-    # where the U is a unitary quaternion (having a norm_squared of one).
-    def rotate(self, a_1p=0, a_1n=0, a_2p=0, a_2n=0, a_3p=0, a_3n=0):
-        """Do a rotation given up to three angles."""
+    # Quaternion rotation involves a triple product:  u R 1/u
+    def rotate(self, u):
+        """Do a rotation using a triple product."""
     
-        u = Q8a([0, 0, a_1p, a_1n, a_2p, a_2n, a_3p, a_3n])
         u_abs = u.abs_of_q()
         u_norm_squaredalized = u.divide_by(u_abs)
         q_rot = u_norm_squaredalized.triple_product(self, u_norm_squaredalized.conj())
@@ -696,12 +694,14 @@ class Q8a(np.ndarray):
     
     # A boost also uses triple products like a rotation, but more of them.
     # This is not a well-known result, but does work.
-    def boost(self, beta_x=0, beta_y=0, beta_z=0, qtype="boost"):
+    # b -> b' = h b h* + 1/2 ((hhb)* -(h*h*b)*)
+    # where h is of the form (cosh(a), sinh(a)) OR (0, a, b, c)
+    def boost(self, h, qtype="boost"):
         """A boost along the x, y, and/or z axis."""
         
         end_qtype = "{}{}".format(self.qtype, qtype)
         
-        boost = Q8a(sr_gamma_betas(beta_x, beta_y, beta_z))
+        boost = h
         b_conj = boost.conj()
         
         triple_1 = boost.triple_product(self, b_conj)
@@ -1450,7 +1450,7 @@ class TestQ8a(unittest.TestCase):
         self.assertTrue(q_z[7] == 0)
 
     def test_rotate(self):
-        q_z = self.q1.rotate(1).reduce()
+        q_z = self.q1.rotate(Q8a([0, 1, 0, 0])).reduce()
         print("rotate: {}".format(q_z))
         self.assertTrue(q_z[0] == 1)
         self.assertTrue(q_z[1] == 0)
@@ -1463,7 +1463,7 @@ class TestQ8a(unittest.TestCase):
         
     def test_boost(self):
         q1_sq = self.q1.square().reduce()
-        q_z = self.q1.boost(0.003)
+        q_z = self.q1.boost(Q8a(sr_gamma_betas(0.003)))
         q_z2 = q_z.square().reduce()
         print("q1_sq: {}".format(q1_sq))
         print("boosted: {}".format(q_z))
