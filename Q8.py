@@ -3,13 +3,13 @@
 
 # # Q8 Designed for nparray
 
-# In physics, group theory plays a central role in the fundamental forces of Nature via the standard model. The gauge symmetry U(1) a unit circle in the complex plane leads to electric charge conservation. The unit quaternions SU(2) is the symmetry needed for the weak force which leads to beta decay. The group SU(3) is the symmetry of the strong force that keeps a nucleus together.
+
 #
 # The class Q8 was written in the hope that group theory would be written in first, not added as needed later. I call these "space-time numbers". The problem with such an approach is that one does not use the mathematical field of real numbers. Instead one relies on the set of positive reals and zero. In some ways, this is like reverse engineering basic computer science. Libraries written in C have a notion of a signed versus unsigned integer. The signed integer behaves like the familiar integers. The unsigned integer is like the positive integers. The difference between the two is whether there is a placeholder for the sign or not. All floats are signed. The modulo operations that work for unsigned integers does not work for floats.
 #
 # Numbers never get smaller. This might sound odd except that is the only thing that consistently happens in the Universe, things get older. There are plenty of particles that are identical to each other. By using a function called reduce() on this class, one can see if different sets of numbers are equivalent ($8 - 3 == 7 - 2 == +5$).
 
-# In[1]:
+
 
 
 import math
@@ -22,7 +22,7 @@ from copy import deepcopy
 
 # Define the stretch factor $\gamma$ and the $\gamma \beta$ used in special relativity.
 
-# In[2]:
+
 
 
 def sr_gamma(beta_x=0, beta_y=0, beta_z=0):
@@ -39,7 +39,7 @@ def sr_gamma_betas(beta_x=0, beta_y=0, beta_z=0):
     return [g, g * beta_x, g * beta_y, g * beta_z]
 
 
-# In[3]:
+
 
 
 class Q8(np.ndarray):
@@ -1170,7 +1170,7 @@ class Q8(np.ndarray):
     trinary_op["triple_product"] = triple_product
 
 
-# In[4]:
+
 
 
 if __name__ == "__main__":
@@ -1814,7 +1814,7 @@ if __name__ == "__main__":
 #
 # This is an ordered array of quaternions with n=rows * m=column = d dimensions. The need for these arose from the study of quantum mechanics, but they may be used in classical mechanics too as a collection of states.
 
-# In[5]:
+
 
 
 class Q8States(object):
@@ -2632,7 +2632,7 @@ class Q8States(object):
         return np.array(self.qs)
 
 
-# In[6]:
+
 
 
 if __name__ == "__main__":
@@ -3071,17 +3071,7 @@ if __name__ == "__main__":
     _results = unittest.TextTestRunner().run(suite)
 
 
-# In[7]:
 
-
-q1 = Q8([1, 2, 3, 4])
-q2 = Q8([0.1, -0.2, -0.3, 0.1])
-
-for q in q1.ops(q2, dim=4):
-    print(q)
-
-
-# In[7]:
 
 
 if __name__ == "__main__":
@@ -3090,4 +3080,4 @@ if __name__ == "__main__":
     get_ipython().system("black Q8.py")
 
 
-# In[ ]:
+

@@ -3,14 +3,15 @@
 
 # # Developing Quaternions for iPython
 
-# In this notebook, tools for working with quaternions for physics issues are developed. The class QH treat quaternions as Hamilton would have done: as a 4-vector over the real numbers.
 
-# In[1]:
+
+
 
 
 import math
 import numpy as np
 import random
+import os
 import sympy as sp
 import unittest
 from copy import deepcopy
@@ -19,13 +20,7 @@ from IPython.display import display
 
 # Define the stretch factor $\gamma$ and the $\gamma \beta$ used in special relativity.
 
-# In[2]:
 
-
-print(__name__)
-
-
-# In[3]:
 
 
 def sr_gamma(beta_x=0, beta_y=0, beta_z=0):
@@ -46,7 +41,7 @@ def sr_gamma_betas(beta_x=0, beta_y=0, beta_z=0):
 
 # Define a class QH to manipulate quaternions as Hamilton would have done it so many years ago. The "qtype" is a little bit of text to leave a trail of breadcrumbs about how a particular quaternion was generated.
 
-# In[4]:
+
 
 
 class QH(object):
@@ -1069,10 +1064,22 @@ class QH(object):
 
         return self
 
+    def sub_q(q, symbol_value_dict):
+        """Evaluates a quaternion using sympy values and a dictionary {t:1, x:2, etc}."""
+
+        t1 = q.t.subs(symbol_value_dict)
+        x1 = q.x.subs(symbol_value_dict)
+        y1 = q.y.subs(symbol_value_dict)
+        z1 = q.z.subs(symbol_value_dict)
+
+        q_txyz = QH([t1, x1, y1, z1])
+
+        return q_txyz
+
 
 # Write tests the QH class.
 
-# In[5]:
+
 
 
 if __name__ == "__main__":
@@ -1086,6 +1093,10 @@ if __name__ == "__main__":
         C = QH([2, 4, 0, 0], qtype="C")
         t, x, y, z = sp.symbols("t x y z")
         q_sym = QH([t, x, y, x * y * z])
+
+        t, x, y, z = sp.symbols("t x y z")
+        q_sym = QH([t ** 2, x - 1, 3 * y, x * y * z])
+        sub_dict = {t: 4, x: 3, y: 2, z: 1}
 
         def test_qt(self):
             self.assertTrue(self.Q.t == 1)
@@ -1609,11 +1620,15 @@ if __name__ == "__main__":
                 )
             )
 
+        def test_q_sub(self):
+            qs = sub_q(self.q_sym, self.sub_dict)
+            self.assertTrue(qs.equals(QH([16, 2, 6, 6])))
+
     suite = unittest.TestLoader().loadTestsFromModule(TestQH())
     _results = unittest.TextTestRunner().run(suite)
 
 
-# In[6]:
+
 
 
 if __name__ == "__main__":
@@ -1683,7 +1698,7 @@ if __name__ == "__main__":
 
 # Any quaternion can be viewed as the sum of n other quaternions. This is common to see in quantum mechanics, whose needs are driving the development of this class and its methods.
 
-# In[7]:
+
 
 
 class QHStates(QH):
@@ -2640,8 +2655,20 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
+    def sub_q(q, symbol_value_dict):
+        """Evaluates a quaternion using sympy values and a dictionary {t:1, x:2, etc}."""
 
-# In[8]:
+        t1 = q.t.subs(symbol_value_dict)
+        x1 = q.x.subs(symbol_value_dict)
+        y1 = q.y.subs(symbol_value_dict)
+        z1 = q.z.subs(symbol_value_dict)
+
+        q_txyz = QH([t1, x1, y1, z1])
+
+        return q_txyz
+
+
+
 
 
 if __name__ == "__main__":
@@ -3071,7 +3098,7 @@ if __name__ == "__main__":
     _results = unittest.TextTestRunner().run(suite)
 
 
-# In[9]:
+
 
 
 class EigenQH(object):
@@ -3108,7 +3135,7 @@ class EigenQH(object):
         return M
 
 
-# In[10]:
+
 
 
 if __name__ == "__main__":
@@ -3204,13 +3231,16 @@ if __name__ == "__main__":
     _results = unittest.TextTestRunner().run(suite)
 
 
-# In[11]:
 
+
+
+cwd = os.getcwd()
 
 if __name__ == "__main__":
 
     get_ipython().system("jupyter nbconvert --to script QH.ipynb")
     get_ipython().system("black QH.py")
+    get_ipython().system("In_remover.sh QH.py")
 
 
-# In[ ]:
+
