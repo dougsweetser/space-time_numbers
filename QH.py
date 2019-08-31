@@ -2462,10 +2462,32 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def norm_squared(self):
-        """Take the Euclidean product of each state and add it up, returning a scalar series."""
+    def square(self):
+        """The square of each state."""
 
-        return self.set_qs_type("bra").Euclidean_product(self.set_qs_type("ket"))
+        new_states = []
+
+        for bra in self.qs:
+            new_states.append(bra.square())
+
+        return QHStates(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
+    def norm_squared(self):
+        """Take the inner product, returning a scalar series."""
+
+        return self.set_qs_type("bra").conj().product(self.set_qs_type("ket"))
+
+    def norm_squared_of_vector(self):
+        """Take the inner product of the vector, returning a scalar series."""
+
+        return (
+            self.set_qs_type("bra")
+            .vector()
+            .conj()
+            .product(self.set_qs_type("ket").vector())
+        )
 
     def transpose(self, m=None, n=None):
         """Transposes a series."""
@@ -3042,10 +3064,20 @@ if __name__ == "__main__":
             print("op_n: ", opn)
             self.assertTrue(opn.qs[0].x == 3)
 
+        def test_1312_square(self):
+            ns = self.q_1_q_i.square()
+            ns.print_state("q_1_q_i square")
+            self.assertTrue(ns.equals(QHStates([self.q_1, self.q_n1])))
+
         def test_1315_norm_squared(self):
             ns = self.q_1_q_i.norm_squared()
             ns.print_state("q_1_q_i norm squared")
             self.assertTrue(ns.equals(QHStates([QH([2, 0, 0, 0])])))
+
+        def test_1318_norm_squared_of_vector(self):
+            ns = self.q_1_q_i.norm_squared_of_vector()
+            ns.print_state("q_1_q_i norm squared of vector")
+            self.assertTrue(ns.equals(QHStates([self.q_1])))
 
         def test_1320_transpose(self):
             opt = self.q_1234.transpose()

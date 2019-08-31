@@ -2526,10 +2526,32 @@ class Q8States(object):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def norm_squared(self):
-        """Take the Euclidean product of each state and add it up, returning a scalar series."""
+    def square(self):
+        """The square of each state."""
 
-        return self.set_qs_type("bra").Euclidean_product(self.set_qs_type("ket"))
+        new_states = []
+
+        for bra in self.qs:
+            new_states.append(bra.square())
+
+        return Q8States(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
+    def norm_squared(self):
+        """Take the inner product, returning a scalar series."""
+
+        return self.set_qs_type("bra").conj().product(self.set_qs_type("ket"))
+
+    def norm_squared_of_vector(self):
+        """Take the inner product of the vector, returning a scalar series."""
+
+        return (
+            self.set_qs_type("bra")
+            .vector()
+            .conj()
+            .product(self.set_qs_type("ket").vector())
+        )
 
     def transpose(self, m=None, n=None):
         """Transposes a series."""
