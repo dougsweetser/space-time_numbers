@@ -18,6 +18,7 @@ import random
 import sympy as sp
 import unittest
 from copy import deepcopy
+import pdb
 
 
 # Define the stretch factor $\gamma$ and the $\gamma \beta$ used in special relativity.
@@ -43,7 +44,7 @@ def sr_gamma_betas(beta_x=0, beta_y=0, beta_z=0):
 
 
 class Q8(np.ndarray):
-    """Space-time numbers operations using ndarrays."""
+    """Space-time numbers operations using ndarrays. Note: can not deal with symbolically."""
 
     def __new__(
         subtype,
@@ -88,7 +89,7 @@ class Q8(np.ndarray):
         return obj
 
     def __handle_negatives(self, a, b):
-        """Figure out which value is negative"""
+        """Figure out which value is negative."""
 
         if a >= 0 and b >= 0:
             return [a, b]
@@ -133,7 +134,7 @@ class Q8(np.ndarray):
 
         return string
 
-    def print_state(self, label, spacer=False, quiet=False):
+    def print_state(self, label, spacer=True, quiet=False):
         """Utility for printing a quaternion."""
 
         print(label)
@@ -2354,6 +2355,21 @@ class Q8States(object):
 
         return Q8States(diagonal, qs_type="op", rows=dim, columns=dim)
 
+    def trace(self):
+        """Return the trace as a scalar quaternion series."""
+
+        if self.rows != self.columns:
+            print("Oops, not a square quaternion series.")
+            return None
+
+        else:
+            trace = self.qs[0]
+
+        for i in range(1, self.rows):
+            trace = trace.add(self.qs[i * (self.rows + 1)])
+
+        return Q8States([trace])
+
     @staticmethod
     def identity(dim, additive=False, non_zeroes=None, qs_type="ket"):
         """Identity operator for states or operators which are diagonal."""
@@ -2439,6 +2455,11 @@ class Q8States(object):
             )
             return None
 
+        # Operator products need to be transposed.
+        operator_flag = False
+        if qs_left in ["op", "operator"] and qs_right in ["op", "operator"]:
+            operator_flag = True
+
         outer_row_max = qs_left.rows
         outer_column_max = qs_right.columns
         shared_inner_max = qs_left.columns
@@ -2477,7 +2498,7 @@ class Q8States(object):
         new_qs = [item for sublist in result for item in sublist]
         new_states = Q8States(new_qs, rows=outer_row_max, columns=outer_column_max)
 
-        if projector_flag:
+        if projector_flag or operator_flag:
             return new_states.transpose()
 
         else:
@@ -2851,6 +2872,11 @@ if __name__ == "__main__":
             self.assertTrue(Op4iDiag2.qs[0].equals(self.q_i4))
             self.assertTrue(Op4iDiag2.qs[1].equals(Q8().q_0()))
 
+        def test_1125_trace(self):
+            trace = self.v1123.op(2, 2).trace()
+            print("trace: ", trace)
+            self.assertTrue(trace.equals(Q8States([self.q_4])))
+
         def test_1130_identity(self):
             I2 = Q8States().identity(2, qs_type="operator")
             print("Operator Idenity, diagonal 2x2", I2)
@@ -3078,6 +3104,7 @@ if __name__ == "__main__":
 
     get_ipython().system("jupyter nbconvert --to python Q8.ipynb")
     get_ipython().system("black Q8.py")
+    get_ipython().system("In_remover.sh Q8.py")
 
 
 

@@ -10,8 +10,8 @@
 
 import math
 import numpy as np
+import pdb
 import random
-import os
 import sympy as sp
 import unittest
 from copy import deepcopy
@@ -90,7 +90,7 @@ class QH(object):
 
         return string
 
-    def print_state(self, label, spacer=False, quiet=True):
+    def print_state(self, label, spacer=True, quiet=True):
         """Utility for printing a quaternion."""
 
         print(label)
@@ -1064,18 +1064,6 @@ class QH(object):
 
         return self
 
-    def sub_q(q, symbol_value_dict):
-        """Evaluates a quaternion using sympy values and a dictionary {t:1, x:2, etc}."""
-
-        t1 = q.t.subs(symbol_value_dict)
-        x1 = q.x.subs(symbol_value_dict)
-        y1 = q.y.subs(symbol_value_dict)
-        z1 = q.z.subs(symbol_value_dict)
-
-        q_txyz = QH([t1, x1, y1, z1])
-
-        return q_txyz
-
 
 # Write tests the QH class.
 
@@ -1093,10 +1081,6 @@ if __name__ == "__main__":
         C = QH([2, 4, 0, 0], qtype="C")
         t, x, y, z = sp.symbols("t x y z")
         q_sym = QH([t, x, y, x * y * z])
-
-        t, x, y, z = sp.symbols("t x y z")
-        q_sym = QH([t ** 2, x - 1, 3 * y, x * y * z])
-        sub_dict = {t: 4, x: 3, y: 2, z: 1}
 
         def test_qt(self):
             self.assertTrue(self.Q.t == 1)
@@ -1620,10 +1604,6 @@ if __name__ == "__main__":
                 )
             )
 
-        def test_q_sub(self):
-            qs = sub_q(self.q_sym, self.sub_dict)
-            self.assertTrue(qs.equals(QH([16, 2, 6, 6])))
-
     suite = unittest.TestLoader().loadTestsFromModule(TestQH())
     _results = unittest.TextTestRunner().run(suite)
 
@@ -1910,6 +1890,17 @@ class QHStates(QH):
         return QHStates(
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
+
+    def display_q(self, label):
+        """Try to display algebra in a pretty way."""
+
+        if label:
+            print(label)
+
+        for i, ket in enumerate(self.qs, start=1):
+            print(f"n={i}")
+            ket.display_q()
+            print("")
 
     def simple_q(self):
         """Simplify the states."""
@@ -2267,6 +2258,21 @@ class QHStates(QH):
 
         return QHStates(diagonal, qs_type="op", rows=dim, columns=dim)
 
+    def trace(self):
+        """Return the trace as a scalar quaternion series."""
+
+        if self.rows != self.columns:
+            print("Oops, not a square quaternion series.")
+            return None
+
+        else:
+            trace = self.qs[0]
+
+        for i in range(1, self.rows):
+            trace = trace.add(self.qs[i * (self.rows + 1)])
+
+        return QHStates([trace])
+
     @staticmethod
     def identity(dim, operator=False, additive=False, non_zeroes=None, qs_type="ket"):
         """Identity operator for states or operators which are diagonal."""
@@ -2310,12 +2316,6 @@ class QHStates(QH):
         self_copy = deepcopy(self)
         q1_copy = deepcopy(q1)
 
-        # Operator products need to be transposed.
-        operator_flag = False
-        if self.qs_type in ["op", "operator"]:
-            if q1.qs_type in ["op", "operator"]:
-                operator_flag = True
-
         # Diagonalize if need be.
         if ((self.rows == q1.rows) and (self.columns == q1.columns)) or (
             "scalar" in [self.qs_type, q1.qs_type]
@@ -2345,6 +2345,11 @@ class QHStates(QH):
                 )
             )
             return None
+
+        # Operator products need to be transposed.
+        operator_flag = False
+        if qs_left in ["op", "operator"] and qs_right in ["op", "operator"]:
+            operator_flag = True
 
         outer_row_max = qs_left.rows
         outer_column_max = qs_right.columns
@@ -2382,19 +2387,7 @@ class QHStates(QH):
 
         # Flatten the list.
         new_qs = [item for sublist in result for item in sublist]
-
-        if outer_row_max == 1 and outer_column_max == 1:
-            qst = "scalar"
-        elif outer_row_max == 1 and outer_column_max > 1:
-            qst = "ket"
-        elif outer_row_max > 1 and outer_column_max == 1:
-            qst = "bra"
-        else:
-            qst = "op"
-
-        new_states = QHStates(
-            new_qs, qs_type=qst, rows=outer_row_max, columns=outer_column_max
-        )
+        new_states = QHStates(new_qs, rows=outer_row_max, columns=outer_column_max)
 
         if projector_flag or operator_flag:
             return new_states.transpose()
@@ -2423,9 +2416,6 @@ class QHStates(QH):
 
         if flip == 1:
             print("fed 2 bras or kets, took a conjugate. Double check.")
-
-        else:
-            print("Assumes your <bra| already has been conjugated. Double check.")
 
         b = bra.product(op).product(ket)
 
@@ -2655,18 +2645,6 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def sub_q(q, symbol_value_dict):
-        """Evaluates a quaternion using sympy values and a dictionary {t:1, x:2, etc}."""
-
-        t1 = q.t.subs(symbol_value_dict)
-        x1 = q.x.subs(symbol_value_dict)
-        y1 = q.y.subs(symbol_value_dict)
-        z1 = q.z.subs(symbol_value_dict)
-
-        q_txyz = QH([t1, x1, y1, z1])
-
-        return q_txyz
-
 
 
 
@@ -2895,6 +2873,11 @@ if __name__ == "__main__":
             self.assertTrue(Op4iDiag2.qs[0].equals(self.q_i4))
             self.assertTrue(Op4iDiag2.qs[1].equals(QH().q_0()))
 
+        def test_1125_trace(self):
+            trace = self.v1123.op(2, 2).trace()
+            print("trace: ", trace)
+            self.assertTrue(trace.equals(QHStates([self.q_4])))
+
         def test_1130_identity(self):
             I2 = QHStates().identity(2, operator=True)
             print("Operator Idenity, diagonal 2x2", I2)
@@ -3100,141 +3083,6 @@ if __name__ == "__main__":
 
 
 
-
-class EigenQH(object):
-    def Eigenvalues_2_operator(numbers):
-        """Give an array of Eigenvalues, returns a diagonal operator."""
-
-        n_states = QHStates(numbers, qs_type="ket")
-        diag_states = n_states.diagonal(len(numbers))
-
-        return diag_states
-
-    def Eigenvectors_2_operator(vectors):
-        """Given an array of Eigenvectors, returns a square matrix operator."""
-
-        qs = []
-
-        for vector in vectors:
-            qs.extend(vector.qs)
-
-        new_states = QHStates(qs, qs_type="op")
-
-        return new_states
-
-    def Eigens_2_matrix(numbers, vectors):
-        """Given an array of Eigennumbers AND an array of QHStates that are Eigenvalues,
-        returns the corresponding matrix."""
-
-        value_matrix = EigenQH.Eigenvalues_2_operator(numbers)
-        vector_matrix = EigenQH.Eigenvectors_2_operator(vectors)
-        vector_inv = vector_matrix.inverse()
-
-        M = vector_matrix.product(value_matrix).product(vector_inv).transpose()
-
-        return M
-
-
-
-
-
-if __name__ == "__main__":
-
-    class EigenQHTest(unittest.TestCase):
-        """Unit tests for Eigen class."""
-
-        # Only if ijk for Eigenvalues and Eigenvectors point in the same direction does this work.
-
-        q_0 = QH().q_0()
-        q_1 = QH().q_1()
-        q_1i = QH([1, 1, 0, 0])
-        q_1ijk = QH([1, 1, 1, 2])
-        q_2ijk = QH([3, 1, 1, 2])
-
-        n1 = QH().q_1(-2)
-        n2 = QH().q_1(7)
-        n1i = QH([-2, 1, 0, 0])
-        n2i = QH([7, 1, 0, 0])
-        n1ijk = QH([-2, 1, 1, 2])
-        n2ijk = QH([7, 1, 1, 2])
-
-        n12 = QHStates([n1, q_0, q_0, n2], qs_type="op")
-        n12i = QHStates([n1i, q_0, q_0, n2i], qs_type="op")
-
-        v1 = QHStates([q_1, q_1])
-        v2 = QHStates([QH().q_1(2), QH().q_1(3)])
-        v1i = QHStates([q_1i, q_1i])
-        v2i = QHStates([QH([2, 1, 0, 0]), QH([3, 1, 0, 0])])
-        v1ijk = QHStates([q_1ijk, q_2ijk])
-        v2ijk = QHStates([QH([2, 1, 1, 2]), QH([3, 1, 1, 2])])
-
-        v12 = QHStates([q_1, q_1, QH().q_1(2), QH().q_1(3)])
-
-        M = QHStates(
-            [QH().q_1(-20), QH().q_1(-27), QH().q_1(18), QH().q_1(25)], qs_type="op"
-        )
-
-        def test_100_Eigenvalues_2_operator(self):
-            n12 = EigenQH.Eigenvalues_2_operator([self.n1, self.n2])
-            self.assertTrue(n12.equals(self.n12))
-
-        def test_200_Eigenvectors_2_operator(self):
-            v12 = EigenQH.Eigenvectors_2_operator([self.v1, self.v2])
-            self.assertTrue(v12.equals(self.v12))
-
-        def test_300_Eigens_2_matrix_real_and_complex(self):
-            # Real valued tests.
-            M = EigenQH.Eigens_2_matrix([self.n1, self.n2], [self.v1, self.v2])
-            self.assertTrue(M.equals(self.M))
-
-            Mv1 = M.product(self.v1)
-            nv1 = QHStates([self.n1]).product(self.v1)
-            self.assertTrue(Mv1.equals(nv1))
-            Mv2 = M.product(self.v2)
-            nv2 = QHStates([self.n2]).product(self.v2)
-            self.assertTrue(Mv2.equals(nv2))
-
-            # Complex valued tests.
-            Mi = EigenQH.Eigens_2_matrix([self.n1i, self.n2i], [self.v1i, self.v2i])
-
-            Mv1i = Mi.product(self.v1i)
-            nv1i = QHStates([self.n1i]).product(self.v1i)
-            self.assertTrue(Mv1i.equals(nv1i))
-            Mv2i = Mi.product(self.v2i)
-            nv2i = QHStates([self.n2i]).product(self.v2i)
-            self.assertTrue(Mv2i.equals(nv2i))
-
-        def test_400_Eigens_2_matrix_quaternions(self):
-            # QUaternion valued tests.
-            Mijk = EigenQH.Eigens_2_matrix(
-                [self.n1ijk, self.n2ijk], [self.v1ijk, self.v2ijk]
-            )
-
-            Mv1ijk = Mijk.product(self.v1ijk)
-            nv1ijk = QHStates([self.n1ijk]).product(self.v1ijk)
-            self.assertTrue(Mv1ijk.equals(nv1ijk))
-
-            Mijk = EigenQH.Eigens_2_matrix(
-                [self.n1ijk, self.n2ijk], [self.v1ijk, self.v2ijk]
-            )
-            n2 = QHStates([self.n2ijk])
-
-            Mv2ijk = Mijk.product(self.v2ijk)
-            nv2ijk = n2.product(self.v2ijk)
-
-            nv2ijk.print_state("n|v>", 1, 1)
-            Mv2ijk.print_state("M|v>", 1, 1)
-
-            self.assertTrue(Mv2ijk.equals(nv2ijk))
-
-    suite = unittest.TestLoader().loadTestsFromModule(EigenQHTest())
-    _results = unittest.TextTestRunner().run(suite)
-
-
-
-
-
-cwd = os.getcwd()
 
 if __name__ == "__main__":
 
