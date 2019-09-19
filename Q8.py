@@ -21,25 +21,6 @@ from copy import deepcopy
 import pdb
 
 
-# Define the stretch factor $\gamma$ and the $\gamma \beta$ used in special relativity.
-
-
-
-
-def sr_gamma(beta_x=0, beta_y=0, beta_z=0):
-    """The gamma used in special relativity using 3 velocites, some may be zero."""
-
-    return 1 / (1 - beta_x ** 2 - beta_y ** 2 - beta_z ** 2) ** (1 / 2)
-
-
-def sr_gamma_betas(beta_x=0, beta_y=0, beta_z=0):
-    """gamma and the three gamma * betas used in special relativity."""
-
-    g = sr_gamma(beta_x, beta_y, beta_z)
-
-    return [g, g * beta_x, g * beta_y, g * beta_z]
-
-
 
 
 
@@ -651,6 +632,9 @@ class Q8(np.ndarray):
         elif kind.lower() == "odd":
             result = q_odd
             times_symbol = "xO"
+        elif kind.lower() == "even_minus_odd":
+            result = q_even.dif(q_odd)
+            times_symbol = "xE-O"
         else:
             raise Exception("Three 'kind' values are known: '', 'even', and 'odd'")
 
@@ -738,7 +722,7 @@ class Q8(np.ndarray):
     # This is not a well-known result, but does work.
     # b -> b' = h b h* + 1/2 ((hhb)* -(h*h*b)*)
     # where h is of the form (cosh(a), sinh(a)) OR (0, a, b, c)
-    def boost(self, h, qtype="boost"):
+    def boost_or_rotation(self, h, qtype="boost"):
         """A boost along the x, y, and/or z axis."""
 
         end_qtype = "{}{}".format(self.qtype, qtype)
@@ -758,6 +742,88 @@ class Q8(np.ndarray):
         triple_123.representation = self.representation
 
         return triple_123
+
+    # Lorentz transformations are not exclusively about special relativity.
+    # The most general case is B->B' such that the first term of scalar(B²)
+    # is equal to scalar(B'²). Since there is just one constraint yet there
+    # are 4 degrees of freedom, rescaling
+    def Lorentz_by_rescaling(
+        self, op, h=None, quiet=True, qtype="Lorentz by rescaling"
+    ):
+
+        end_qtype = "{}{}".format(self.qtype, qtype)
+
+        # Use h if provided.
+        unscaled = op(h) if h is not None else op()
+
+        self_interval = self.square().t()
+        unscaled_interval = unscaled.square().t()
+
+        # Figure out if the interval is time-like, space-like, or light-like (+, -, or 0)
+        if self_interval:
+            if self_interval > 0:
+                self_interval_type = "time-like"
+            else:
+                self_interval_type = "space-like"
+        else:
+            self_interval_type = "light-like"
+
+        if unscaled_interval:
+            if unscaled_interval > 0:
+                unscaled_interval_type = "time-like"
+            else:
+                unscaled_interval_type = "space-like"
+        else:
+            unscaled_interval_type = "light-like"
+
+        # My house rules after thinking about this rescaling stuff.
+        # A light-like interval can go to a light-like interval.
+        # Only a light-like interval can transform to the origin.
+        # A light-like interval cannot go to a time- or space-like interval or visa versa.
+        # If any of these exceptions are met, then an identity transformaton is returned - deepcopy(self).
+        # A time-like interval can rescale to a time-like or space-like (via an 'improper rescaling') interval.
+        # A space-like interval can rescale to a time-like or space-like interval interval.
+
+        # For light-like to light-like, no scaling is required.
+        if (self_interval_type == "light-like") and (
+            unscaled_interval_type == "light-like"
+        ):
+            return unscaled
+
+        # When one is light-like but the other is not, return a copy of the
+        # starting value (an identity transformation).
+
+        if (self_interval_type == "light-like") and (
+            unscaled_interval_type != "light-like"
+        ):
+            return deepcopy(self)
+
+        if (self_interval_type != "light-like") and (
+            unscaled_interval_type == "light-like"
+        ):
+            return deepcopy(self)
+
+        # The remaining case is to handle is if time-like goes to space-like
+        # or visa-versa. Use a sign flip to avoid an imaginary value from the square root.
+        sign_flip = True if self_interval * unscaled_interval < 0 else False
+
+        if sign_flip:
+            scaling = np.sqrt(-1 * self_interval / unscaled_interval)
+        else:
+            scaling = np.sqrt(self_interval / unscaled_interval)
+
+        if unscaled.equals(Q8().q_0()):
+            print("zero issue") if not quiet else 0
+            return deepcopy(self)
+
+        if not np.isclose(scaling, 1):
+            print(f"scaling needed: {scaling}") if not quiet else 0
+
+        scaled = unscaled.product(Q8([scaling, 0, 0, 0]))
+        scaled.print_state("final scaled") if not quiet else 0
+        scaled.square().print_state("scaled square") if not quiet else 0
+
+        return scaled
 
     # g_shift is a function based on the space-times-time invariance proposal for gravity,
     # which proposes that if one changes the distance from a gravitational source, then
@@ -1189,11 +1255,13 @@ if __name__ == "__main__":
         R = Q8([3, 0, 0, 0], qtype="R")
         C = Q8([2, 4, 0, 0], qtype="C")
         verbose = True
+        q22 = Q8([2, 2, 0, 0])
+        q44 = Q8([4, 4, 0, 0])
 
-        def test_qt(self):
+        def test_1000_qt(self):
             self.assertTrue(self.q1[0] == 1)
 
-        def test_scalar(self):
+        def test_1020_scalar(self):
             q_z = self.q1.scalar()
             print("scalar(q): ", q_z)
             self.assertTrue(q_z[0] == 1)
@@ -1201,7 +1269,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[4] == 0)
             self.assertTrue(q_z[6] == 0)
 
-        def test_vector(self):
+        def test_1030_vector(self):
             q_z = self.q1.vector()
             print("vector(q): ", q_z)
             self.assertTrue(q_z[0] == 0)
@@ -1209,19 +1277,19 @@ if __name__ == "__main__":
             self.assertTrue(q_z[5] == 3)
             self.assertTrue(q_z[7] == 4)
 
-        def test_t(self):
+        def test_1035_t(self):
             q_z = self.q1.t()
             print("q.t()): ", q_z)
             self.assertTrue(q_z[0] == 1)
 
-        def test_xyz(self):
+        def test_1040_xyz(self):
             q_z = self.q1.xyz()
             print("q.xyz()): ", q_z)
             self.assertTrue(q_z[0] == -2)
             self.assertTrue(q_z[1] == -3)
             self.assertTrue(q_z[2] == -4)
 
-        def test_txyz(self):
+        def test_1045_txyz(self):
             q_z = self.q1.txyz()
             print("q.txyz()): ", q_z)
             self.assertTrue(q_z[0] == 1)
@@ -1229,7 +1297,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[2] == -3)
             self.assertTrue(q_z[3] == -4)
 
-        def test_q_zero(self):
+        def test_1050_q_zero(self):
             q_z = self.q1.q_0()
             print("q0: {}".format(q_z))
             self.assertTrue(q_z[0] == 0)
@@ -1237,7 +1305,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[5] == 0)
             self.assertTrue(q_z[6] == 0)
 
-        def test_q_1(self):
+        def test_1060_q_1(self):
             q_z = self.q1.q_1()
             q_zn = self.q1.q_1(-1)
             print("q_1: {}".format(q_z))
@@ -1247,7 +1315,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 0)
             self.assertTrue(q_zn[1] == 1)
 
-        def test_q_i(self):
+        def test_1070_q_i(self):
             q_z = self.q1.q_i()
             q_zn = self.q1.q_i(-1)
             print("q_i: {}".format(q_z))
@@ -1257,7 +1325,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 0)
             self.assertTrue(q_zn[3] == 1)
 
-        def test_q_j(self):
+        def test_1080q_j(self):
             q_z = self.q1.q_j()
             q_zn = self.q1.q_j(-1)
             print("q_j: {}".format(q_z))
@@ -1267,7 +1335,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 0)
             self.assertTrue(q_zn[5] == 1)
 
-        def test_q_k(self):
+        def test_1090_q_k(self):
             q_z = self.q1.q_k()
             q_zn = self.q1.q_k(-1)
             print("q_k: {}".format(q_z))
@@ -1277,13 +1345,17 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 1)
             self.assertTrue(q_zn[7] == 1)
 
-        def test_q_random(self):
+        def test_1100_q_random(self):
             q_z = self.q1.q_random()
             print("q_random():", q_z)
             for i in range(8):
                 self.assertTrue(q_z[i] >= 0 and q_z[i] <= 1)
 
-        def test_conj_0(self):
+        def test_1200_equals(self):
+            self.assertTrue(self.q1.equals(self.q1))
+            self.assertFalse(self.q1.equals(self.q2))
+
+        def test_1210_conj_0(self):
             q_z = self.q1.conj()
             print("conj 0: {}".format(q_z))
             self.assertTrue(1)
@@ -1292,11 +1364,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[4] == 3)
             self.assertTrue(q_z[6] == 4)
 
-        def test_equals(self):
-            self.assertTrue(self.q1.equals(self.q1))
-            self.assertFalse(self.q1.equals(self.q2))
-
-        def test_conj_1(self):
+        def test_1220_conj_1(self):
             q_z = self.q1.conj(1)
             print("conj 1: {}".format(q_z))
             self.assertTrue(q_z[1] == 1)
@@ -1304,7 +1372,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[4] == 3)
             self.assertTrue(q_z[6] == 4)
 
-        def test_conj_2(self):
+        def test_1230_conj_2(self):
             q_z = self.q1.conj(2)
             print("conj 2: {}".format(q_z))
             self.assertTrue(q_z[1] == 1)
@@ -1312,7 +1380,14 @@ if __name__ == "__main__":
             self.assertTrue(q_z[5] == 3)
             self.assertTrue(q_z[6] == 4)
 
-        def test_vahlen_conj_0(self):
+        def test_1250_flip_signs(self):
+            q_z = self.q_big.flip_signs()
+            print("q_big sign_flip: {}".format(q_z))
+            for i in range(0, 8, 2):
+                self.assertTrue(q_z[i] == self.q_big[i + 1])
+                self.assertTrue(q_z[i + 1] == self.q_big[i])
+
+        def test_1260_vahlen_conj_0(self):
             q1 = Q8(values=[1, 0, 0, 2, 0, 3, 0, 4])
             q_z = q1.vahlen_conj()
             print("vahlen conj -: {}".format(q_z))
@@ -1321,7 +1396,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[4] == 3)
             self.assertTrue(q_z[6] == 4)
 
-        def test_vahlen_conj_1(self):
+        def test_1270_vahlen_conj_1(self):
             q_z = self.q1.vahlen_conj("'")
             print("vahlen conj ': {}".format(q_z))
             self.assertTrue(q_z[0] == 1)
@@ -1329,7 +1404,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[4] == 3)
             self.assertTrue(q_z[7] == 4)
 
-        def test_vahlen_conj_2(self):
+        def test_1280_vahlen_conj_2(self):
             q_z = self.q1.vahlen_conj("*")
             print("vahlen conj *: {}".format(q_z))
             self.assertTrue(q_z[0] == 1)
@@ -1337,57 +1412,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[5] == 3)
             self.assertTrue(q_z[6] == 4)
 
-        def test_reduce(self):
-            q_z = self.q_big.reduce()
-            print("q_big reduced: {}".format(q_z))
-            for i in range(0, 8, 2):
-                self.assertTrue(q_z[i] == 0)
-                self.assertTrue(q_z[i + 1] == 1)
-
-        def test_flip_signs(self):
-            q_z = self.q_big.flip_signs()
-            print("q_big sign_flip: {}".format(q_z))
-            for i in range(0, 8, 2):
-                self.assertTrue(q_z[i] == self.q_big[i + 1])
-                self.assertTrue(q_z[i + 1] == self.q_big[i])
-
-        def test_add(self):
-            q_z = self.q1.add(self.q2)
-            print("add: {}".format(q_z))
-            self.assertTrue(q_z[0] == 1)
-            self.assertTrue(q_z[1] == 0)
-            self.assertTrue(q_z[2] == 4)
-            self.assertTrue(q_z[3] == 2)
-            self.assertTrue(q_z[4] == 0)
-            self.assertTrue(q_z[5] == 6)
-            self.assertTrue(q_z[6] == 0)
-            self.assertTrue(q_z[7] == 4)
-
-        def test_add_reduce(self):
-            q_z_red = self.q1.add(self.q2).reduce()
-            print("add reduce: {}".format(q_z_red))
-            self.assertTrue(q_z_red[0] == 1)
-            self.assertTrue(q_z_red[1] == 0)
-            self.assertTrue(q_z_red[2] == 2)
-            self.assertTrue(q_z_red[3] == 0)
-            self.assertTrue(q_z_red[4] == 0)
-            self.assertTrue(q_z_red[5] == 6)
-            self.assertTrue(q_z_red[6] == 0)
-            self.assertTrue(q_z_red[7] == 4)
-
-        def test_dif(self):
-            q_z = self.q1.dif(self.q2)
-            print("dif: {}".format(q_z))
-            self.assertTrue(q_z[0] == 1)
-            self.assertTrue(q_z[1] == 0)
-            self.assertTrue(q_z[2] == 0)
-            self.assertTrue(q_z[3] == 6)
-            self.assertTrue(q_z[4] == 3)
-            self.assertTrue(q_z[5] == 3)
-            self.assertTrue(q_z[6] == 0)
-            self.assertTrue(q_z[7] == 4)
-
-        def test_square(self):
+        def test_1290_square(self):
             q_sq = self.q1.square()
             q_sq_red = q_sq.reduce()
             print("square: {}".format(q_sq))
@@ -1400,7 +1425,7 @@ if __name__ == "__main__":
             self.assertTrue(q_sq_red[0] == 0)
             self.assertTrue(q_sq_red[1] == 28)
 
-        def test_norm_squared(self):
+        def test_1300_norm_squared(self):
             q_z = self.q1.norm_squared()
             print("norm_squared: {}".format(q_z))
             self.assertTrue(q_z[0] == 30)
@@ -1412,7 +1437,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 0)
             self.assertTrue(q_z[7] == 0)
 
-        def test_norm_squared_of_vector(self):
+        def test_1310_norm_squared_of_vector(self):
             q_z = self.q1.norm_squared_of_vector()
             print("norm_squared_of_vector: {}".format(q_z))
             self.assertTrue(q_z[0] == 29)
@@ -1424,7 +1449,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 0)
             self.assertTrue(q_z[7] == 0)
 
-        def test_abs_of_q(self):
+        def test_1320_abs_of_q(self):
             q_z = self.q2.abs_of_q()
             print("abs_of_q: {}".format(q_z))
             self.assertTrue(q_z[0] == 5)
@@ -1436,19 +1461,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[5] == 0)
             self.assertTrue(q_z[7] == 0)
 
-        def test_abs_of_vector(self):
-            q_z = self.q2.abs_of_vector()
-            print("abs_of_vector: {}".format(q_z))
-            self.assertTrue(q_z[0] == 5)
-            self.assertTrue(q_z[2] == 0)
-            self.assertTrue(q_z[4] == 0)
-            self.assertTrue(q_z[6] == 0)
-            self.assertTrue(q_z[1] == 0)
-            self.assertTrue(q_z[3] == 0)
-            self.assertTrue(q_z[5] == 0)
-            self.assertTrue(q_z[7] == 0)
-
-        def test_normalize(self):
+        def test_1330_normalize(self):
             q_z = self.q2.normalize()
             print("q_normalized: {}".format(q_z))
             self.assertTrue(q_z[0] == 0)
@@ -1460,7 +1473,62 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 0)
             self.assertTrue(q_z[7] == 0)
 
-        def test_product(self):
+        def test_1340_abs_of_vector(self):
+            q_z = self.q2.abs_of_vector()
+            print("abs_of_vector: {}".format(q_z))
+            self.assertTrue(q_z[0] == 5)
+            self.assertTrue(q_z[2] == 0)
+            self.assertTrue(q_z[4] == 0)
+            self.assertTrue(q_z[6] == 0)
+            self.assertTrue(q_z[1] == 0)
+            self.assertTrue(q_z[3] == 0)
+            self.assertTrue(q_z[5] == 0)
+            self.assertTrue(q_z[7] == 0)
+
+        def test_1345_reduce(self):
+            q_z = self.q_big.reduce()
+            print("q_big reduced: {}".format(q_z))
+            for i in range(0, 8, 2):
+                self.assertTrue(q_z[i] == 0)
+                self.assertTrue(q_z[i + 1] == 1)
+
+        def test_1350_add(self):
+            q_z = self.q1.add(self.q2)
+            print("add: {}".format(q_z))
+            self.assertTrue(q_z[0] == 1)
+            self.assertTrue(q_z[1] == 0)
+            self.assertTrue(q_z[2] == 4)
+            self.assertTrue(q_z[3] == 2)
+            self.assertTrue(q_z[4] == 0)
+            self.assertTrue(q_z[5] == 6)
+            self.assertTrue(q_z[6] == 0)
+            self.assertTrue(q_z[7] == 4)
+
+        def test_1352_add_reduce(self):
+            q_z_red = self.q1.add(self.q2).reduce()
+            print("add reduce: {}".format(q_z_red))
+            self.assertTrue(q_z_red[0] == 1)
+            self.assertTrue(q_z_red[1] == 0)
+            self.assertTrue(q_z_red[2] == 2)
+            self.assertTrue(q_z_red[3] == 0)
+            self.assertTrue(q_z_red[4] == 0)
+            self.assertTrue(q_z_red[5] == 6)
+            self.assertTrue(q_z_red[6] == 0)
+            self.assertTrue(q_z_red[7] == 4)
+
+        def test_1350_dif(self):
+            q_z = self.q1.dif(self.q2)
+            print("dif: {}".format(q_z))
+            self.assertTrue(q_z[0] == 1)
+            self.assertTrue(q_z[1] == 0)
+            self.assertTrue(q_z[2] == 0)
+            self.assertTrue(q_z[3] == 6)
+            self.assertTrue(q_z[4] == 3)
+            self.assertTrue(q_z[5] == 3)
+            self.assertTrue(q_z[6] == 0)
+            self.assertTrue(q_z[7] == 4)
+
+        def test_1370_product(self):
             q_z = self.q1.product(self.q2).reduce()
             print("product: {}".format(q_z))
             self.assertTrue(q_z[0] == 0)
@@ -1472,7 +1540,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 18)
             self.assertTrue(q_z[7] == 0)
 
-        def test_product_even(self):
+        def test_1380_product_even(self):
             q_z = self.q1.product(self.q2, kind="even").reduce()
             print("product, kind even: {}".format(q_z))
             self.assertTrue(q_z[0] == 0)
@@ -1484,7 +1552,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 0)
             self.assertTrue(q_z[7] == 0)
 
-        def test_product_odd(self):
+        def test_1390_product_odd(self):
             q_z = self.q1.product(self.q2, kind="odd").reduce()
             print("product, kind odd: {}".format(q_z))
             self.assertTrue(q_z[0] == 0)
@@ -1496,12 +1564,20 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 18)
             self.assertTrue(q_z[7] == 0)
 
-        def test_product_reverse(self):
+        def test_1400_product_even_minus_odd(self):
+            q_z = self.Q.product(self.P, kind="even_minus_odd").reduce()
+            print("product, kind even_minus_odd: ", q_z)
+            self.assertTrue(q_z[1] == 1)
+            self.assertTrue(q_z[2] == 16)
+            self.assertTrue(q_z[4] == 13)
+            self.assertTrue(q_z[7] == 18)
+
+        def test_1410_product_reverse(self):
             q1q2_rev = self.q1.product(self.q2, reverse=True)
             q2q1 = self.q2.product(self.q1)
             self.assertTrue(q1q2_rev.equals(q2q1))
 
-        def test_Euclidean_product(self):
+        def test_1420_Euclidean_product(self):
             q_z = self.q1.Euclidean_product(self.q2).reduce()
             print("Euclidean product: {}".format(q_z))
             self.assertTrue(q_z[0] == 1)
@@ -1513,7 +1589,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 0)
             self.assertTrue(q_z[7] == 18)
 
-        def test_inverse(self):
+        def test_1430_inverse(self):
             q_z = self.q2.inverse().reduce()
             print("inverse: {}".format(q_z))
             self.assertTrue(q_z[0] == 0)
@@ -1525,7 +1601,15 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 0)
             self.assertTrue(q_z[7] == 0)
 
-        def test_triple_product(self):
+        def test_1440_divide_by(self):
+            q_z = self.Q.divide_by(self.Q).reduce()
+            print("divide_by: ", q_z)
+            self.assertTrue(q_z[0] == 1)
+            self.assertTrue(q_z[2] == 0)
+            self.assertTrue(q_z[4] == 0)
+            self.assertTrue(q_z[6] == 0)
+
+        def test_1450_triple_product(self):
             q_z = self.q1.triple_product(self.q2, self.q1).reduce()
             print("triple: {}".format(q_z))
             self.assertTrue(q_z[0] == 0)
@@ -1537,7 +1621,7 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 8)
             self.assertTrue(q_z[7] == 0)
 
-        def test_rotate(self):
+        def test_1460_rotate(self):
             q_z = self.q1.rotate(Q8([0, 1, 0, 0])).reduce()
             print("rotate: {}".format(q_z))
             self.assertTrue(q_z[0] == 1)
@@ -1549,16 +1633,42 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 4)
             self.assertTrue(q_z[7] == 0)
 
-        def test_boost(self):
+        def test_1470_boost_or_rotation(self):
             q1_sq = self.q1.square().reduce()
-            q_z = self.q1.boost(Q8(sr_gamma_betas(0.003)))
+            beta = 0.003
+            gamma = 1 / np.sqrt(1 - beta ** 2)
+            h = Q8([gamma, gamma * beta, 0, 0])
+            q_z = self.q1.boost_or_rotation(h)
             q_z2 = q_z.square().reduce()
             print("q1_sq: {}".format(q1_sq))
             print("boosted: {}".format(q_z))
             print("b squared: {}".format(q_z2))
             self.assertTrue(round(q_z2[1], 12) == round(q1_sq[1], 12))
 
-        def test_g_shift(self):
+        def test_1480_Lorentz_by_rescaling(self):
+            Q2 = self.Q.square().reduce()
+            rescale = self.q22.Lorentz_by_rescaling(
+                op=self.q22.add, h=self.q22
+            ).reduce()
+            print("rescale_q_22+q22: ", rescale)
+            print(rescale.equals(self.q44))
+            rescale = self.q22.Lorentz_by_rescaling(
+                op=self.q22.dif, h=self.q22
+            ).reduce()
+            print("rescale_q22-q22: ", rescale)
+            print(rescale.equals(Q8().q_0()))
+            rescale = self.Q.Lorentz_by_rescaling(op=self.Q.dif, h=self.Q).reduce()
+            print("rescale Q-Q: ", rescale)
+            print(rescale.equals(self.Q))
+            rescale = self.Q.Lorentz_by_rescaling(op=self.Q.add, h=self.P).reduce()
+            print("rescale_Q+P: ", rescale)
+            r2 = rescale.square()
+            print(np.isclose(r2[0], Q2[0]))
+            rescale = self.q22.Lorentz_by_rescaling(op=self.q22.add, h=self.Q).reduce()
+            print("rescale_q22+Q: ", rescale)
+            print(rescale.equals(self.q22))
+
+        def test_1490_g_shift(self):
             q1_sq = self.q1.square().reduce()
             q_z = self.q1.g_shift(0.003)
             q_z2 = q_z.square().reduce()
@@ -1573,7 +1683,153 @@ if __name__ == "__main__":
             self.assertTrue(q_z2[6] == q1_sq[6])
             self.assertTrue(q_z2[7] == q1_sq[7])
 
-        def test_exp(self):
+        def test_1500_sin(self):
+            self.assertTrue(Q8([0, 0, 0, 0]).sin().reduce().equals(Q8().q_0()))
+            self.assertTrue(
+                self.Q.sin()
+                .reduce()
+                .equals(
+                    Q8(
+                        [
+                            91.7837157840346691,
+                            -21.8864868530291758,
+                            -32.8297302795437673,
+                            -43.7729737060583517,
+                        ]
+                    )
+                )
+            )
+            self.assertTrue(
+                self.P.sin()
+                .reduce()
+                .equals(Q8([0, 59.3625684622310033, -44.5219263466732542, 0]))
+            )
+            self.assertTrue(
+                self.R.sin().reduce().equals(Q8([0.1411200080598672, 0, 0, 0]))
+            )
+            self.assertTrue(
+                self.C.sin()
+                .reduce()
+                .equals(Q8([24.8313058489463785, -11.3566127112181743, 0, 0]))
+            )
+
+        def test_1510_cos(self):
+            self.assertTrue(Q8([0, 0, 0, 0]).cos().equals(Q8().q_1()))
+            self.assertTrue(
+                self.Q.cos().equals(
+                    Q8(
+                        [
+                            58.9336461679439481,
+                            34.0861836904655959,
+                            51.1292755356983974,
+                            68.1723673809311919,
+                        ]
+                    )
+                )
+            )
+            self.assertTrue(self.P.cos().equals(Q8([74.2099485247878476, 0, 0, 0])))
+            self.assertTrue(self.R.cos().equals(Q8([-0.9899924966004454, 0, 0, 0])))
+            self.assertTrue(
+                self.C.cos().equals(
+                    Q8([-11.3642347064010600, -24.8146514856341867, 0, 0])
+                )
+            )
+
+        def test_1520_tan(self):
+            self.assertTrue(Q8([0, 0, 0, 0]).tan().equals(Q8().q_0()))
+            self.assertTrue(
+                self.Q.tan().equals(
+                    Q8(
+                        [
+                            0.0000382163172501,
+                            -0.3713971716439372,
+                            -0.5570957574659058,
+                            -0.7427943432878743,
+                        ]
+                    )
+                )
+            )
+            self.assertTrue(
+                self.P.tan().equals(Q8([0, 0.7999273634100760, -0.5999455225575570, 0]))
+            )
+            self.assertTrue(self.R.tan().equals(Q8([-0.1425465430742778, 0, 0, 0])))
+            self.assertTrue(
+                self.C.tan().equals(Q8([-0.0005079806234700, 1.0004385132020521, 0, 0]))
+            )
+
+        def test_1530_sinh(self):
+            self.assertTrue(Q8([0, 0, 0, 0]).sinh().equals(Q8().q_0()))
+            self.assertTrue(
+                self.Q.sinh().equals(
+                    Q8(
+                        [
+                            0.7323376060463428,
+                            0.4482074499805421,
+                            0.6723111749708131,
+                            0.8964148999610841,
+                        ]
+                    )
+                )
+            )
+            self.assertTrue(
+                self.P.sinh().equals(
+                    Q8([0, -0.7671394197305108, 0.5753545647978831, 0])
+                )
+            )
+            self.assertTrue(self.R.sinh().equals(Q8([10.0178749274099026, 0, 0, 0])))
+            self.assertTrue(
+                self.C.sinh().equals(
+                    Q8([-2.3706741693520015, -2.8472390868488278, 0, 0])
+                )
+            )
+
+        def test_1540_cosh(self):
+            self.assertTrue(Q8([0, 0, 0, 0]).cosh().equals(Q8().q_1()))
+            self.assertTrue(
+                self.Q.cosh().equals(
+                    Q8(
+                        [
+                            0.9615851176369565,
+                            0.3413521745610167,
+                            0.5120282618415251,
+                            0.6827043491220334,
+                        ]
+                    )
+                )
+            )
+            self.assertTrue(self.P.cosh().equals(Q8([0.2836621854632263, 0, 0, 0])))
+            self.assertTrue(self.R.cosh().equals(Q8([10.0676619957777653, 0, 0, 0])))
+            self.assertTrue(
+                self.C.cosh().equals(
+                    Q8([-2.4591352139173837, -2.7448170067921538, 0, 0])
+                )
+            )
+
+        def test_1550_tanh(self):
+            self.assertTrue(Q8([0, 0, 0, 0]).tanh().equals(Q8().q_0()))
+            self.assertTrue(
+                self.Q.tanh().equals(
+                    Q8(
+                        [
+                            1.0248695360556623,
+                            0.1022956817887642,
+                            0.1534435226831462,
+                            0.2045913635775283,
+                        ]
+                    )
+                )
+            )
+            self.assertTrue(
+                self.P.tanh().equals(
+                    Q8([0, -2.7044120049972684, 2.0283090037479505, 0])
+                )
+            )
+            self.assertTrue(self.R.tanh().equals(Q8([0.9950547536867305, 0, 0, 0])))
+            self.assertTrue(
+                self.C.tanh().equals(Q8([1.0046823121902353, 0.0364233692474038, 0, 0]))
+            )
+
+        def test_1560_exp(self):
             self.assertTrue(Q8([0, 0, 0, 0]).exp().equals(Q8().q_1()))
             Q_z = self.Q.exp()
             P_z = self.P.exp()
@@ -1605,7 +1861,7 @@ if __name__ == "__main__":
                 C_z.equals(Q8([-4.8298093832693851, -5.5920560936409816, 0, 0]))
             )
 
-        def test_ln(self):
+        def test_1570_ln(self):
             Q_z = self.Q.ln()
             P_z = self.P.ln()
             R_z = self.R.ln()
@@ -1638,7 +1894,7 @@ if __name__ == "__main__":
             )
 
         @unittest.skip("Will have to investigate this one more.")
-        def test_q_2_p(self):
+        def test_1580_q_2_p(self):
             Q2P = self.Q.q_2_q(self.P)
             print("Q^P: ", Q2P)
             self.assertTrue(
@@ -1654,153 +1910,7 @@ if __name__ == "__main__":
                 )
             )
 
-        def test_sin(self):
-            self.assertTrue(Q8([0, 0, 0, 0]).sin().reduce().equals(Q8().q_0()))
-            self.assertTrue(
-                self.Q.sin()
-                .reduce()
-                .equals(
-                    Q8(
-                        [
-                            91.7837157840346691,
-                            -21.8864868530291758,
-                            -32.8297302795437673,
-                            -43.7729737060583517,
-                        ]
-                    )
-                )
-            )
-            self.assertTrue(
-                self.P.sin()
-                .reduce()
-                .equals(Q8([0, 59.3625684622310033, -44.5219263466732542, 0]))
-            )
-            self.assertTrue(
-                self.R.sin().reduce().equals(Q8([0.1411200080598672, 0, 0, 0]))
-            )
-            self.assertTrue(
-                self.C.sin()
-                .reduce()
-                .equals(Q8([24.8313058489463785, -11.3566127112181743, 0, 0]))
-            )
-
-        def test_cos(self):
-            self.assertTrue(Q8([0, 0, 0, 0]).cos().equals(Q8().q_1()))
-            self.assertTrue(
-                self.Q.cos().equals(
-                    Q8(
-                        [
-                            58.9336461679439481,
-                            34.0861836904655959,
-                            51.1292755356983974,
-                            68.1723673809311919,
-                        ]
-                    )
-                )
-            )
-            self.assertTrue(self.P.cos().equals(Q8([74.2099485247878476, 0, 0, 0])))
-            self.assertTrue(self.R.cos().equals(Q8([-0.9899924966004454, 0, 0, 0])))
-            self.assertTrue(
-                self.C.cos().equals(
-                    Q8([-11.3642347064010600, -24.8146514856341867, 0, 0])
-                )
-            )
-
-        def test_tan(self):
-            self.assertTrue(Q8([0, 0, 0, 0]).tan().equals(Q8().q_0()))
-            self.assertTrue(
-                self.Q.tan().equals(
-                    Q8(
-                        [
-                            0.0000382163172501,
-                            -0.3713971716439372,
-                            -0.5570957574659058,
-                            -0.7427943432878743,
-                        ]
-                    )
-                )
-            )
-            self.assertTrue(
-                self.P.tan().equals(Q8([0, 0.7999273634100760, -0.5999455225575570, 0]))
-            )
-            self.assertTrue(self.R.tan().equals(Q8([-0.1425465430742778, 0, 0, 0])))
-            self.assertTrue(
-                self.C.tan().equals(Q8([-0.0005079806234700, 1.0004385132020521, 0, 0]))
-            )
-
-        def test_sinh(self):
-            self.assertTrue(Q8([0, 0, 0, 0]).sinh().equals(Q8().q_0()))
-            self.assertTrue(
-                self.Q.sinh().equals(
-                    Q8(
-                        [
-                            0.7323376060463428,
-                            0.4482074499805421,
-                            0.6723111749708131,
-                            0.8964148999610841,
-                        ]
-                    )
-                )
-            )
-            self.assertTrue(
-                self.P.sinh().equals(
-                    Q8([0, -0.7671394197305108, 0.5753545647978831, 0])
-                )
-            )
-            self.assertTrue(self.R.sinh().equals(Q8([10.0178749274099026, 0, 0, 0])))
-            self.assertTrue(
-                self.C.sinh().equals(
-                    Q8([-2.3706741693520015, -2.8472390868488278, 0, 0])
-                )
-            )
-
-        def test_cosh(self):
-            self.assertTrue(Q8([0, 0, 0, 0]).cosh().equals(Q8().q_1()))
-            self.assertTrue(
-                self.Q.cosh().equals(
-                    Q8(
-                        [
-                            0.9615851176369565,
-                            0.3413521745610167,
-                            0.5120282618415251,
-                            0.6827043491220334,
-                        ]
-                    )
-                )
-            )
-            self.assertTrue(self.P.cosh().equals(Q8([0.2836621854632263, 0, 0, 0])))
-            self.assertTrue(self.R.cosh().equals(Q8([10.0676619957777653, 0, 0, 0])))
-            self.assertTrue(
-                self.C.cosh().equals(
-                    Q8([-2.4591352139173837, -2.7448170067921538, 0, 0])
-                )
-            )
-
-        def test_tanh(self):
-            self.assertTrue(Q8([0, 0, 0, 0]).tanh().equals(Q8().q_0()))
-            self.assertTrue(
-                self.Q.tanh().equals(
-                    Q8(
-                        [
-                            1.0248695360556623,
-                            0.1022956817887642,
-                            0.1534435226831462,
-                            0.2045913635775283,
-                        ]
-                    )
-                )
-            )
-            self.assertTrue(
-                self.P.tanh().equals(
-                    Q8([0, -2.7044120049972684, 2.0283090037479505, 0])
-                )
-            )
-            self.assertTrue(self.R.tanh().equals(Q8([0.9950547536867305, 0, 0, 0])))
-            self.assertTrue(
-                self.C.tanh().equals(Q8([1.0046823121902353, 0.0364233692474038, 0, 0]))
-            )
-
-        def test_ops(self):
+        def test_1590_ops(self):
             qs = []
             for q in self.q_0.ops(q2=self.q_1, op="dif", dim=3):
                 qs.append(q)
@@ -1917,12 +2027,30 @@ class Q8States(object):
     def bra(self):
         """Quickly set the qs_type to bra by calling set_qs_type()."""
 
-        return self.set_qs_type("bra")
+        if self.qs_type == "bra":
+            return self
+
+        bra_copy = deepcopy(self).conj()
+        bra_copy.rows = 1
+        bra_copy.columns = self.dim
+
+        bra_copy.qs_type = "bra" if self.dim > 1 else "scalar"
+
+        return bra_copy
 
     def ket(self):
         """Quickly set the qs_type to ket by calling set_qs_type()."""
 
-        return self.set_qs_type("ket")
+        if self.qs_type == "ket":
+            return self
+
+        ket_copy = deepcopy(self).conj()
+        ket_copy.rows = self.dim
+        ket_copy.columns = 1
+
+        ket_copy.qs_type = "ket" if self.dim > 1 else "scalar"
+
+        return ket_copy
 
     def op(self, rows=0, columns=0):
         """Quickly set the qs_type to op by calling set_qs_type()."""
@@ -2371,23 +2499,13 @@ class Q8States(object):
         return Q8States([trace])
 
     @staticmethod
-    def identity(dim, additive=False, non_zeroes=None, qs_type="ket"):
+    def identity(dim, operator=False, additive=False, non_zeroes=None, qs_type="ket"):
         """Identity operator for states or operators which are diagonal."""
-
-        if qs_type == "ket":
-            rows, columns = dim, 1
-
-        elif qs_type == "bra":
-            rows, columns = 1, dim
-
-        else:
-            rows, columns = dim, 1
 
         if additive:
             id_q = [Q8().q_0() for i in range(dim)]
 
         elif non_zeroes is not None:
-
             id_q = []
 
             if len(non_zeroes) != dim:
@@ -2396,9 +2514,7 @@ class Q8States(object):
                         nz=len(non_zeroes), d=dim
                     )
                 )
-                return Q8States(
-                    [Q8().q_0()], qs_type=qs_type, rows=rows, columns=columns
-                )
+                return Q8States([Q8().q_0()])
 
             else:
                 for non_zero in non_zeroes:
@@ -2410,12 +2526,12 @@ class Q8States(object):
         else:
             id_q = [Q8().q_1() for i in range(dim)]
 
-        if qs_type in ["op", "operator", "scalar"]:
-            q_1 = Q8States(id_q, qs_type=qs_type, rows=rows, columns=columns)
+        if operator:
+            q_1 = Q8States(id_q)
             ident = Q8States.diagonal(q_1, dim)
 
         else:
-            ident = Q8States(id_q, qs_type=qs_type, rows=rows, columns=columns)
+            ident = Q8States(id_q, qs_type=qs_type)
 
         return ident
 
@@ -2508,6 +2624,99 @@ class Q8States(object):
         """Forms the Euclidean product, what is used in QM all the time."""
 
         return self.conj().product(q1, kind, reverse)
+
+    def triple_product(self, ket, ket_2):
+        """A quaternion triple product of states."""
+
+        new_states = []
+
+        for bra, k, k2 in zip(self.qs, ket.qs, ket_2.qs):
+            new_states.append(bra.product(k).product(k2))
+
+        return Q8States(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
+    def rotate(self, ket):
+        """Rotate one state by another."""
+
+        new_states = []
+
+        for bra, k in zip(self.qs, ket.qs):
+            new_states.append(bra.rotate(k))
+
+        return Q8States(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
+    def boost_or_rotation(self, ket):
+        """Do state-by-state rotations or boosts."""
+
+        new_states = []
+
+        for bra, k in zip(self.qs, ket.qs):
+            new_states.append(bra.boost_or_rotation(k))
+
+        return Q8States(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
+    def g_shift(self, g_factor, g_form="exp"):
+        """Do the g_shift to each state."""
+
+        new_states = []
+
+        for bra in self.qs:
+            new_states.append(bra.g_shift(g_factor, g_form))
+
+        return Q8States(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
+    @staticmethod
+    def bracket(bra, op, ket):
+        """Forms <bra|op|ket>. Note: if fed 2 kets, will take a conjugate."""
+
+        flip = 0
+
+        if bra.qs_type == "ket":
+            bra = bra.bra()
+            flip += 1
+
+        if ket.qs_type == "bra":
+            ket = ket.ket()
+            flip += 1
+
+        if flip == 1:
+            print("fed 2 bras or kets, took a conjugate. Double check.")
+
+        b = bra.product(op).product(ket)
+
+        return b
+
+    @staticmethod
+    def braket(bra, ket):
+        """Forms <bra|ket>, no operator. Note: if fed 2 kets, will take a conjugate."""
+
+        flip = 0
+
+        if bra.qs_type == "ket":
+            bra = bra.bra()
+            flip += 1
+
+        if ket.qs_type == "bra":
+            ket = ket.ket()
+            flip += 1
+
+        if flip == 1:
+            print("fed 2 bras or kets, took a conjugate. Double check.")
+
+        else:
+            print("Assumes your <bra| already has been conjugated. Double check.")
+
+        b = bra.product(ket)
+
+        return b
 
     def op_n(self, n, first=True, kind="", reverse=False):
         """Mulitply an operator times a number, in that order. Set first=false for n * Op"""
@@ -2765,6 +2974,19 @@ if __name__ == "__main__":
         k = Q8States([q_4, q_5, q_6], qs_type="ket")
         o = Q8States([q_10], qs_type="op")
 
+        b = Q8States([q_1, q_2, q_3], qs_type="bra")
+        k = Q8States([q_4, q_5, q_6], qs_type="ket")
+        o = Q8States([q_10], qs_type="op")
+
+        Q = Q8([1, -2, -3, -4], qtype="Q")
+        Q_states = Q8States([Q])
+        P = Q8([0, 4, -3, 0], qtype="P")
+        P_states = Q8States([P])
+        R = Q8([3, 0, 0, 0], qtype="R")
+        C = Q8([2, 4, 0, 0], qtype="C")
+        q22 = Q8States([Q8([2, 2, 0, 0])])
+        q44 = Q8States([Q8([4, 4, 0, 0])])
+
         def test_1000_init(self):
             self.assertTrue(self.q_0_q_1.dim == 2)
 
@@ -2900,7 +3122,7 @@ if __name__ == "__main__":
             self.assertTrue(trace.equals(Q8States([self.q_4])))
 
         def test_1130_identity(self):
-            I2 = Q8States().identity(2, qs_type="operator")
+            I2 = Q8States().identity(2, operator=True)
             print("Operator Idenity, diagonal 2x2", I2)
             self.assertTrue(I2.qs[0].equals(Q8().q_1()))
             self.assertTrue(I2.qs[1].equals(Q8().q_0()))
@@ -2962,11 +3184,6 @@ if __name__ == "__main__":
         def test_1150_product_AA(self):
             AA = self.A.product(self.A.ket())
             print("AA: ", AA)
-            self.assertTrue(AA.equals(Q8States([Q8([15, 0, 0, 0])])))
-
-        def test_1160_Euclidean_product_AA(self):
-            AA = self.A.Euclidean_product(self.A.ket())
-            print("A* A", AA)
             self.assertTrue(AA.equals(Q8States([Q8([17, 0, 0, 0])])))
 
         def test_1170_product_AOp(self):
@@ -3051,15 +3268,87 @@ if __name__ == "__main__":
             print("A* Op4i B: ", AOp4iB)
             self.assertTrue(AOp4iB.equals(Q8States([Q8([9, 24, 0, 24])])))
 
+        def test_1302_triple_product(self):
+            q_z = self.Q_states.triple_product(self.P_states, self.Q_states)
+            print("triple product: ", q_z)
+            self.assertTrue(q_z.equals(Q8States([Q8([-2, 124, -84, 8])])))
+
+        def test_1303_rotate(self):
+            q_z = self.Q_states.rotate(Q8States([self.q_i]))
+            print("rotate: ", q_z)
+            self.assertTrue(q_z.equals(Q8States([Q8([1, -2, 3, 4])])))
+
+        def test_1304_boost_or_rotation(self):
+            q1_sq = self.Q_states.square().reduce()
+            beta = 0.003
+            gamma = 1 / np.sqrt(1 - beta ** 2)
+            h = Q8States([Q8([gamma, gamma * beta, 0, 0])])
+            q_z = self.Q_states.boost_or_rotation(h).reduce()
+            q_z2 = q_z.square().reduce()
+            print("q1_sq: ", q1_sq)
+            print("boosted: ", q_z)
+            print("boosted squared: ", q_z2)
+            self.assertAlmostEqual(q_z2.qs[0][0], q1_sq.qs[0][0])
+            self.assertAlmostEqual(q_z2.qs[0][1], q1_sq.qs[0][1])
+
+        def test_1306_g_shift(self):
+            q1_sq = self.Q_states.square().reduce()
+            q_z = self.Q_states.g_shift(0.003).reduce()
+            q_z2 = q_z.square()
+            q_z_minimal = self.Q_states.g_shift(0.003, g_form="minimal")
+            q_z2_minimal = q_z_minimal.square()
+            print("q1_sq: ", q1_sq)
+            print("g_shift: ", q_z)
+            print("g squared: ", q_z2)
+            self.assertTrue(q_z2.qs[0][0] != q1_sq.qs[0][0])
+            self.assertTrue(q_z2.qs[0][1] != q1_sq.qs[0][1])
+            self.assertTrue(q_z2.qs[0][2] == q1_sq.qs[0][2])
+            self.assertTrue(q_z2.qs[0][3] == q1_sq.qs[0][3])
+            self.assertTrue(q_z2.qs[0][4] == q1_sq.qs[0][4])
+            self.assertTrue(q_z2.qs[0][5] == q1_sq.qs[0][5])
+            self.assertTrue(q_z2.qs[0][6] == q1_sq.qs[0][6])
+            self.assertTrue(q_z2.qs[0][7] == q1_sq.qs[0][7])
+            self.assertTrue(q_z2_minimal.qs[0][0] != q1_sq.qs[0][0])
+            self.assertTrue(q_z2_minimal.qs[0][1] != q1_sq.qs[0][1])
+            self.assertTrue(q_z2_minimal.qs[0][2] == q1_sq.qs[0][2])
+            self.assertTrue(q_z2_minimal.qs[0][3] == q1_sq.qs[0][3])
+            self.assertTrue(q_z2_minimal.qs[0][4] == q1_sq.qs[0][4])
+            self.assertTrue(q_z2_minimal.qs[0][5] == q1_sq.qs[0][5])
+            self.assertTrue(q_z2_minimal.qs[0][6] == q1_sq.qs[0][6])
+            self.assertTrue(q_z2_minimal.qs[0][7] == q1_sq.qs[0][7])
+
+        def test_1305_bracket(self):
+            bracket1234 = (
+                Q8States()
+                .bracket(
+                    self.q_1234.bra(),
+                    Q8States().identity(4, operator=True),
+                    self.q_1234,
+                )
+                .reduce()
+            )
+            print("bracket <1234|I|1234>: ", bracket1234)
+            self.assertTrue(bracket1234.equals(Q8States([Q8([34, 0, 0, 0])])))
+
         def test_1310_op_n(self):
             opn = self.Op.op_n(n=self.q_i)
             print("op_n: ", opn)
             self.assertTrue(opn.qs[0][2] == 3)
 
+        def test_1312_square(self):
+            ns = self.q_1_q_i.square()
+            ns.print_state("q_1_q_i square")
+            self.assertTrue(ns.equals(Q8States([self.q_1, self.q_n1])))
+
         def test_1315_norm_squared(self):
             ns = self.q_1_q_i.norm_squared()
             ns.print_state("q_1_q_i norm squared")
-            self.assertTrue(ns.equals(Q8States([Q8([2, 0, 0, 0])])))
+            self.assertTrue(ns.equals(Q8States([self.q_2])))
+
+        def test_1318_norm_squared_of_vector(self):
+            ns = self.q_1_q_i.norm_squared_of_vector()
+            ns.print_state("q_1_q_i norm squared of vector")
+            self.assertTrue(ns.equals(Q8States([self.q_1])))
 
         def test_1320_transpose(self):
             opt = self.q_1234.transpose()
@@ -3127,6 +3416,3 @@ if __name__ == "__main__":
     get_ipython().system("jupyter nbconvert --to python Q8.ipynb")
     get_ipython().system("black Q8.py")
     get_ipython().system("In_remover.sh Q8.py")
-
-
-
