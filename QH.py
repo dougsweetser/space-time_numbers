@@ -289,7 +289,7 @@ class QH(object):
         return v
 
     def xyz(self):
-        """Returns the vector as an np.array."""
+        """Returns the vector x, y, z as an np.array."""
 
         return np.array([self.x, self.y, self.z])
 
@@ -797,6 +797,42 @@ class QH(object):
 
         return triple_123
 
+    def Lorentz_next_rotation(q1, q2):
+        """Given 2 quaternions, creates a new quaternion to do a rotation
+           in the triple triple quaternion function by using a normalized cross product."""
+
+        next_rotation = q1.product(q2, kind="odd").normalize()
+
+        # If the 2 quaternions point in exactly the same direction, the result is zoro.
+        # That is unacceptable for closure, so return the normalized vector of one input.
+        # This does create some ambiguity since q1 and q2 could point in exactly opposite
+        # directions. In that case, the first quaternion is always chosen.
+        v_norm = next_rotation.norm_squared_of_vector()
+
+        if v_norm.t == 0:
+            next_rotation = q1.vector().normalize()
+
+        return next_rotation
+
+    def Lorentz_next_boost(q1, q2):
+        """Given 2 quaternions, creates a new quaternion to do a boost/rotation
+           using the triple triple quaternion product
+           by using the scalar of an even product to form (cosh(x), i sinh(x))."""
+
+        q_even = q1.product(q2, kind="even")
+        q_s = q_even.scalar()
+        q_v = q_even.vector().normalize()
+
+        if np.abs(q_s.t) > 1:
+            q_s = q_s.inverse()
+
+        exp_sum = q_s.exp().add(q_s.flip_signs().exp()).product(QH().q_1(1 / 2))
+        exp_dif = q_s.exp().dif(q_s.flip_signs().exp()).product(QH().q_1(1 / 2))
+
+        boost = exp_sum.add(q_v.product(exp_dif))
+
+        return boost
+
     # Lorentz transformations are not exclusively about special relativity.
     # The most general case is B->B' such that the first term of scalar(B²)
     # is equal to scalar(B'²). Since there is just one constraint yet there
@@ -1147,6 +1183,8 @@ if __name__ == "__main__":
         q_sym = QH([t, x, y, x * y * z])
         q22 = QH([2, 2, 0, 0])
         q44 = QH([4, 4, 0, 0])
+        q4321 = QH([4, 3, 2, 1])
+        q2244 = QH([2, 2, 4, 4])
 
         def test_1000_qt(self):
             self.assertTrue(self.Q.t == 1)
@@ -1171,13 +1209,6 @@ if __name__ == "__main__":
             self.assertTrue(q_z.x == -2)
             self.assertTrue(q_z.y == -3)
             self.assertTrue(q_z.z == -4)
-
-        def test_1035_t(self):
-            q_z = self.Q.t()
-            print("q.xyz()): ", q_z)
-            self.assertTrue(q_z[0] == -2)
-            self.assertTrue(q_z[1] == -3)
-            self.assertTrue(q_z[2] == -4)
 
         def test_1040_xyz(self):
             q_z = self.Q.xyz()
@@ -1454,6 +1485,23 @@ if __name__ == "__main__":
             print("boosted: ", q_z)
             print("boosted squared: ", q_z2)
             self.assertTrue(round(q_z2.t, 5) == round(q1_sq.t, 5))
+
+        def test_1471_Lorentz_next_rotation(self):
+            next_rotation = self.Q.Lorentz_next_rotation(self.q4321)
+            print("next_rotation: ", next_rotation)
+            self.assertEqual(next_rotation.t, 0)
+            rot = self.q2244.boost_or_rotation(next_rotation)
+            self.assertEqual(rot.t, 2)
+            self.assertAlmostEqual(rot.square().t, self.q2244.square().t)
+            next_rotation = self.Q.Lorentz_next_rotation(self.Q)
+            self.assertTrue(next_rotation.equals(self.Q.vector().normalize()))
+
+        def test_1472_Lorentz_next_boost(self):
+            next_boost = self.Q.Lorentz_next_boost(self.q4321)
+            print("next_boost: ", next_boost)
+            self.assertNotEqual(next_boost.t, 0)
+            boost = self.q2244.boost_or_rotation(next_boost)
+            self.assertAlmostEqual(boost.square().t, self.q2244.square().t)
 
         def test_1480_Lorentz_by_rescaling(self):
             Q2 = self.Q.square()
@@ -2542,6 +2590,42 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
+    def Lorentz_next_rotation(self, q1):
+        """Does multiple rotations of a QHState given another QHState of equal dimensions."""
+
+        if self.dim != q1.dim:
+            print(
+                "Oops, this tool requires 2 quaternion states with the same number of dimensions."
+            )
+            return null
+
+        new_states = []
+
+        for ket, q in zip(self.qs, q1.qs):
+            new_states.append(ket.Lorentz_next_rotation(q))
+
+        return QHStates(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
+    def Lorentz_next_boost(self, q1):
+        """Does multiple boosts of a QHState given another QHState of equal dimensions."""
+
+        if self.dim != q1.dim:
+            print(
+                "Oops, this tool requires 2 quaternion states with the same number of dimensions."
+            )
+            return null
+
+        new_states = []
+
+        for ket, q in zip(self.qs, q1.qs):
+            new_states.append(ket.Lorentz_next_boost(q))
+
+        return QHStates(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
     def g_shift(self, g_factor, g_form="exp"):
         """Do the g_shift to each state."""
 
@@ -2927,6 +3011,12 @@ if __name__ == "__main__":
         q22 = QHStates([QH([2, 2, 0, 0])])
         q44 = QHStates([QH([4, 4, 0, 0])])
 
+        q1234 = QH([1, 2, 3, 4])
+        q4321 = QH([4, 3, 2, 1])
+        q2222 = QH([2, 2, 2, 2])
+        qsmall = QH([0.04, 0.2, 0.1, -0.3])
+        q2_states = QHStates([q1234, qsmall], "ket")
+
         def test_1000_init(self):
             self.assertTrue(self.q_0_q_1.dim == 2)
 
@@ -3245,6 +3335,29 @@ if __name__ == "__main__":
             print("boosted squared: ", q_z2)
             self.assertTrue(round(q_z2.qs[0].t, 5) == round(q1_sq.qs[0].t, 5))
 
+        def test_1305_Lorentz_next_rotation(self):
+            next_rot = self.q2_states.Lorentz_next_rotation(
+                QHStates([self.q2222, self.q2222])
+            )
+            print("next_rotation: ", next_rot)
+            self.assertEqual(next_rot.qs[0].t, 0)
+            self.assertEqual(next_rot.qs[1].t, 0)
+            self.assertAlmostEqual(next_rot.norm_squared().qs[0].t, 2)
+            self.assertFalse(next_rot.qs[0].equals(next_rot.qs[1]))
+
+        def test_1305_Lorentz_next_boost(self):
+            next_boost = self.q2_states.Lorentz_next_boost(
+                QHStates([self.q2222, self.q2222])
+            )
+            print("next_boost: ", next_boost)
+            self.assertNotEqual(next_boost.qs[0].t, 0)
+            self.assertNotEqual(next_boost.qs[1].t, 0)
+            self.assertNotEqual(next_boost.norm_squared().qs[0].t, 2)
+            self.assertFalse(next_boost.qs[0].equals(next_boost.qs[1]))
+            boosted_square = self.q2_states.boost_or_rotation(next_boost).square()
+            q2_states_square = self.q2_states.square()
+            self.assertAlmostEqual(q2_states_square.qs[0].t, boosted_square.qs[0].t)
+
         def test_1306_g_shift(self):
             q1_sq = self.Q_states.square()
             q_z = self.Q_states.g_shift(0.003)
@@ -3332,39 +3445,3 @@ if __name__ == "__main__":
     get_ipython().system("jupyter nbconvert --to script QH.ipynb")
     get_ipython().system("black QH.py")
     get_ipython().system("In_remover.sh QH.py")
-
-
-
-
-
-q22 = QHStates([QH([2, 2, 0, 0])])
-q44 = QHStates([QH([4, 4, 0, 0])])
-
-
-
-
-
-q22.print_state("|q22>")
-q22.bra().print_state("<q22|")
-
-
-
-
-
-A = QHStates([QH([4, 0, 0, 0]), QH([0, 1, 0, 0])], "bra")
-A.print_state("A")
-
-
-
-
-
-A.product(A.ket()).print_state("<A|A>")
-
-
-
-
-
-A.product(A).print_state("<A|<A|")
-
-
-
