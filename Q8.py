@@ -192,20 +192,11 @@ class Q8(np.ndarray):
         return qk
 
     @staticmethod
-    def q_random(distribution="uniform", qtype="?", representation=""):
-        """Return a random-valued quaternion. Can add more distributions if needed.
-           exponential, laplace, logistic, lognormal, normal, poisson, uniform (default)."""
+    def q_random(low=-1, high=1, qtype="?", representation=""):
+        """There are other distributions available. For now will only implement
+           a uniform distribution with 4 degrees of freedom."""
 
-        distributions = {}
-        distributions["exponential"] = np.random.exponential
-        distributions["laplace"] = np.random.laplace
-        distributions["logistic"] = np.random.logistic
-        distributions["lognormal"] = np.random.lognormal
-        distributions["normal"] = np.random.normal
-        distributions["poisson"] = np.random.poisson
-        distributions["uniform"] = np.random.uniform
-
-        numbers = distributions[distribution](size=8).tolist()
+        numbers = np.random.uniform(low=low, high=high, size=4).tolist()
         qr = Q8(numbers, qtype=qtype)
         qr.representation = representation
 
@@ -722,7 +713,7 @@ class Q8(np.ndarray):
     # This is not a well-known result, but does work.
     # b -> b' = h b h* + 1/2 ((hhb)* -(h*h*b)*)
     # where h is of the form (cosh(a), sinh(a)) OR (0, a, b, c)
-    def boost_or_rotation(self, h, qtype="boost"):
+    def rotation_and_or_boost(self, h, qtype="boost"):
         """A boost along the x, y, and/or z axis."""
 
         end_qtype = "{}{}".format(self.qtype, qtype)
@@ -1671,12 +1662,12 @@ if __name__ == "__main__":
             self.assertTrue(q_z[6] == 4)
             self.assertTrue(q_z[7] == 0)
 
-        def test_1470_boost_or_rotation(self):
+        def test_1470_rotation_and_or_boost(self):
             q1_sq = self.q1.square().reduce()
             beta = 0.003
             gamma = 1 / np.sqrt(1 - beta ** 2)
             h = Q8([gamma, gamma * beta, 0, 0])
-            q_z = self.q1.boost_or_rotation(h)
+            q_z = self.q1.rotation_and_or_boost(h)
             q_z2 = q_z.square().reduce()
             print("q1_sq: {}".format(q1_sq))
             print("boosted: {}".format(q_z))
@@ -1688,7 +1679,7 @@ if __name__ == "__main__":
             print("next_rotation: ", next_rotation)
             self.assertEqual(next_rotation[0], 0)
             self.assertEqual(next_rotation[1], 0)
-            rot = self.q2244.boost_or_rotation(next_rotation).reduce()
+            rot = self.q2244.rotation_and_or_boost(next_rotation).reduce()
             self.assertEqual(rot[0], 2)
             self.assertAlmostEqual(rot.square()[0], self.q2244.square()[0])
             next_rotation = self.Q.Lorentz_next_rotation(self.Q)
@@ -1698,7 +1689,7 @@ if __name__ == "__main__":
             next_boost = self.q2244.Lorentz_next_boost(self.q4321).reduce()
             print("next_boost: ", next_boost)
             self.assertNotEqual(next_boost[0], 0)
-            boost = self.q2244.boost_or_rotation(next_boost).reduce()
+            boost = self.q2244.rotation_and_or_boost(next_boost).reduce()
             self.assertAlmostEqual(
                 boost.square().reduce()[0], self.q2244.square().reduce()[0]
             )
@@ -2209,6 +2200,72 @@ class Q8States(object):
 
         return new_states
 
+    @staticmethod
+    def q_0(n=1,):
+        """Nothing but n zeros."""
+
+        new_states = []
+
+        for _ in range(n):
+            new_states.append(Q8.q_0())
+
+        return Q8States(new_states, rows=n, columns=1)
+
+    @staticmethod
+    def q_1(n=1,):
+        """Nothing but n 1 s."""
+
+        new_states = []
+
+        for _ in range(n):
+            new_states.append(Q8.q_1())
+
+        return Q8States(new_states, rows=n, columns=1)
+
+    @staticmethod
+    def q_i(n=1,):
+        """Nothing but n i s."""
+
+        new_states = []
+
+        for _ in range(n):
+            new_states.append(Q8.q_i())
+
+        return Q8States(new_states, rows=n, columns=1)
+
+    @staticmethod
+    def q_j(n=1,):
+        """Nothing but n j s."""
+
+        new_states = []
+
+        for _ in range(n):
+            new_states.append(Q8.q_j())
+
+        return Q8States(new_states, rows=n, columns=1)
+
+    @staticmethod
+    def q_k(n=1,):
+        """Nothing but n k s."""
+
+        new_states = []
+
+        for _ in range(n):
+            new_states.append(Q8.q_k())
+
+        return Q8States(new_states, rows=n, columns=1)
+
+    @staticmethod
+    def q_random(n=1, low=-1, high=1):
+        """Nothing but n random numbers."""
+
+        new_states = []
+
+        for _ in range(n):
+            new_states.append(Q8.q_random(low, high))
+
+        return Q8States(new_states, rows=n, columns=1)
+
     def conj(self, conj_type=0):
         """Take the conjgates of states, default is zero, but also can do 1 or 2."""
 
@@ -2707,13 +2764,13 @@ class Q8States(object):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def boost_or_rotation(self, ket):
+    def rotation_and_or_boost(self, ket):
         """Do state-by-state rotations or boosts."""
 
         new_states = []
 
         for bra, k in zip(self.qs, ket.qs):
-            new_states.append(bra.boost_or_rotation(k))
+            new_states.append(bra.rotation_and_or_boost(k))
 
         return Q8States(
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
@@ -3140,6 +3197,42 @@ if __name__ == "__main__":
             self.assertTrue(q_z[0][2] == 1)
             self.assertTrue(q_z[0][3] == 0)
 
+        def test_10352_q_0(self):
+            q = Q8States.q_0(3)
+            print("3 q_0 s", q)
+            self.assertTrue(q.dim == 3)
+            self.assertTrue(q.qs[0].equals(Q8.q_0()))
+
+        def test_1036_q_1(self):
+            q = Q8States.q_1(3)
+            print("3 1 s", q)
+            self.assertTrue(q.dim == 3)
+            self.assertTrue(q.qs[0].equals(Q8.q_1()))
+
+        def test_1037_q_i(self):
+            q = Q8States.q_i(3)
+            print("3 q_i s", q)
+            self.assertTrue(q.dim == 3)
+            self.assertTrue(q.qs[0].equals(Q8.q_i()))
+
+        def test_1038_q_j(self):
+            q = Q8States.q_j(3)
+            print("3 q_j s", q)
+            self.assertTrue(q.dim == 3)
+            self.assertTrue(q.qs[0].equals(Q8.q_j()))
+
+        def test_1039_q_k(self):
+            q = Q8States.q_k(3)
+            print("3 q_0s", q)
+            self.assertTrue(q.dim == 3)
+            self.assertTrue(q.qs[0].equals(Q8.q_k()))
+
+        def test_10399_q_random(self):
+            q = Q8States.q_random(3, 4, 5)
+            print("3 q_randoms s", q)
+            self.assertTrue(q.dim == 3)
+            self.assertTrue(q.qs[0][0] > 3.9)
+
         def test_1040_conj(self):
             qc = self.q_1_q_i.conj()
             qc1 = self.q_1_q_i.conj(1)
@@ -3378,12 +3471,12 @@ if __name__ == "__main__":
             print("rotate: ", q_z)
             self.assertTrue(q_z.equals(Q8States([Q8([1, -2, 3, 4])])))
 
-        def test_1304_boost_or_rotation(self):
+        def test_1304_rotation_and_or_boost(self):
             q1_sq = self.Q_states.square().reduce()
             beta = 0.003
             gamma = 1 / np.sqrt(1 - beta ** 2)
             h = Q8States([Q8([gamma, gamma * beta, 0, 0])])
-            q_z = self.Q_states.boost_or_rotation(h).reduce()
+            q_z = self.Q_states.rotation_and_or_boost(h).reduce()
             q_z2 = q_z.square().reduce()
             print("q1_sq: ", q1_sq)
             print("boosted: ", q_z)
@@ -3410,7 +3503,7 @@ if __name__ == "__main__":
             self.assertNotEqual(next_boost.qs[1][0], 0)
             self.assertNotEqual(next_boost.norm_squared().qs[0][0], 2)
             boosted_square = (
-                self.q2_states.boost_or_rotation(next_boost).square().reduce()
+                self.q2_states.rotation_and_or_boost(next_boost).square().reduce()
             )
             q2_states_square = self.q2_states.square().reduce()
             self.assertAlmostEqual(q2_states_square.qs[0][0], boosted_square.qs[0][0])
