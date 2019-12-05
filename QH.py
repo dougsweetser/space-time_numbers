@@ -1002,7 +1002,6 @@ class QH(object):
         Returns: QH
 
         """
-        """"""
 
         self.check_representations(q_2)
 
