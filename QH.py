@@ -352,7 +352,8 @@ class QH(object):
     def scalar(self) -> QH:
         """
         Returns the scalar part of a quaternion as a quaternion.
-        $$ \rm{scalar}(q) = (t, 0) $$
+
+        $ \rm{scalar}(q) = (t, 0) $
 
         Returns: QH
 
@@ -366,7 +367,7 @@ class QH(object):
     def vector(self) -> QH:
         """
         Returns the vector part of a quaternion.
-        $$ \rm{vector}(q) = (0, R) $$
+        $ \rm{vector}(q) = (0, R) $
 
         Returns: QH
 
