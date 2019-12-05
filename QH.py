@@ -2619,12 +2619,12 @@ class QHStates(QH):
 
         return self.Hermitian_conj(m, n, conj_type)
 
-    def is_square(self):
+    def is_square(self) -> bool:
         """Tests if a quaternion series is square, meaning the dimenion is n^2."""
 
         return math.sqrt(self.dim).is_integer()
 
-    def is_Hermitian(self):
+    def is_Hermitian(self) -> bool:
         """Tests if a series is Hermitian."""
 
         hc = self.Hermitian_conj()
@@ -2632,7 +2632,7 @@ class QHStates(QH):
         return self.equals(hc)
 
     @staticmethod
-    def sigma(kind, theta=None, phi=None):
+    def sigma(kind, theta: float = None, phi: float = None) -> QHStates:
         """Returns a sigma when given a type like, x, y, z, xy, xz, yz, xyz, with optional angles theta and phi."""
 
         q0, q_2, qi = QH().q_0(), QH().q_1(), QH().q_i()
@@ -2671,7 +2671,7 @@ class QHStates(QH):
 
         return sigma[kind].normalize()
 
-    def sin(self):
+    def sin(self) -> QHStates:
         """sine of states."""
 
         new_states = []
@@ -2683,7 +2683,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def cos(self):
+    def cos(self) -> QHStates:
         """cosine of states."""
 
         new_states = []
@@ -2695,7 +2695,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def tan(self):
+    def tan(self) -> QHStates:
         """tan of states."""
 
         new_states = []
@@ -2707,7 +2707,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def sinh(self):
+    def sinh(self) -> QHStates:
         """sinh of states."""
 
         new_states = []
@@ -2719,7 +2719,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def cosh(self):
+    def cosh(self) -> QHStates:
         """cosh of states."""
 
         new_states = []
@@ -2731,7 +2731,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def tanh(self):
+    def tanh(self) -> QHStates:
         """tanh of states."""
 
         new_states = []
@@ -2743,7 +2743,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def exp(self):
+    def exp(self) -> QHStates:
         """exponential of states."""
 
         new_states = []
