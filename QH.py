@@ -1121,7 +1121,9 @@ class QH(object):
         $ \rm{q.triple_product(q_2, q_3)} = q q_2 q_3 $
 
         $ = (t t\_2 t\_3 - R \cdot R\_2 t\_3 - t R\_2 \cdot R|_3 - t\_2 R \cdot R\_3 - (R \times R_2) \cdot R\_3, $
+
         $ ... t t\_2 R\_3 - (R \cdot R\_2) R\_3 + t t\_3 R\_2 + t\_2 t\_3 R $
+
         $ ... + t\_3 R \times R\_2 + t R_2 \times R\_3 + t_2 R \times R\_3 + R \times R\_2 \times R\_3) $
 
         Args:
@@ -1145,7 +1147,7 @@ class QH(object):
         """
         Do a rotation using a triple product: u R 1/u.
 
-        $ q.rotate(u) = u q u^{-1} $
+        $ \rm{q.rotate(u)} = u q u^{-1} $
 
         $ = (u^2 t - u V \cdot R + u R \cdot V + t V \cdot V, $
         $ ... - u t V + (V \cdot R) V + u^2 R + V t u + V \times R u - u R \times V - V \times R \times V) $
