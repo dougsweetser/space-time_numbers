@@ -407,7 +407,7 @@ class QH(object):
         """
         Return a zero quaternion.
 
-        $ \rm{q_0} = (0, 0) $
+        $ q\_0() = (0, 0) $
 
         Returns: QH
 
@@ -421,7 +421,7 @@ class QH(object):
         """
         Return a real-valued quaternion multiplied by n.
 
-        $ \rm{q_1(n)} = (n, 0) $
+        $ q\_1(n) = (n, 0) $
 
         Returns: QH
 
@@ -435,7 +435,7 @@ class QH(object):
         """
         Return a quaternion with $ i * n $.
 
-        $ \rm{q_i(n)} = (0, n i) $
+        $ q\_i(n) = (0, n i) $
 
         Returns: QH
 
