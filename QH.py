@@ -560,7 +560,6 @@ class QH(object):
         """
         There are 4 types of conjugates.
 
-        conj(0)
         $ q.conj(0) = q^* =(t, -x, -y, -z) $
         $ q.conj(1) = (i q i)^* =(-t, x, -y, -z) $
         $ q.conj(2) = (j q j)^* =(-t, -x, y, -z) $
@@ -623,7 +622,7 @@ class QH(object):
 
     def conj_q(self, q_2: QH) -> QH:
         """
-        Given a quaternion with 0's or 1's, will do the standard conjugate, first conjugate
+        Given a quaternion with 0s or 1s, will do the standard conjugate, first conjugate
         second conjugate, sign flip, or all combinations of the above.
 
         $ q.conj(q(1, 1, 1, 1)) = q.conj(0).conj(1).conj(2).conj(3) $
@@ -679,7 +678,7 @@ class QH(object):
 
     def vahlen_conj(self, conj_type: str = "-", q_type: str = "vc") -> QH:
         """
-        Three types of conjugates dash, apostrophe, or star (-'*) done by Vahlen in 1901.
+        Three types of conjugates dash, apostrophe, or star as done by Vahlen in 1901.
 
         $ q.vahlen_conj("-") = q^* = (t, -x, -y, -z) $
 
