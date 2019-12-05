@@ -473,9 +473,6 @@ class QH(object):
                  representation: str = "") -> QH:
         """
         Return a random-valued quaternion.
-
-        $ \rm{q\_random(-1.0, 1.0)} = (a, b, c, d) $
-
         The distribution is uniform, but one could add to options.
         It would take some work to make this clean so will skip for now.
 
@@ -524,7 +521,7 @@ class QH(object):
         """
         Tests if self and q_2 quaternions are close to equal.
 
-        $ \rm{q.equals(q_2)} = q == q_2 = True $
+        $ \rm{q.equals}(q\_2) = q == q_2 = \rm{True} $
 
         Args:
             q_2: QH
@@ -563,13 +560,13 @@ class QH(object):
         """
         There are 4 types of conjugates.
 
-        $ \rm{q.conj(0)} = q^* =(t, -x, -y, -z) $
+        $ \rm{q.conj}(0) = q^* =(t, -x, -y, -z) $
 
-        $ \rm{q.conj(1)} = (i q i)^* = (-t, x, -y, -z) $
+        $ \rm{q.conj}(1) = (i q i)^* = (-t, x, -y, -z) $
 
-        $ \rm{q.conj(2)} = (j q j)^* = (-t, -x, y, -z) $
+        $ \rm{q.conj}(2) = (j q j)^* = (-t, -x, y, -z) $
 
-        $ \rm{q.conj(3)} = (k q k)^* = (-t, -x, -y, z) $
+        $ \rm{q.conj}(3) = (k q k)^* = (-t, -x, -y, z) $
 
         Args:
             conj_type: int:   0-3 depending on who stays positive.
