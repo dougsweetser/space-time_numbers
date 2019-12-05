@@ -562,15 +562,7 @@ class QH(object):
 
         conj(0)
         $ q.conj(0) = q^* =(t, -x, -y, -z) $
-
-        conj(1)
-        $ q.conj(1) = (i q i)^* = (-t, x, -y, -z) $
-
-        conj(2)
-        $ q.conj(2) = (j q j)^* = (-t, -x, y, -z) $
-
-        conj(3)
-        $ q.conj(3) = (k q k)^* = (-t, -x, -y, z) $
+        $ q.conj(1) = (i q i)^* =(t, -x, -y, -z) $
 
         Args:
             conj_type: int:   0-3 depending on who stays positive.
@@ -661,7 +653,7 @@ class QH(object):
         """
         Flip the signs of all terms.
 
-        $ q.flip_signs() = -q = (-t, -R) $
+        $ q.flip\_signs() = -q = (-t, -R) $
 
         Returns: QH
 
