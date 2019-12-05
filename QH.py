@@ -353,7 +353,7 @@ class QH(object):
         """
         Returns the scalar part of a quaternion as a quaternion.
 
-        $ \rm{scalar}(q) = (t, 0) $
+        $ \rm{scalar(q)} = (t, 0) $
 
         Returns: QH
 
@@ -367,7 +367,7 @@ class QH(object):
     def vector(self) -> QH:
         """
         Returns the vector part of a quaternion.
-        $ \rm{vector}(q) = (0, R) $
+        $ \rm{vector(q)} = (0, R) $
 
         Returns: QH
 
@@ -407,7 +407,7 @@ class QH(object):
         """
         Return a zero quaternion.
 
-        $ q_0 = (0, 0) $
+        $ \rm{q_0} = (0, 0) $
 
         Returns: QH
 
@@ -421,7 +421,7 @@ class QH(object):
         """
         Return a real-valued quaternion multiplied by n.
 
-        $ q_1(n) = (n, 0) $
+        $ \rm{q_1(n)} = (n, 0) $
 
         Returns: QH
 
@@ -435,7 +435,7 @@ class QH(object):
         """
         Return a quaternion with $ i * n $.
 
-        $ q_i(n) = (0, n i) $
+        $ \rm{q_i(n)} = (0, n i) $
 
         Returns: QH
 
@@ -1094,7 +1094,7 @@ class QH(object):
         """
         Divide one quaternion by another. The order matters unless one is using a norm_squared (real number).
 
-        $ q.divided_by(q_2) = q q_2^{-1} $
+        $ \rm{q.divided_by(q_2)} = q q_2^{-1} $
 
         Args:
             q_2:  QH
@@ -1117,7 +1117,7 @@ class QH(object):
         """
         Form a triple product given 3 quaternions, in left-to-right order: self, q_2, q_3.
 
-        $ q.triple_product(q_2, q_3) = q q_2 q_3 $
+        $ \rm{q.triple_product(q_2, q_3)} = q q_2 q_3 $
 
         Args:
             q_2: QH:
