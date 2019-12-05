@@ -625,7 +625,7 @@ class QH(object):
         Given a quaternion with 0s or 1s, will do the standard conjugate, first conjugate
         second conjugate, sign flip, or all combinations of the above.
 
-        $ q.conj(q(1, 1, 1, 1)) = q.conj(0).conj(1).conj(2).conj(3) $
+        q.conj(q(1, 1, 1, 1)) = q.conj(0).conj(1).conj(2).conj(3)
 
         Args:
             q_2: QH    Use a quaternion to do one of 4 conjugates in combinations
@@ -680,11 +680,11 @@ class QH(object):
         """
         Three types of conjugates dash, apostrophe, or star as done by Vahlen in 1901.
 
-        $ q.vahlen_conj("-") = q^* = (t, -x, -y, -z) $
+        q.vahlen_conj("-") = q^* = (t, -x, -y, -z)
 
-        $ q.vahlen_conj("'") = (k q k)^* = (t, -x, -y, z) $
+        q.vahlen_conj("'") = (k q k)^* = (t, -x, -y, z)
 
-        $ q.vahlen_conj("*") = -(k q k)^* = (t, x, y, -z) $
+        q.vahlen_conj("*") = -(k q k)^* = (t, x, y, -z)
 
         Args:
             conj_type: str:    3 sorts, dash apostrophe,
