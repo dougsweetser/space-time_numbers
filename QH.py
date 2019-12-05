@@ -798,7 +798,7 @@ class QH(object):
         """
         Square a quaternion.
 
-        $ q.square() = q^2 = (t^2 - R \cdot R, 2 t R) $
+        $ q.square() = q^2 = (t^2 - R.R, 2 t R) $
 
         Returns:
             QH
