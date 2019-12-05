@@ -978,15 +978,15 @@ class QH(object):
         Form a product given 2 quaternions. Kind of product can be '' aka standard, even, odd, or even_minus_odd.
         Setting reverse=True is like changing the order.
 
-        $ q.product(q_2) = q q\_2 = (t t_2 - R.R_2, t R_2 + R t_2 + R \times R_2 ) $
+        $ q.product(q_2) = q q\_2 = (t t_2 - R.R_2, t R_2 + R t_2 + RxR_2 ) $
 
         $ q.product(q_2, kind="even") = (q q\_2 + (q q\_2)^*)/2 = (t t_2 - R.R_2, t R_2 + R t_2 ) $
 
-        $ q.product(q_2, kind="odd") = (q q\_2 - (q q\_2)^*)/2 = (0, R \times R_2 ) $
+        $ q.product(q_2, kind="odd") = (q q\_2 - (q q\_2)^*)/2 = (0, RxR_2 ) $
 
-        $ q.product(q_2, kind="even_minus_odd") = q\_2 q = (t t_2 - R.R_2, t R_2 + R t_2 - R \times R_2 ) $
+        $ q.product(q_2, kind="even_minus_odd") = q\_2 q = (t t_2 - R.R_2, t R_2 + R t_2 - RxR_2 ) $
 
-        $ q.product(q_2, reverse=True) = q\_2 q = (t t_2 - R.R_2, t R_2 + R t_2 - R \times R_2 ) $
+        $ q.product(q_2, reverse=True) = q\_2 q = (t t_2 - R.R_2, t R_2 + R t_2 - RxR_2 ) $
 
         Args:
             q_2: QH:
@@ -1084,7 +1084,7 @@ class QH(object):
         """
         Divide one quaternion by another. The order matters unless one is using a norm_squared (real number).
 
-        $ q.divided_by(q_2) = q q_2^{-1} = (t t\_2 + R.R\_2, -t R\_2 + R t\_2 - R \times R\_2) $
+        $ q.divided_by(q_2) = q q_2^{-1} = (t t\_2 + R.R\_2, -t R\_2 + R t\_2 - RxR\_2) $
 
         Args:
             q_2:  QH
@@ -1109,11 +1109,11 @@ class QH(object):
 
         $ q.triple_product(q_2, q_3) = q q_2 q_3 $
 
-        $ = (t t\_2 t\_3 - R.R\_2 t\_3 - t R\_2.R|_3 - t\_2 R.R\_3 - (R \times R_2).R\_3, $
+        $ = (t t\_2 t\_3 - R.R\_2 t\_3 - t R\_2.R|_3 - t\_2 R.R\_3 - (RxR_2).R\_3, $
 
         $ ... t t\_2 R\_3 - (R.R\_2) R\_3 + t t\_3 R\_2 + t\_2 t\_3 R $
 
-        $ ... + t\_3 R \times R\_2 + t R_2 \times R\_3 + t_2 R \times R\_3 + R \times R\_2 \times R\_3) $
+        $ ... + t\_3 RxR\_2 + t R_2xR\_3 + t_2 RxR\_3 + RxR\_2xR\_3) $
 
         Args:
             q_2: QH:
@@ -1139,7 +1139,7 @@ class QH(object):
         $ q.rotate(u) = u q u^{-1} $
 
         $ = (u^2 t - u V.R + u R.V + t V.V, $
-        $ ... - u t V + (V.R) V + u^2 R + V t u + V \times R u - u R \times V - V \times R \times V) $
+        $ ... - u t V + (V.R) V + u^2 R + V t u + VxR u - u RxV - VxRxV) $
 
         Args:
             u: QH    pre-multiply by u, post-multiply by $u^{-1}$.
