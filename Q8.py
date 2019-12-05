@@ -89,7 +89,7 @@ class Q8(np.ndarray):
             return
 
         self.values = getattr(obj, "values", None)
-        self.qtype = getattr(obj, "qtype", "Q")
+        self.qtype = getattr(obj, "q_type", "Q")
         self.representation = getattr(obj, "representation", "")
 
     def __str__(self, quiet=False):
@@ -315,7 +315,7 @@ class Q8(np.ndarray):
             conj_q = Q8([tn, tp, xn, xp, yp, yn, zn, zp])
             qtype += "2"
 
-        # conj_q.qtype = self.qtype + qtype
+        # conj_q.q_type = self.q_type + q_type
         # conj_q.representation = self.representation
 
         return conj_q
@@ -742,7 +742,7 @@ class Q8(np.ndarray):
 
         # If the 2 quaternions point in exactly the same direction, the result is zoro.
         # That is unacceptable for closure, so return the normalized vector of one input.
-        # This does create some ambiguity since q1 and q2 could point in exactly opposite
+        # This does create some ambiguity since q1 and q_3 could point in exactly opposite
         # directions. In that case, the first quaternion is always chosen.
         v_norm = next_rotation.norm_squared_of_vector()
 
@@ -2699,7 +2699,7 @@ class Q8States(object):
         )
 
         result = [
-            [Q8().q_0(qtype="") for i in range(outer_column_max)]
+            [Q8().q_0(q_type="") for i in range(outer_column_max)]
             for j in range(outer_row_max)
         ]
 
