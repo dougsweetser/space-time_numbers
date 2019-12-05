@@ -406,7 +406,8 @@ class QH(object):
     def q_0(q_type: str = "0", representation: str = "") -> QH:
         """
         Return a zero quaternion.
-        $$ q_0 = (0, 0) $$
+
+        $ q_0 = (0, 0) $
 
         Returns: QH
 
@@ -419,7 +420,8 @@ class QH(object):
     def q_1(n: float = 1.0, q_type: str = "1", representation: str = "") -> QH:
         """
         Return a real-valued quaternion multiplied by n.
-        $$ q_1(n) = (n, 0) $$
+
+        $ q_1(n) = (n, 0) $
 
         Returns: QH
 
@@ -432,7 +434,8 @@ class QH(object):
     def q_i(n: float = 1.0, q_type: str = "i", representation: str = "") -> QH:
         """
         Return a quaternion with $ i * n $.
-        $$ q_i(n) = (0, n i) $$
+
+        $ q_i(n) = (0, n i) $
 
         Returns: QH
 
@@ -445,7 +448,8 @@ class QH(object):
     def q_j(n: float = 1.0, q_type: str = "j", representation: str = "") -> QH:
         """
         Return a quaternion with $ j * n $.
-        $$ q_j(n) = (0, n j) $$
+
+        $ q_j(n) = (0, n j) $
 
         Returns: QH
 
@@ -458,7 +462,8 @@ class QH(object):
     def q_k(n: float = 1, q_type: str = "k", representation: str = "") -> QH:
         """
         Return a quaternion with $ k * n $.
-        $$ q_j(n) = (0, n j) $$
+
+        $ q_j(n) = (0, n j) $
 
         Returns: QH
 
@@ -472,7 +477,8 @@ class QH(object):
                  representation: str = "") -> QH:
         """
         Return a random-valued quaternion.
-        $$ q_random(-1.0, 1.0) = (a, b, c, d) $$
+
+        $ q_random(-1.0, 1.0) = (a, b, c, d) $
         The distribution is uniform, but one could add to options.
         It would take some work to make this clean so will skip for now.
 
@@ -520,7 +526,9 @@ class QH(object):
     def equals(self, q_2: QH) -> QH:
         """
         Tests if self and q_2 quaternions are close to equal.
-        $$ q.equals(q) = True $$
+
+        $ q.equals(q) = True $
+
         Args:
             q_2: QH
 
@@ -557,10 +565,14 @@ class QH(object):
     def conj(self, conj_type: int = 0) -> QH:
         """
         There are 4 types of conjugates.
-        $$ q.conj(0) = (t, -x, -y, -z) $$
-        $$ q.conj(1) = (-t, x, -y, -z) $$
-        $$ q.conj(2) = (-t, -x, y, -z) $$
-        $$ q.conj(3) = (-t, -x, -y, z) $$
+
+        $ q.conj(0) = (t, -x, -y, -z) $
+
+        $ q.conj(1) = (-t, x, -y, -z) $
+
+        $ q.conj(2) = (-t, -x, y, -z) $
+
+        $ q.conj(3) = (-t, -x, -y, z) $
 
         Args:
             conj_type: int:   0-3 depending on who stays positive.
@@ -621,7 +633,8 @@ class QH(object):
         """
         Given a quaternion with 0's or 1's, will do the standard conjugate, first conjugate
         second conjugate, sign flip, or all combinations of the above.
-        $$ q.conj(q(1, 1, 1, 1)) = q.conj(0).conj(1).conj(2).conj(3) $$
+
+        $ q.conj(q(1, 1, 1, 1)) = q.conj(0).conj(1).conj(2).conj(3) $
 
         Args:
             q_2: QH    Use a quaternion to do one of 4 conjugates in combinations
@@ -649,7 +662,8 @@ class QH(object):
     def flip_signs(self) -> QH:
         """
         Flip the signs of all terms.
-        $$ q.flip_signs() = (-t, -R) $$
+
+        $ q.flip_signs() = (-t, -R) $
 
         Returns: QH
 
@@ -674,9 +688,12 @@ class QH(object):
     def vahlen_conj(self, conj_type: str = "-", q_type: str = "vc") -> QH:
         """
         Three types of conjugates dash, apostrophe, or star (-'*) done by Vahlen in 1901.
-        $$ q.vahlen_conj("-") = (t, -x, -y, -z) $$
-        $$ q.vahlen_conj("'") = (t, -x, -y, z) $$
-        $$ q.vahlen_conj("*") = (t, x, y, -z) $$
+
+        $ q.vahlen_conj("-") = (t, -x, -y, -z) $
+
+        $ q.vahlen_conj("'") = (t, -x, -y, z) $
+
+        $ q.vahlen_conj("*") = (t, x, y, -z) $
 
         Args:
             conj_type: str:    3 sorts, dash apostrophe,
@@ -789,7 +806,8 @@ class QH(object):
     def square(self) -> QH:
         """
         Square a quaternion.
-        $$ q^2 = (t^2 - R \cdot R, 2 t R) $$
+
+        $ q^2 = (t^2 - R \cdot R, 2 t R) $
 
         Returns:
             QH
@@ -811,7 +829,8 @@ class QH(object):
     def norm_squared(self) -> QH:
         """
         The norm_squared of a quaternion.
-        $$ q q^* = (t^2 + R \cdot R, 0) $$
+
+        $ q q^* = (t^2 + R \cdot R, 0) $
 
         Returns: QH
 
@@ -829,7 +848,8 @@ class QH(object):
     def norm_squared_of_vector(self):
         """
         The norm_squared of the vector of a quaternion.
-        $$ ((q - q^*)(q - q^*)^*)/4 = (R \cdot R, 0) $$
+
+        $ ((q - q^*)(q - q^*)^*)/4 = (R \cdot R, 0) $
 
         Returns: QH
         """
@@ -846,7 +866,8 @@ class QH(object):
     def abs_of_q(self) -> QH:
         """
         The absolute value, the square root of the norm_squared.
-        $$ q.abs_of_q() = (\sqrt{t^2 + R \cdot R}, 0) $$
+
+        $ q.abs_of_q() = (\sqrt{t^2 + R \cdot R}, 0) $
 
         Returns: QH
 
@@ -865,7 +886,8 @@ class QH(object):
     def normalize(self, n: float = 1.0, q_type: str = "U") -> QH:
         """
         Normalize a quaternion to a given value n.
-        $$ q.normalized(n) = q (n/\sqrt{q q^*}, 0) $$
+
+        $ q.normalized(n) = q (n/\sqrt{q q^*}, 0) $
 
         Args:
             n:        Make the norm equal to n.
@@ -887,7 +909,8 @@ class QH(object):
     def abs_of_vector(self) -> QH:
         """
         The absolute value of the vector, the square root of the norm_squared of the vector.
-        $$ q.abs_of_vector() = \sqrt{(q - q^*)(q - q^*)/4} $$
+
+        $ q.abs_of_vector() = \sqrt{(q - q^*)(q - q^*)/4} $
 
         Returns: QH
 
@@ -906,7 +929,8 @@ class QH(object):
     def add(self, q_2: QH) -> QH:
         """
         Add two quaternions.
-        $$ q.add(q_2) = (t + t_2, R + R_2) $$
+
+        $ q.add(q_2) = (t + t_2, R + R_2) $
 
         Args:
             q_2: QH
@@ -933,7 +957,8 @@ class QH(object):
     def dif(self, q_2: QH) -> QH:
         """
         Takes the difference of 2 quaternions.
-        $$ q.dif(q_2) = (t - t_2, R - R)2) $$
+
+        $ q.dif(q_2) = (t - t_2, R - R)2) $
 
         Args:
             q_2: QH
@@ -961,11 +986,16 @@ class QH(object):
         """
         Form a product given 2 quaternions. Kind of product can be '' aka standard, even, odd, or even_minus_odd.
         Setting reverse=True is like changing the order.
-        $$ q.product(q_2) = (t t_2 - R \cdot R_2, t R_2 + R t_2 + R \times R_2 ) $$
-        $$ q.product(q_2, \rm{kind="even"}) = (t t_2 - R \cdot R_2, t R_2 + R t_2 ) $$
-        $$ q.product(q_2, \rm{kind="odd"}) = (0, R \times R_2 ) $$
-        $$ q.product(q_2, \rm{kind="even_minus_odd") = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $$
-        $$ q.product(q_2, \rm{reverse=True) = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $$
+
+        $ q.product(q_2) = (t t_2 - R \cdot R_2, t R_2 + R t_2 + R \times R_2 ) $
+
+        $ q.product(q_2, \rm{kind="even"}) = (t t_2 - R \cdot R_2, t R_2 + R t_2 ) $
+
+        $ q.product(q_2, \rm{kind="odd"}) = (0, R \times R_2 ) $
+
+        $ q.product(q_2, \rm{kind="even_minus_odd") = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $
+
+        $ q.product(q_2, \rm{reverse=True) = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $
 
         Args:
             q_2: QH:
@@ -1027,8 +1057,10 @@ class QH(object):
     def inverse(self, additive: bool = False) -> QH:
         """
         The additive or multiplicative inverse of a quaternion. Defaults to 1/q, not -q.
-        $$ q.inverse() = q^* / (t^2 + R \cdot R) $$
-        $$ q.inverse(additive=True) = -q $$
+
+        $ q.inverse() = q^* / (t^2 + R \cdot R) $
+
+        $ q.inverse(additive=True) = -q $
 
         Args:
             additive: bool
@@ -1061,7 +1093,8 @@ class QH(object):
     def divide_by(self, q_2) -> QH:
         """
         Divide one quaternion by another. The order matters unless one is using a norm_squared (real number).
-        $$ q.divided_by(q_2) = q q_2^{-1} $$
+
+        $ q.divided_by(q_2) = q q_2^{-1} $
 
         Args:
             q_2:  QH
@@ -1083,7 +1116,8 @@ class QH(object):
     def triple_product(self, q_2: QH, q_3: QH) -> QH:
         """
         Form a triple product given 3 quaternions, in left-to-right order: self, q_2, q_3.
-        $$ q.triple_product(q_2, q_3) = q q_2 q_3 $$
+
+        $ q.triple_product(q_2, q_3) = q q_2 q_3 $
 
         Args:
             q_2: QH:
@@ -1105,7 +1139,8 @@ class QH(object):
     def rotate(self, u):
         """
         Do a rotation using a triple product: u R 1/u.
-        $$ q.rotate(u) = u q u^{-1} $$
+
+        $ q.rotate(u) = u q u^{-1} $
 
         Args:
             u: QH    pre-multiply by u, post-multiply by $u^{-1}$.
@@ -1128,13 +1163,19 @@ class QH(object):
         product. After Minkowski characterized Einstein's work in special relativity as a 4D rotation, efforts were
         made to do the same with one quaternion triple product. That obvious goal was not achieved until 2010 by
         D. Sweetser and indpendently by M. Kharinov. Two other triple products need to be used like so:
-        $$ b.rotation_and_or_boost(h) = h b h^* + 1/2 ((hhb)^* -(h^* h^* b)^*) $$
+
+        $ b.rotation_and_or_boost(h) = h b h^* + 1/2 ((hhb)^* -(h^* h^* b)^*) $
+
         The parameter h is NOT free from constraints. There are two constraints. If the parameter h is to do a
         rotation, it must have a norm of unity and have the first term equal to zero.
-        $$ h = (0, R), scalar(h) = 0, scalar(h h^*) = 1 $$
+
+        $ h = (0, R), scalar(h) = 0, scalar(h h^*) = 1 $
+
         To do a boost which may or may not also do a rotation, then the parameter h must have a square whose first
         term is equal to zero:
-        $$ h = (\cosh(a), \sinh(a)), scalar(h^2) = 1 $$
+
+        $ h = (\cosh(a), \sinh(a)), scalar(h^2) = 1 $
+
         There has been no issue about the ability of this function to do boosts. There has been a spirited debate
         as to whether the function can do rotations. Notice that the form reduces to the Rodrigues triple product.
         I consider this so elementary that I cannot argue the other side. Please see the wiki page or use this code
@@ -1404,7 +1445,8 @@ class QH(object):
     def tan(self) -> QH:
         """
         Take the tan of a quaternion.
-         $$ q.tan() = \sin(q) \cos(q)^{-1} $$
+
+         $ q.tan() = \sin(q) \cos(q)^{-1} $
 
          Returns: QH
 
@@ -1460,7 +1502,8 @@ class QH(object):
     def cosh(self) -> QH:
         """
         Take the cosh of a quaternion.
-        $$ (\cosh(t) \cos(|R|), \sinh(t) \sin(|R|) R/|R|) $$
+
+        $ (\cosh(t) \cos(|R|), \sinh(t) \sin(|R|) R/|R|) $
 
         Returns: QH
 
@@ -1491,7 +1534,8 @@ class QH(object):
     def tanh(self) -> QH:
         """
         Take the tanh of a quaternion.
-        $$ q.tanh() = \sin(q) \cos(q)^{-1} $$
+
+        $ q.tanh() = \sin(q) \cos(q)^{-1} $
 
         Returns: QH
 
@@ -1517,7 +1561,8 @@ class QH(object):
     def exp(self) -> QH:
         """
         Take the exponential of a quaternion.
-        $$ q.exp() = (\exp(t) \cos(|R|, \exp(t) \sin(|R|) R/|R|) $$
+
+        $ q.exp() = (\exp(t) \cos(|R|, \exp(t) \sin(|R|) R/|R|) $
 
         Returns: QH
         """
@@ -1545,7 +1590,8 @@ class QH(object):
     def ln(self) -> QH:
         """
         Take the natural log of a quaternion.
-        $$ q.ln() = (0.5 \ln t^2 + R \cdot R, \atan2(|R|, t) R/|R|) $$
+
+        $ q.ln() = (0.5 \ln t^2 + R \cdot R, \atan2(|R|, t) R/|R|) $
 
         Returns: QH
 
@@ -1575,7 +1621,8 @@ class QH(object):
 
     def q_2_q(self, q_2: QH) -> QH:
         """Take the natural log of a quaternion.
-        $$ q.q_2_q(p) = \exp(\ln(q) * p) $$
+
+        $ q.q_2_q(p) = \exp(\ln(q) * p) $
 
         Returns: QH
 
