@@ -521,7 +521,7 @@ class QH(object):
         """
         Tests if self and q_2 quaternions are close to equal.
 
-        $ q.equals(q\_2) = q == q_2 = True $
+        $ q.equals(q\_2) = q == q\_2 = True $
 
         Args:
             q_2: QH
@@ -628,7 +628,7 @@ class QH(object):
         Given a quaternion with 0's or 1's, will do the standard conjugate, first conjugate
         second conjugate, sign flip, or all combinations of the above.
 
-        $ \rm{q.conj(q(1, 1, 1, 1)) = q.conj(0).conj(1).conj(2).conj(3)} $
+        $ q.conj(q(1, 1, 1, 1)) = q.conj(0).conj(1).conj(2).conj(3) $
 
         Args:
             q_2: QH    Use a quaternion to do one of 4 conjugates in combinations
@@ -657,7 +657,7 @@ class QH(object):
         """
         Flip the signs of all terms.
 
-        $ \rm{q.flip_signs() = -q = (-t, -R)} $
+        $ q.flip_signs() = -q = (-t, -R) $
 
         Returns: QH
 
@@ -683,11 +683,11 @@ class QH(object):
         """
         Three types of conjugates dash, apostrophe, or star (-'*) done by Vahlen in 1901.
 
-        $ \rm{q.vahlen_conj("-")} = q^* = (t, -x, -y, -z) $
+        $ q.vahlen_conj("-") = q^* = (t, -x, -y, -z) $
 
-        $ \rm{q.vahlen_conj("'")} = (k q k)^* = (t, -x, -y, z) $
+        $ q.vahlen_conj("'") = (k q k)^* = (t, -x, -y, z) $
 
-        $ \rm{q.vahlen_conj("*")} = -(k q k)^* = (t, x, y, -z) $
+        $ q.vahlen_conj("*") = -(k q k)^* = (t, x, y, -z) $
 
         Args:
             conj_type: str:    3 sorts, dash apostrophe,
@@ -801,7 +801,7 @@ class QH(object):
         """
         Square a quaternion.
 
-        $ \rm{q.square()} = q^2 = (t^2 - R \cdot R, 2 t R) $
+        $ q.square() = q^2 = (t^2 - R \cdot R, 2 t R) $
 
         Returns:
             QH
@@ -824,7 +824,7 @@ class QH(object):
         """
         The norm_squared of a quaternion.
 
-        $ \rm{q.norm_squared()} = q q^* = (t^2 + R \cdot R, 0) $
+        $ q.norm_squared() = q q^* = (t^2 + R \cdot R, 0) $
 
         Returns: QH
 
@@ -843,7 +843,7 @@ class QH(object):
         """
         The norm_squared of the vector of a quaternion.
 
-        $ \rm{q.norm_squared_of_vector()} = ((q - q^*)(q - q^*)^*)/4 = (R \cdot R, 0) $
+        $ q.norm_squared_of_vector() = ((q - q^*)(q - q^*)^*)/4 = (R \cdot R, 0) $
 
         Returns: QH
         """
@@ -924,7 +924,7 @@ class QH(object):
         """
         Add two quaternions.
 
-        $ \rm{q.add(q\_2)} = q + q\_2 = (t + t_2, R + R_2) $
+        $ q.add(q\_2) = q + q\_2 = (t + t\_2, R + R\_2) $
 
         Args:
             q_2: QH
@@ -952,7 +952,7 @@ class QH(object):
         """
         Takes the difference of 2 quaternions.
 
-        $ \rm{q.dif(q\_2)} = q - q\_2 = (t - t\_2, R - R\_2) $
+        $ q.dif(q\_2) = q - q\_2 = (t - t\_2, R - R\_2) $
 
         Args:
             q_2: QH
@@ -983,13 +983,13 @@ class QH(object):
 
         $ q.product(q_2) = q q\_2 = (t t_2 - R \cdot R_2, t R_2 + R t_2 + R \times R_2 ) $
 
-        $ q.product(q_2, \rm{kind="even"}) = (q q\_2 + (q q\_2)^*)/2 = (t t_2 - R \cdot R_2, t R_2 + R t_2 ) $
+        $ q.product(q_2, kind="even") = (q q\_2 + (q q\_2)^*)/2 = (t t_2 - R \cdot R_2, t R_2 + R t_2 ) $
 
-        $ q.product(q_2, \rm{kind="odd"}) = (q q\_2 - (q q\_2)^*)/2 = (0, R \times R_2 ) $
+        $ q.product(q_2, kind="odd") = (q q\_2 - (q q\_2)^*)/2 = (0, R \times R_2 ) $
 
-        $ q.product(q_2, \rm{kind="even_minus_odd") = q\_2 q = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $
+        $ q.product(q_2, kind="even_minus_odd") = q\_2 q = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $
 
-        $ q.product(q_2, \rm{reverse=True) = q\_2 q = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $
+        $ q.product(q_2, reverse=True) = q\_2 q = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $
 
         Args:
             q_2: QH:
@@ -1051,9 +1051,9 @@ class QH(object):
         """
         The additive or multiplicative inverse of a quaternion. Defaults to 1/q, not -q.
 
-        $ \rm{q.inverse()} = q^* (q q^*)^{-1} = (t, -R) / (t^2 + R \cdot R) $
+        $ q.inverse() = q^* (q q^*)^{-1} = (t, -R) / (t^2 + R \cdot R) $
 
-        $ \rm{q.inverse(additive=True)} = -q = (-t, -R) $
+        $ q.inverse(additive=True) = -q = (-t, -R) $
 
         Args:
             additive: bool
@@ -1087,7 +1087,7 @@ class QH(object):
         """
         Divide one quaternion by another. The order matters unless one is using a norm_squared (real number).
 
-        $ \rm{q.divided_by(q_2)} = q q_2^{-1} = (t t\_2 + R \cdot R\_2, -t R\_2 + R t\_2 - R \times R\_2) $
+        $ q.divided_by(q_2) = q q_2^{-1} = (t t\_2 + R \cdot R\_2, -t R\_2 + R t\_2 - R \times R\_2) $
 
         Args:
             q_2:  QH
@@ -1110,7 +1110,7 @@ class QH(object):
         """
         Form a triple product given 3 quaternions, in left-to-right order: self, q_2, q_3.
 
-        $ \rm{q.triple_product(q_2, q_3)} = q q_2 q_3 $
+        $ q.triple_product(q_2, q_3) = q q_2 q_3 $
 
         $ = (t t\_2 t\_3 - R \cdot R\_2 t\_3 - t R\_2 \cdot R|_3 - t\_2 R \cdot R\_3 - (R \times R_2) \cdot R\_3, $
 
@@ -1139,7 +1139,7 @@ class QH(object):
         """
         Do a rotation using a triple product: u R 1/u.
 
-        $ \rm{q.rotate(u)} = u q u^{-1} $
+        $ q.rotate(u) = u q u^{-1} $
 
         $ = (u^2 t - u V \cdot R + u R \cdot V + t V \cdot V, $
         $ ... - u t V + (V \cdot R) V + u^2 R + V t u + V \times R u - u R \times V - V \times R \times V) $
