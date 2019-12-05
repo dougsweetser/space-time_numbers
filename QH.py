@@ -353,7 +353,7 @@ class QH(object):
         """
         Returns the scalar part of a quaternion as a quaternion.
 
-        $ \rm{scalar(q)} = (t, 0) $
+        $ \rm{scalar(q)} = (q + q^*)/2 = (t, 0) $
 
         Returns: QH
 
@@ -367,7 +367,7 @@ class QH(object):
     def vector(self) -> QH:
         """
         Returns the vector part of a quaternion.
-        $ \rm{vector(q)} = (0, R) $
+        $ \rm{vector(q)} = (q - q^*)/2 = (0, R) $
 
         Returns: QH
 
@@ -407,7 +407,7 @@ class QH(object):
         """
         Return a zero quaternion.
 
-        $ q\_0() = (0, 0) $
+        $ q\_0() = 0 = (0, 0) $
 
         Returns: QH
 
@@ -421,7 +421,7 @@ class QH(object):
         """
         Return a real-valued quaternion multiplied by n.
 
-        $ q\_1(n) = (n, 0) $
+        $ q\_1(n) = n = (n, 0) $
 
         Returns: QH
 
@@ -435,7 +435,7 @@ class QH(object):
         """
         Return a quaternion with $ i * n $.
 
-        $ q\_i(n) = (0, n i) $
+        $ q\_i(n) = n i = (0, n i) $
 
         Returns: QH
 
@@ -449,7 +449,7 @@ class QH(object):
         """
         Return a quaternion with $ j * n $.
 
-        $ q_j(n) = (0, n j) $
+        $ q\_j(n) = n j = (0, n j) $
 
         Returns: QH
 
@@ -463,7 +463,7 @@ class QH(object):
         """
         Return a quaternion with $ k * n $.
 
-        $ q_j(n) = (0, n j) $
+        $ q\_k(n) = n k =(0, n k) $
 
         Returns: QH
 
@@ -478,7 +478,8 @@ class QH(object):
         """
         Return a random-valued quaternion.
 
-        $ q_random(-1.0, 1.0) = (a, b, c, d) $
+        $ \rm{q\_random(-1.0, 1.0)} = (a, b, c, d) $
+
         The distribution is uniform, but one could add to options.
         It would take some work to make this clean so will skip for now.
 
@@ -527,7 +528,7 @@ class QH(object):
         """
         Tests if self and q_2 quaternions are close to equal.
 
-        $ q.equals(q) = True $
+        $ \rm{q.equals(q_2)} = q == q_2 = True $
 
         Args:
             q_2: QH
@@ -566,13 +567,13 @@ class QH(object):
         """
         There are 4 types of conjugates.
 
-        $ q.conj(0) = (t, -x, -y, -z) $
+        $ \rm{q.conj(0)} = q^* =(t, -x, -y, -z) $
 
-        $ q.conj(1) = (-t, x, -y, -z) $
+        $ \rm{q.conj(1)} = (i q i)^* = (-t, x, -y, -z) $
 
-        $ q.conj(2) = (-t, -x, y, -z) $
+        $ \rm{q.conj(2)} = (j q j)^* = (-t, -x, y, -z) $
 
-        $ q.conj(3) = (-t, -x, -y, z) $
+        $ \rm{q.conj(3)} = (k q k)^* = (-t, -x, -y, z) $
 
         Args:
             conj_type: int:   0-3 depending on who stays positive.
@@ -634,7 +635,7 @@ class QH(object):
         Given a quaternion with 0's or 1's, will do the standard conjugate, first conjugate
         second conjugate, sign flip, or all combinations of the above.
 
-        $ q.conj(q(1, 1, 1, 1)) = q.conj(0).conj(1).conj(2).conj(3) $
+        $ \rm{q.conj(q(1, 1, 1, 1)) = q.conj(0).conj(1).conj(2).conj(3)} $
 
         Args:
             q_2: QH    Use a quaternion to do one of 4 conjugates in combinations
@@ -663,7 +664,7 @@ class QH(object):
         """
         Flip the signs of all terms.
 
-        $ q.flip_signs() = (-t, -R) $
+        $ \rm{q.flip_signs() = -q = (-t, -R)} $
 
         Returns: QH
 
@@ -689,11 +690,11 @@ class QH(object):
         """
         Three types of conjugates dash, apostrophe, or star (-'*) done by Vahlen in 1901.
 
-        $ q.vahlen_conj("-") = (t, -x, -y, -z) $
+        $ \rm{q.vahlen_conj("-")} = q^* = (t, -x, -y, -z) $
 
-        $ q.vahlen_conj("'") = (t, -x, -y, z) $
+        $ \rm{q.vahlen_conj("'")} = (k q k)^* = (t, -x, -y, z) $
 
-        $ q.vahlen_conj("*") = (t, x, y, -z) $
+        $ \rm{q.vahlen_conj("*")} = -(k q k)^* = (t, x, y, -z) $
 
         Args:
             conj_type: str:    3 sorts, dash apostrophe,
@@ -789,7 +790,7 @@ class QH(object):
 
     def _all_products(self, q_2: QH) -> typing.Dict:
         """
-        All products, commuting and anticommuting products as a dictionary. For internal use.
+        All products, commuting and anti-commuting products as a dictionary. For internal use.
 
         Args:
             q_2: QH
@@ -807,7 +808,7 @@ class QH(object):
         """
         Square a quaternion.
 
-        $ q^2 = (t^2 - R \cdot R, 2 t R) $
+        $ \rm{q.square()} = q^2 = (t^2 - R \cdot R, 2 t R) $
 
         Returns:
             QH
@@ -830,7 +831,7 @@ class QH(object):
         """
         The norm_squared of a quaternion.
 
-        $ q q^* = (t^2 + R \cdot R, 0) $
+        $ \rm{q.norm_squared()} = q q^* = (t^2 + R \cdot R, 0) $
 
         Returns: QH
 
@@ -849,7 +850,7 @@ class QH(object):
         """
         The norm_squared of the vector of a quaternion.
 
-        $ ((q - q^*)(q - q^*)^*)/4 = (R \cdot R, 0) $
+        $ \rm{q.norm_squared_of_vector()} = ((q - q^*)(q - q^*)^*)/4 = (R \cdot R, 0) $
 
         Returns: QH
         """
@@ -867,7 +868,7 @@ class QH(object):
         """
         The absolute value, the square root of the norm_squared.
 
-        $ q.abs_of_q() = (\sqrt{t^2 + R \cdot R}, 0) $
+        $ q.abs_of_q() = \sqrt{q q^*} = (\sqrt{t^2 + R \cdot R}, 0) $
 
         Returns: QH
 
@@ -887,7 +888,7 @@ class QH(object):
         """
         Normalize a quaternion to a given value n.
 
-        $ q.normalized(n) = q (n/\sqrt{q q^*}, 0) $
+        $ q.normalized(n) = q (q q^*)^{-1} = q (n/\sqrt{q q^*}, 0) $
 
         Args:
             n:        Make the norm equal to n.
@@ -910,7 +911,7 @@ class QH(object):
         """
         The absolute value of the vector, the square root of the norm_squared of the vector.
 
-        $ q.abs_of_vector() = \sqrt{(q - q^*)(q - q^*)/4} $
+        $ q.abs_of_vector() = \sqrt{(q - q^*)(q - q^*)/4} = (\sqrt{R \cdot R}, 0) $
 
         Returns: QH
 
@@ -930,7 +931,7 @@ class QH(object):
         """
         Add two quaternions.
 
-        $ q.add(q_2) = (t + t_2, R + R_2) $
+        $ \rm{q.add(q\_2)} = q + q\_2 = (t + t_2, R + R_2) $
 
         Args:
             q_2: QH
@@ -958,7 +959,7 @@ class QH(object):
         """
         Takes the difference of 2 quaternions.
 
-        $ q.dif(q_2) = (t - t_2, R - R)2) $
+        $ \rm{q.dif(q\_2)} = q - q\_2 = (t - t\_2, R - R\_2) $
 
         Args:
             q_2: QH
@@ -987,15 +988,15 @@ class QH(object):
         Form a product given 2 quaternions. Kind of product can be '' aka standard, even, odd, or even_minus_odd.
         Setting reverse=True is like changing the order.
 
-        $ q.product(q_2) = (t t_2 - R \cdot R_2, t R_2 + R t_2 + R \times R_2 ) $
+        $ q.product(q_2) = q q\_2 = (t t_2 - R \cdot R_2, t R_2 + R t_2 + R \times R_2 ) $
 
-        $ q.product(q_2, \rm{kind="even"}) = (t t_2 - R \cdot R_2, t R_2 + R t_2 ) $
+        $ q.product(q_2, \rm{kind="even"}) = (q q\_2 + (q q\_2)^*)/2 = (t t_2 - R \cdot R_2, t R_2 + R t_2 ) $
 
-        $ q.product(q_2, \rm{kind="odd"}) = (0, R \times R_2 ) $
+        $ q.product(q_2, \rm{kind="odd"}) = (q q\_2 - (q q\_2)^*)/2 = (0, R \times R_2 ) $
 
-        $ q.product(q_2, \rm{kind="even_minus_odd") = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $
+        $ q.product(q_2, \rm{kind="even_minus_odd") = q\_2 q = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $
 
-        $ q.product(q_2, \rm{reverse=True) = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $
+        $ q.product(q_2, \rm{reverse=True) = q\_2 q = (t t_2 - R \cdot R_2, t R_2 + R t_2 - R \times R_2 ) $
 
         Args:
             q_2: QH:
@@ -1058,9 +1059,9 @@ class QH(object):
         """
         The additive or multiplicative inverse of a quaternion. Defaults to 1/q, not -q.
 
-        $ q.inverse() = q^* / (t^2 + R \cdot R) $
+        $ \rm{q.inverse()} = q^* (q q^*)^{-1} = (t, -R) / (t^2 + R \cdot R) $
 
-        $ q.inverse(additive=True) = -q $
+        $ \rm{q.inverse(additive=True)} = -q = (-t, -R) $
 
         Args:
             additive: bool
@@ -1094,7 +1095,7 @@ class QH(object):
         """
         Divide one quaternion by another. The order matters unless one is using a norm_squared (real number).
 
-        $ \rm{q.divided_by(q_2)} = q q_2^{-1} $
+        $ \rm{q.divided_by(q_2)} = q q_2^{-1} = (t t\_2 + R \cdot R\_2, -t R\_2 + R t\_2 - R \times R\_2) $
 
         Args:
             q_2:  QH
@@ -1119,6 +1120,10 @@ class QH(object):
 
         $ \rm{q.triple_product(q_2, q_3)} = q q_2 q_3 $
 
+        $ = (t t\_2 t\_3 - R \cdot R\_2 t\_3 - t R\_2 \cdot R|_3 - t\_2 R \cdot R\_3 - (R \times R_2) \cdot R\_3, $
+        $ ... t t\_2 R\_3 - (R \cdot R\_2) R\_3 + t t\_3 R\_2 + t\_2 t\_3 R $
+        $ ... + t\_3 R \times R\_2 + t R_2 \times R\_3 + t_2 R \times R\_3 + R \times R\_2 \times R\_3) $
+
         Args:
             q_2: QH:
             q_3: QH:
@@ -1141,6 +1146,9 @@ class QH(object):
         Do a rotation using a triple product: u R 1/u.
 
         $ q.rotate(u) = u q u^{-1} $
+
+        $ = (u^2 t - u V \cdot R + u R \cdot V + t V \cdot V, $
+        $ ... - u t V + (V \cdot R) V + u^2 R + V t u + V \times R u - u R \times V - V \times R \times V) $
 
         Args:
             u: QH    pre-multiply by u, post-multiply by $u^{-1}$.
