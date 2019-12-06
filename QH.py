@@ -39,6 +39,10 @@ class QH(object):
         elif len(values) == 8:
             self.t, self.x = values[0] - values[1], values[2] - values[3]
             self.y, self.z = values[4] - values[5], values[6] - values[7]
+
+        else:
+            raise ValueError(f"The program accepts lists/arrays of 4 or 8 dimensions, not {len(values)}")
+
         self.representation = representation
 
         if representation != "":
