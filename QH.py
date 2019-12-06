@@ -821,7 +821,7 @@ class QH(object):
         """
         The norm_squared of a quaternion.
 
-        $ q.norm_squared() = q q^* = (t^2 + R.R, 0) $
+        $ q.norm\_squared() = q q^* = (t^2 + R.R, 0) $
 
         Returns: QH
 
@@ -840,7 +840,7 @@ class QH(object):
         """
         The norm_squared of the vector of a quaternion.
 
-        $ q.norm_squared_of_vector() = ((q - q^*)(q - q^*)^*)/4 = (R.R, 0) $
+        $ q.norm\_squared\_of\_vector() = ((q - q^*)(q - q^*)^*)/4 = (R.R, 0) $
 
         Returns: QH
         """
