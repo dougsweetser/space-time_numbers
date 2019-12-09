@@ -1217,30 +1217,64 @@ class QH(object):
         return triple_123
 
     @staticmethod
-    def Lorentz_next_rotation(q_2, q2):
-        """Given 2 quaternions, creates a new quaternion to do a rotation
-           in the triple triple quaternion function by using a normalized cross product."""
+    def Lorentz_next_rotation(q: QH, q_2: QH) -> QH:
+        """
+        Given 2 quaternions, creates a new quaternion to do a rotation
+        in the triple triple quaternion function by using a normalized cross product.
 
-        next_rotation = q_2.product(q2, kind="odd").normalize()
+        $ Lorentz_next_rotation(q, q_2) = (q q\_2 - q\_2 q) / 2|(q q\_2 - (q\_2 q)^*)| = (0, QxQ\_2)/|(0, QxQ\_2)| $
+
+        Args:
+            q:      any quaternion
+            q_2:    any quaternion whose first term equals the first term of q and
+                    for the first terms of each squared.
+
+        Returns: QH
+
+        """
+
+        if not math.isclose(q.t, q_2.t):
+            raise ValueError(f"Oops, to be a rotation, the first values must be the same: {q.t} != {q_2.t}")
+
+        if not math.isclose(q.square().t, q_2.square().t):
+            raise ValueError(f"Oops, the squares of these two are not equal: {q.square().t} != {q_2.square().t}")
+
+        next_rotation = q.product(q_2, kind="odd").normalize()
 
         # If the 2 quaternions point in exactly the same direction, the result is zoro.
         # That is unacceptable for closure, so return the normalized vector of one input.
-        # This does create some ambiguity since q_2 and q_3 could point in exactly opposite
+        # This does create some ambiguity since q and q_2 could point in exactly opposite
         # directions. In that case, the first quaternion is always chosen.
         v_norm = next_rotation.norm_squared_of_vector()
 
         if v_norm.t == 0:
-            next_rotation = q_2.vector().normalize()
+            next_rotation = q.vector().normalize()
 
         return next_rotation
 
     @staticmethod
-    def Lorentz_next_boost(q_2, q2):
-        """Given 2 quaternions, creates a new quaternion to do a boost/rotation
-           using the triple triple quaternion product
-           by using the scalar of an even product to form (cosh(x), i sinh(x))."""
+    def Lorentz_next_boost(q: QH, q_2: QH) -> QH:
+        """
+        Given 2 quaternions, creates a new quaternion to do a boost/rotation
+        using the triple triple quaternion product
+        by using the scalar of an even product to form (cosh(x), i sinh(x)).
 
-        q_even = q_2.product(q2, kind="even")
+        $ Lorentz_next_boost(q, q_2) = q q\_2 + q\_2 q
+
+        Args:
+            q: QH
+            q\_2: QH
+
+        Returns: QH
+
+        """
+        if not (q.t >= 1.0 and q_2.t >= 1.0):
+            raise ValueError(f"Oops, to be a boost, the first values must both be greater than one: {q.t},  {q_2.t}")
+
+        if not math.isclose(q.square().t, q_2.square().t):
+            raise ValueError(f"Oops, the squares of these two are not equal: {q.square().t} != {q_2.square().t}")
+
+        q_even = q.product(q_2, kind="even")
         q_s = q_even.scalar()
         q_v = q_even.vector().normalize()
 
@@ -2066,7 +2100,7 @@ class QHStates(QH):
 
         return q_det
 
-    def add(self, ket):
+    def add(self, ket: QHStates) -> QHStates:
         """Add two states."""
 
         if (self.rows != ket.rows) or (self.columns != ket.columns):
