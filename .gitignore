@@ -1,5 +1,7 @@
+*.bak
 *html
 *~
-*.bak
+.env
+.idea
 .ipynb_*
 __*
