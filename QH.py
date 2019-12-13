@@ -1263,7 +1263,7 @@ class QH(object):
 
         Args:
             q: QH
-            q\_2: QH
+            q_2: QH
 
         Returns: QH
 
@@ -2000,6 +2000,174 @@ class QHStates(QH):
 
         return new_states
 
+
+    @staticmethod
+    def q_0(dim: int = 1, qs_type: str = "ket") -> QHStates:
+        """
+        Return zero dim quaternion states.
+
+        print(q_0(3))
+        n=1: (0, 0, 0, 0) 0
+        n=2: (0, 0, 0, 0) 0
+        n=3: (0, 0, 0, 0) 0
+
+        Args:
+            dim: int
+            qs_type: str
+
+        Returns: QHStates
+
+        """
+
+        new_states = []
+
+        for _ in range(dim):
+            new_states.append(QH().q_0())
+
+        q0 = QHStates(new_states, qs_type=qs_type)
+
+        return q0
+
+    @staticmethod
+    def q_1(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> QHStates:
+            """
+            Return n * 1 dim quaternion states.
+
+            print(q_1(n, 3))
+            n=1: (n, 0, 0, 0) 1
+            n=2: (n, 0, 0, 0) 1
+            n=3: (n, 0, 0, 0) 1
+            Args:
+                n: float    real valued
+                dim: int
+                qs_type: str
+
+            Returns: QHStates
+
+            """
+
+            new_states = []
+
+            for _ in range(dim):
+                new_states.append(QH().q_1(n))
+
+            q1 = QHStates(new_states, qs_type=qs_type)
+
+            return q1
+
+    @staticmethod
+    def q_i(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> QHStates:
+            """
+            Return n * i dim quaternion states.
+
+            print(q_i(3))
+            n=1: (0, n, 0, 0) i
+            n=2: (0, n, 0, 0) i
+            n=3: (0, n, 0, 0) i
+
+            Args:
+                n: float    n times i
+                dim: int
+                qs_type: str
+
+            Returns: QHStates
+
+            """
+
+            new_states = []
+
+            for _ in range(dim):
+                new_states.append(QH().q_i(n))
+
+            qi = QHStates(new_states, qs_type=qs_type)
+
+            return qi
+
+    @staticmethod
+    def q_j(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> QHStates:
+            """
+            Return n * j dim quaternion states.
+
+            print(q_j(3))
+            n=1: (0, 0, n, 0) j
+            n=2: (0, 0, n, 0) j
+            n=3: (0, 0, n, 0) j
+
+            Args:
+                dim: int
+                qs_type: str
+
+            Returns: QHStates
+
+            """
+
+            new_states = []
+
+            for _ in range(dim):
+                new_states.append(QH().q_j(n))
+
+            qj = QHStates(new_states, qs_type=qs_type)
+
+            return qj
+
+    @staticmethod
+    def q_k(n: float = 1, dim: int = 1, qs_type: str = "ket") -> QHStates:
+            """
+            Return n * k dim quaternion states.
+
+            print(q_k(3))
+            n=1: (0, 0, 0, n) 0
+            n=2: (0, 0, 0, n) 0
+            n=3: (0, 0, 0, n) 0
+
+            Args:
+                dim: int
+                qs_type: str
+
+            Returns: QHStates
+
+            """
+
+            new_states = []
+
+            for _ in range(dim):
+                new_states.append(QH().q_k(n))
+
+            q0 = QHStates(new_states, qs_type=qs_type)
+
+            return q0
+
+
+    @staticmethod
+    def q_random(low: float = -1.0, high: float = 1.0, distribution: str = "uniform", dim: int = 1,
+                 qs_type: str = "ket", q_type: str = "?", representation: str = "") -> QHStates:
+        """
+        Return a random-valued quaternion.
+        The distribution is uniform, but one could add to options.
+        It would take some work to make this clean so will skip for now.
+
+        Args:
+            low: float
+            high: float
+            distribution: str     have only implemented uniform distribution
+            dim: int              number of states
+            qs_type: str          bra/ket/op
+            q_type: str           ?
+            representation:       Cartesian by default
+
+        Returns: QHState
+
+        """
+
+        new_states = []
+
+        for _ in range(dim):
+            new_states.append(QH().q_random(low=low, high=high, distribution=distribution, q_type=q_type, representation=representation))
+
+        qr = QHStates(new_states, qs_type=qs_type)
+
+        return qr
+
     def flip_signs(self):
         """Flip signs of all states."""
 
@@ -2104,13 +2272,9 @@ class QHStates(QH):
         """Add two states."""
 
         if (self.rows != ket.rows) or (self.columns != ket.columns):
-            print("Oops, can only add if rows and columns are the same.")
-            print(
-                "rows are: {}/{}, columns are: {}/{}".format(
-                    self.rows, ket.rows, self.columns, ket.columns
-                )
-            )
-            return
+            error_msg = "Oops, can only add if rows and columns are the same.\n"
+            error_msg += f"rows are {self.rows}/{ket.rows}, col: {self.col}/{ket.col}"
+            raise ValueError(error_msg)
 
         new_states = []
 

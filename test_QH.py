@@ -758,6 +758,47 @@ def test_1034_xyz():
     assert qxyz[1][0] == 1
 
 
+def test_1035_q_0():
+    q0 = QHStates().q_0(3)
+    print("q0(3): ", q0)
+    assert q0.dim == 3
+
+
+def test_1036_q_1():
+    q1 = QHStates().q_1(2.0, 3)
+    print("q1(3): ", q1)
+    assert q1.dim == 3
+    assert q1.qs[0].t == 2.0
+
+
+def test_1037_q_i():
+    qi = QHStates().q_i(2.0, 3)
+    print("qi(3): ", qi)
+    assert qi.dim == 3
+    assert qi.qs[0].x == 2.0
+
+
+def test_1038_q_j():
+    qj = QHStates().q_j(2.0, 3)
+    print("qj(3): ", qj)
+    assert qj.dim == 3
+    assert qj.qs[0].y == 2.0
+
+
+def test_1039_q_k():
+    qk = QHStates().q_k(2.0, 3)
+    print("qk(3): ", qk)
+    assert qk.dim == 3
+    assert qk.qs[0].z == 2.0
+
+
+def test_1039_q_random():
+    qr = QHStates().q_random(-2, 2, dim=3)
+    print("qk(3): ", qr)
+    assert qr.dim == 3
+    assert qr.qs[0].z != qr.qs[0].t
+
+
 def test_1040_conj():
     qc = q_1_q_i.conj()
     qc1 = q_1_q_i.conj(1)
