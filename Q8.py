@@ -3549,7 +3549,7 @@ if __name__ == "__main__":
 
         def test_1310_op_n(self):
             opn = self.Op.op_n(n=self.q_i)
-            print("op_n: ", opn)
+            print("op_q: ", opn)
             self.assertTrue(opn.qs[0][2] == 3)
 
         def test_1312_square(self):

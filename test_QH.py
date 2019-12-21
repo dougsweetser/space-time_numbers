@@ -1052,22 +1052,22 @@ def test_1305_Lorentz_next_boost():
 
 
 def test_1306_g_shift():
-    q1_sq = Q_states.square()
-    q_z = Q_states.g_shift(0.003)
-    q_z2 = q_z.square()
-    q_z_minimal = Q_states.g_shift(0.003, g_form="minimal")
-    q_z2_minimal = q_z_minimal.square()
-    print("q1_sq: ", q1_sq)
-    print("g_shift: ", q_z)
-    print("g squared: ", q_z2)
-    assert q_z2.qs[0].t != q1_sq.qs[0].t
-    assert q_z2.qs[0].x == q1_sq.qs[0].x
-    assert q_z2.qs[0].y == q1_sq.qs[0].y
-    assert q_z2.qs[0].z == q1_sq.qs[0].z
-    assert q_z2_minimal.qs[0].t != q1_sq.qs[0].t
-    assert q_z2_minimal.qs[0].x == q1_sq.qs[0].x
-    assert q_z2_minimal.qs[0].y == q1_sq.qs[0].y
-    assert q_z2_minimal.qs[0].z == q1_sq.qs[0].z
+    qs1_sq = Q_states.square()
+    qs_z = Q_states.g_shift(0.003)
+    qs_z2 = qs_z.square()
+    qs_z_minimal = Q_states.g_shift(0.003, g_form="minimal")
+    qs_z2_minimal = qs_z_minimal.square()
+    print("q1_sq: ", qs1_sq)
+    print("g_shift: ", qs_z)
+    print("g squared: ", qs_z2)
+    assert qs_z2.qs[0].t != qs1_sq.qs[0].t
+    assert qs_z2.qs[0].x == qs1_sq.qs[0].x
+    assert qs_z2.qs[0].y == qs1_sq.qs[0].y
+    assert qs_z2.qs[0].z == qs1_sq.qs[0].z
+    assert qs_z2_minimal.qs[0].t != qs1_sq.qs[0].t
+    assert qs_z2_minimal.qs[0].x == qs1_sq.qs[0].x
+    assert qs_z2_minimal.qs[0].y == qs1_sq.qs[0].y
+    assert qs_z2_minimal.qs[0].z == qs1_sq.qs[0].z
 
 
 def test_1305_bracket():
@@ -1078,9 +1078,9 @@ def test_1305_bracket():
     assert bracket1234.equals(QHStates([QH([34, 0, 0, 0])]))
 
 
-def test_1310_op_n():
-    opn = Op.op_n(n=q_i)
-    print("op_n: ", opn)
+def test_1310_op_q():
+    opn = Op.op_q(q=q_i)
+    print("op_q: ", opn)
     assert opn.qs[0].x == 3
 
 
