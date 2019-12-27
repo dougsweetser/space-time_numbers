@@ -2451,7 +2451,7 @@ class Q8States(object):
                 zero_norm_count += 1
                 new_states.append(Q8().q_0())
             else:
-                new_states.append(bra.normalize(n))
+                new_states.append(bra.normalize(n, ))
 
         new_states_normalized = []
 
@@ -2472,12 +2472,12 @@ class Q8States(object):
     def orthonormalize(self):
         """Given a quaternion series, resturn a normalized orthoganl basis."""
 
-        last_q = self.qs.pop(0).normalize(math.sqrt(1 / self.dim))
+        last_q = self.qs.pop(0).normalize(math.sqrt(1 / self.dim), )
         orthonormal_qs = [last_q]
 
         for q in self.qs:
             qp = q.Euclidean_product(last_q)
-            orthonormal_q = q.dif(qp).normalize(math.sqrt(1 / self.dim))
+            orthonormal_q = q.dif(qp).normalize(math.sqrt(1 / self.dim), )
             orthonormal_qs.append(orthonormal_q)
             last_q = orthonormal_q
 

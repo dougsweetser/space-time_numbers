@@ -45,6 +45,7 @@ class QH(object):
 
         self.representation = representation
 
+        # "Under the hood", all quaternions are manipulated in a Cartesian coordinate system.
         if representation != "":
             self.t, self.x, self.y, self.z = self.representation_2_txyz(representation)
 
@@ -85,7 +86,7 @@ class QH(object):
 
         return string
 
-    def print_state(self, label: str = "", spacer: bool = True, quiet: bool = True) -> None:
+    def print_state(self: QH, label: str = "", spacer: bool = True, quiet: bool = True) -> None:
         """
         Utility to print a quaternion with a label.
 
@@ -105,7 +106,7 @@ class QH(object):
         if spacer:
             print("")
 
-    def is_symbolic(self) -> bool:
+    def is_symbolic(self: QH) -> bool:
         """
         Figures out if a quaternion has any symbolic terms.
 
@@ -125,7 +126,7 @@ class QH(object):
 
         return symbolic
 
-    def txyz_2_representation(self, representation: str = "") -> List:
+    def txyz_2_representation(self: QH, representation: str = "") -> List:
         """
         Given a quaternion in Cartesian coordinates
         returns one in another representation.
@@ -193,7 +194,7 @@ class QH(object):
 
         return rep
 
-    def representation_2_txyz(self, representation: str = "") -> List:
+    def representation_2_txyz(self: QH, representation: str = "") -> List:
         """
         Converts something in a representation such as
         polar, spherical
@@ -252,12 +253,27 @@ class QH(object):
                 box_y = R * math.sin(theta) * math.sin(phi)
                 box_z = R * math.cos(theta)
 
+        elif representation == "hyperbolic":
+            u, v, theta, phi = self.t, self.x, self.y, self.z
+
+            if symbolic:
+                box_t = v * sp.exp(u)
+                box_x = v * sp.exp(-u)
+                box_y = v * sp.sin(theta) * sp.sin(phi)
+                box_z = v * sp.cos(theta)
+
+            else:
+                box_t = v * math.exp(u)
+                box_x = v * math.exp(-u)
+                box_y = v * math.sin(theta) * sp.sin(phi)
+                box_z = v * math.cos(theta)
+
         else:
             raise ValueError(f"Oops, don't know representation: representation")
 
         return [box_t, box_x, box_y, box_z]
 
-    def check_representations(self, q_2: QH) -> bool:
+    def check_representations(self: QH, q_2: QH) -> bool:
         """
         Checks if self and q_2 have the same representation.
 
@@ -274,7 +290,7 @@ class QH(object):
         else:
             raise Exception(f"Oops, 2 have different representations: {self.representation} {q_2.representation}")
 
-    def display_q(self, label: str = "") -> QH:
+    def display_q(self: QH, label: str = "") -> QH:
         """
         Prints LaTeX-like output, one line for each of th 4 terms.
 
@@ -293,19 +309,14 @@ class QH(object):
         display(self.z)
         return
 
-    def simple_q(self, label: str = "") -> QH:
+    def simple_q(self: QH) -> QH:
         """
-        Runs simplify on each term, good for symbolic expression.
-
-        Args:
-            label: str  one more line of text
+        Runs symboy.simplify() on each term, good for symbolic expression.
 
         Returns: QH
 
         """
 
-        if label:
-            print(label)
         self.t = sp.simplify(self.t)
         self.x = sp.simplify(self.x)
         self.y = sp.simplify(self.y)
@@ -327,7 +338,7 @@ class QH(object):
         self.z = sp.expand(self.z)
         return self
 
-    def subs(self, symbol_value_dict: annotations.Dict) -> QH:
+    def subs(self: QH, symbol_value_dict: annotations.Dict) -> QH:
         """
         Evaluates a quaternion using sympy values and a dictionary {t:1, x:2, etc}.
 
@@ -349,7 +360,7 @@ class QH(object):
 
         return q_txyz
 
-    def scalar(self) -> QH:
+    def scalar(self: QH) -> QH:
         """
         Returns the scalar part of a quaternion as a quaternion.
 
@@ -364,7 +375,7 @@ class QH(object):
         s = QH([self.t, 0, 0, 0], q_type=end_q_type, representation=self.representation)
         return s
 
-    def vector(self) -> QH:
+    def vector(self: QH) -> QH:
         """
         Returns the vector part of a quaternion.
         $ \rm{vector(q)} = (q - q^*)/2 = (0, R) $
@@ -382,7 +393,7 @@ class QH(object):
         )
         return v
 
-    def t(self) -> np.array:
+    def t(self: QH) -> np.array:
         """
         Returns the scalar t as an np.array.
 
@@ -392,7 +403,7 @@ class QH(object):
 
         return np.array([self.t])
 
-    def xyz(self) -> np.array:
+    def xyz(self: QH) -> np.array:
         """
         Returns the vector x, y, z as an np.array.
 
@@ -506,7 +517,7 @@ class QH(object):
         )
         return qr
 
-    def dupe(self) -> QH:
+    def dupe(self: QH) -> QH:
         """
         Return a duplicate copy.
 
@@ -521,7 +532,7 @@ class QH(object):
         )
         return du
 
-    def equals(self, q_2: QH) -> QH:
+    def equals(self: QH, q_2: QH) -> QH:
         """
         Tests if self and q_2 quaternions are close to equal.
 
@@ -560,7 +571,7 @@ class QH(object):
         else:
             return False
 
-    def conj(self, conj_type: int = 0) -> QH:
+    def conj(self: QH, conj_type: int = 0) -> QH:
         """
         There are 4 types of conjugates.
 
@@ -624,7 +635,7 @@ class QH(object):
 
         return conj_q
 
-    def conj_q(self, q_2: QH) -> QH:
+    def conj_q(self: QH, q_2: QH) -> QH:
         """
         Given a quaternion with 0s or 1s, will do the standard conjugate, first conjugate
         second conjugate, sign flip, or all combinations of the above.
@@ -654,7 +665,7 @@ class QH(object):
 
         return _conj
 
-    def flip_signs(self) -> QH:
+    def flip_signs(self: QH) -> QH:
         """
         Flip the signs of all terms.
 
@@ -680,7 +691,7 @@ class QH(object):
 
         return flip_q
 
-    def vahlen_conj(self, conj_type: str = "-", q_type: str = "vc") -> QH:
+    def vahlen_conj(self: QH, conj_type: str = "-", q_type: str = "vc") -> QH:
         """
         Three types of conjugates dash, apostrophe, or star as done by Vahlen in 1901.
 
@@ -733,7 +744,7 @@ class QH(object):
 
         return conj_q
 
-    def _commuting_products(self, q_2: QH) -> Dict:
+    def _commuting_products(self: QH, q_2: QH) -> Dict:
         """
         Returns a dictionary with the commuting products. For internal use.
 
@@ -757,7 +768,7 @@ class QH(object):
 
         return products
 
-    def _anti_commuting_products(self, q_2: QH) -> Dict:
+    def _anti_commuting_products(self: QH, q_2: QH) -> Dict:
         """
         Returns a dictionary with the three anti-commuting products. For internal use.
 
@@ -782,7 +793,7 @@ class QH(object):
 
         return products
 
-    def _all_products(self, q_2: QH) -> Dict:
+    def _all_products(self: QH, q_2: QH) -> Dict:
         """
         All products, commuting and anti-commuting products as a dictionary. For internal use.
 
@@ -798,7 +809,7 @@ class QH(object):
 
         return products
 
-    def square(self) -> QH:
+    def square(self: QH) -> QH:
         """
         Square a quaternion.
 
@@ -821,7 +832,7 @@ class QH(object):
 
         return sq_q
 
-    def norm_squared(self) -> QH:
+    def norm_squared(self: QH) -> QH:
         """
         The norm_squared of a quaternion.
 
@@ -840,7 +851,7 @@ class QH(object):
 
         return n_q
 
-    def norm_squared_of_vector(self):
+    def norm_squared_of_vector(self: QH):
         """
         The norm_squared of the vector of a quaternion.
 
@@ -858,7 +869,7 @@ class QH(object):
 
         return nv_q
 
-    def abs_of_q(self) -> QH:
+    def abs_of_q(self: QH) -> QH:
         """
         The absolute value, the square root of the norm_squared.
 
@@ -878,7 +889,7 @@ class QH(object):
 
         return a
 
-    def normalize(self, n: float = 1.0, q_type: str = "U") -> QH:
+    def normalize(self: QH, n: float = 1.0, q_type: str = "U") -> QH:
         """
         Normalize a quaternion to a given value n.
 
@@ -901,7 +912,7 @@ class QH(object):
 
         return n_q
 
-    def abs_of_vector(self) -> QH:
+    def abs_of_vector(self: QH) -> QH:
         """
         The absolute value of the vector, the square root of the norm_squared of the vector.
 
@@ -921,7 +932,7 @@ class QH(object):
 
         return av
 
-    def add(self, q_2: QH) -> QH:
+    def add(self: QH, q_2: QH) -> QH:
         """
         Add two quaternions.
 
@@ -949,7 +960,7 @@ class QH(object):
 
         return add_q
 
-    def dif(self, q_2: QH) -> QH:
+    def dif(self: QH, q_2: QH) -> QH:
         """
         Takes the difference of 2 quaternions.
 
@@ -977,7 +988,7 @@ class QH(object):
 
         return dif_q
 
-    def product(self, q_2: QH, kind: str = "", reverse: bool = False):
+    def product(self: QH, q_2: QH, kind: str = "", reverse: bool = False):
         """
         Form a product given 2 quaternions. Kind of product can be '' aka standard, even, odd, or even_minus_odd.
         Setting reverse=True is like changing the order.
@@ -1048,7 +1059,7 @@ class QH(object):
 
         return result
 
-    def inverse(self, additive: bool = False) -> QH:
+    def inverse(self: QH, additive: bool = False) -> QH:
         """
         The additive or multiplicative inverse of a quaternion. Defaults to 1/q, not -q.
 
@@ -1084,7 +1095,7 @@ class QH(object):
 
         return q_inv
 
-    def divide_by(self, q_2) -> QH:
+    def divide_by(self: QH, q_2: QH) -> QH:
         """
         Divide one quaternion by another. The order matters unless one is using a norm_squared (real number).
 
@@ -1107,7 +1118,7 @@ class QH(object):
 
         return q_div
 
-    def triple_product(self, q_2: QH, q_3: QH) -> QH:
+    def triple_product(self: QH, q_2: QH, q_3: QH) -> QH:
         """
         Form a triple product given 3 quaternions, in left-to-right order: self, q_2, q_3.
 
@@ -1136,7 +1147,7 @@ class QH(object):
         return triple
 
     # Quaternion rotation involves a triple product:  u R 1/u
-    def rotate(self, u: QH) -> QH:
+    def rotate(self: QH, u: QH) -> QH:
         """
         Do a rotation using a triple product: u R 1/u.
 
@@ -1152,6 +1163,7 @@ class QH(object):
 
         """
 
+        self.check_representations(u)
         end_q_type = f"{self.q_type}*rot"
 
         q_rot = u.triple_product(self, u.inverse())
@@ -1160,7 +1172,7 @@ class QH(object):
 
         return q_rot
 
-    def rotation_and_or_boost(self, h: QH) -> QH:
+    def rotation_and_or_boost(self: QH, h: QH) -> QH:
         """
         The method for doing a rotation in 3D space discovered by Rodrigues in the 1840s used a quaternion triple
         product. After Minkowski characterized Einstein's work in special relativity as a 4D rotation, efforts were
@@ -1190,7 +1202,7 @@ class QH(object):
         Returns: QH
 
         """
-
+        self.check_representations(h)
         end_q_type = f"{self.q_type}rotation/boost"
 
         # if not h.is_symbolic():
@@ -1232,6 +1244,7 @@ class QH(object):
         Returns: QH
 
         """
+        q.check_representations(q_2)
 
         if not math.isclose(q.t, q_2.t):
             raise ValueError(f"Oops, to be a rotation, the first values must be the same: {q.t} != {q_2.t}")
@@ -1268,6 +1281,8 @@ class QH(object):
         Returns: QH
 
         """
+        q.check_representations(q_2)
+
         if not (q.t >= 1.0 and q_2.t >= 1.0):
             raise ValueError(f"Oops, to be a boost, the first values must both be greater than one: {q.t},  {q_2.t}")
 
@@ -1292,7 +1307,7 @@ class QH(object):
     # The most general case is B->B' such that the first term of scalar(B²)
     # is equal to scalar(B'²). Since there is just one constraint yet there
     # are 4 degrees of freedom, rescaling
-    def Lorentz_by_rescaling(self, op, h: QH = None, quiet: bool = True) -> QH:
+    def Lorentz_by_rescaling(self: QH, op, h: QH = None, quiet: bool = True) -> QH:
 
         end_q_type = f"{self.q_type} Lorentz-by-rescaling"
 
@@ -1385,7 +1400,7 @@ class QH(object):
     # space-times-time values, but not the intervals.
     # g_form is the form of the function, either minimal or exponential
     # Minimal is what is needed to pass all weak field tests of gravity
-    def g_shift(self, dimensionless_g, g_form="exp"):
+    def g_shift(self: QH, dimensionless_g, g_form="exp"):
         """Shift an observation based on a dimensionless GM/c^2 dR."""
 
         end_q_type = f"{self.q_type} gshift"
@@ -1408,7 +1423,7 @@ class QH(object):
 
         return g_q
 
-    def sin(self) -> QH:
+    def sin(self: QH) -> QH:
         """
         Take the sine of a quaternion
 
@@ -1423,7 +1438,7 @@ class QH(object):
         abs_v = self.abs_of_vector()
 
         if abs_v.t == 0:
-            return QH([math.sin(self.t), 0, 0, 0], q_type=end_q_type)
+            return QH([math.sin(self.t), 0, 0, 0], q_type=end_q_type, representation=self.representation)
 
         sint = math.sin(self.t)
         cost = math.cos(self.t)
@@ -1443,7 +1458,7 @@ class QH(object):
 
         return q_sin
 
-    def cos(self) -> QH:
+    def cos(self: QH) -> QH:
         """
         Take the cosine of a quaternion.
         $ q.cos() = (\cos(t) \cosh(|R|), \sin(t) \sinh(|R|) R/|R|) $
@@ -1457,7 +1472,7 @@ class QH(object):
         abs_v = self.abs_of_vector()
 
         if abs_v.t == 0:
-            return QH([math.cos(self.t), 0, 0, 0], q_type=end_q_type)
+            return QH([math.cos(self.t), 0, 0, 0], q_type=end_q_type, representation=self.representation)
 
         sint = math.sin(self.t)
         cost = math.cos(self.t)
@@ -1477,7 +1492,7 @@ class QH(object):
 
         return q_cos
 
-    def tan(self) -> QH:
+    def tan(self: QH) -> QH:
         """
         Take the tan of a quaternion.
 
@@ -1492,7 +1507,7 @@ class QH(object):
         abs_v = self.abs_of_vector()
 
         if abs_v.t == 0:
-            return QH([math.tan(self.t), 0, 0, 0], q_type=end_q_type)
+            return QH([math.tan(self.t), 0, 0, 0], q_type=end_q_type, representation=self.representation)
 
         sinq = self.sin()
         cosq = self.cos()
@@ -1503,7 +1518,7 @@ class QH(object):
 
         return q_tan
 
-    def sinh(self) -> QH:
+    def sinh(self: QH) -> QH:
         """
         Take the sinh of a quaternion.
 
@@ -1518,7 +1533,7 @@ class QH(object):
         abs_v = self.abs_of_vector()
 
         if abs_v.t == 0:
-            return QH([math.sinh(self.t), 0, 0, 0], q_type=end_q_type)
+            return QH([math.sinh(self.t), 0, 0, 0], q_type=end_q_type, representation=self.representation)
 
         sinh_t = math.sinh(self.t)
         cos_r = math.cos(abs_v.t)
@@ -1535,7 +1550,7 @@ class QH(object):
 
         return q_sinh
 
-    def cosh(self) -> QH:
+    def cosh(self: QH) -> QH:
         """
         Take the cosh of a quaternion.
 
@@ -1550,7 +1565,7 @@ class QH(object):
         abs_v = self.abs_of_vector()
 
         if abs_v.t == 0:
-            return QH([math.cosh(self.t), 0, 0, 0], q_type=end_q_type)
+            return QH([math.cosh(self.t), 0, 0, 0], q_type=end_q_type, representation=self.representation)
 
         cosh_t = math.cosh(self.t)
         cos_r = math.cos(abs_v.t)
@@ -1567,7 +1582,7 @@ class QH(object):
 
         return q_cosh
 
-    def tanh(self) -> QH:
+    def tanh(self: QH) -> QH:
         """
         Take the tanh of a quaternion.
 
@@ -1582,7 +1597,7 @@ class QH(object):
         abs_v = self.abs_of_vector()
 
         if abs_v.t == 0:
-            return QH([math.tanh(self.t), 0, 0, 0], q_type=end_q_type)
+            return QH([math.tanh(self.t), 0, 0, 0], q_type=end_q_type, representation=self.representation)
 
         sinhq = self.sinh()
         coshq = self.cosh()
@@ -1593,7 +1608,7 @@ class QH(object):
 
         return q_tanh
 
-    def exp(self) -> QH:
+    def exp(self: QH) -> QH:
         """
         Take the exponential of a quaternion.
 
@@ -1608,7 +1623,7 @@ class QH(object):
         et = math.exp(self.t)
 
         if abs_v.t == 0:
-            return QH([et, 0, 0, 0], q_type=end_q_type)
+            return QH([et, 0, 0, 0], q_type=end_q_type, representation=self.representation)
 
         cosR = math.cos(abs_v.t)
         sinR = math.sin(abs_v.t)
@@ -1622,7 +1637,7 @@ class QH(object):
 
         return q_exp
 
-    def ln(self) -> QH:
+    def ln(self: QH) -> QH:
         """
         Take the natural log of a quaternion.
 
@@ -1638,10 +1653,10 @@ class QH(object):
         if abs_v.t == 0:
 
             if self.t > 0:
-                return QH([math.log(self.t), 0, 0, 0], q_type=end_q_type)
+                return QH([math.log(self.t), 0, 0, 0], q_type=end_q_type, representation=self.representation)
             else:
                 # I don't understand this, but Mathematica does the same thing.
-                return QH([math.log(-self.t), math.pi, 0, 0], q_type=end_q_type)
+                return QH([math.log(-self.t), math.pi, 0, 0], q_type=end_q_type, representation=self.representation)
 
         t_value = 0.5 * math.log(self.t * self.t + abs_v.t * abs_v.t)
         k = math.atan2(abs_v.t, self.t) / abs_v.t
@@ -1654,7 +1669,7 @@ class QH(object):
 
         return q_ln
 
-    def q_2_q(self, q_2: QH) -> QH:
+    def q_2_q(self: QH, q_2: QH) -> QH:
         """Take the natural log of a quaternion.
 
         $ q.q_2_q(p) = \exp(\ln(q) * p) $
@@ -1673,8 +1688,9 @@ class QH(object):
 
         return q2q
 
-    def trunc(self) -> QH:
-        """Truncates values.
+    def trunc(self: QH) -> QH:
+        """
+        Truncates values.
 
         Returns: QH
 
@@ -1724,7 +1740,7 @@ class QHStates(QH):
 
         self.set_qs_type(qs_type, rows, columns, copy=False)
 
-    def set_qs_type(self, qs_type: str = "", rows: int = 0, columns: int = 0, copy: bool = True) -> QHStates:
+    def set_qs_type(self: QHStates, qs_type: str = "", rows: int = 0, columns: int = 0, copy: bool = True) -> QHStates:
         """
         Set the qs_type to something sensible.
 
@@ -1792,7 +1808,7 @@ class QHStates(QH):
 
         return new_q
 
-    def bra(self) -> QHStates:
+    def bra(self: QHStates) -> QHStates:
         """
         Quickly set the qs_type to bra by calling set_qs_type() with rows=1, columns=dim and taking a conjugate.
 
@@ -1811,7 +1827,7 @@ class QHStates(QH):
 
         return bra
 
-    def ket(self) -> QHStates:
+    def ket(self: QHStates) -> QHStates:
         """
         Quickly set the qs_type to ket by calling set_qs_type() with rows=dim, columns=1 and taking a conjugate.
 
@@ -1830,7 +1846,7 @@ class QHStates(QH):
 
         return ket
 
-    def op(self, rows: int, columns: int) -> QHStates:
+    def op(self: QHStates, rows: int, columns: int) -> QHStates:
         """
         Quickly set the qs_type to op by calling set_qs_type().
 
@@ -1857,8 +1873,16 @@ class QHStates(QH):
 
         return op_q
 
-    def __str__(self, quiet: bool = False) -> str:
-        """Print out all the states."""
+    def __str__(self: QHStates, quiet: bool = False) -> str:
+        """
+        Print out all the states.
+
+        Args:
+            quiet: bool   Suppress printing the qtype.
+
+        Returns: str
+
+        """
 
         states = ""
 
@@ -1867,11 +1891,12 @@ class QHStates(QH):
 
         return states.rstrip()
 
-    def print_state(self, label: str = "", spacer: bool = True, quiet: bool = True) -> None:
+    def print_state(self: QHStates, label: str = "", spacer: bool = True, quiet: bool = True) -> None:
         """
         Utility for printing states as a quaternion series.
 
         Returns: None
+
         """
 
         print(label)
@@ -1888,9 +1913,15 @@ class QHStates(QH):
         if spacer:
             print("")
 
-    def equals(self, q_2: QHStates) -> bool:
+    def equals(self: QHStates, q_2: QHStates) -> bool:
         """
         Test if two states are equal, state by state.
+
+        Args:
+            q_2: QHStates   A quaternion state to compare with self.
+
+        Returns: QHStates
+
         """
 
         if self.dim != q_2.dim:
@@ -1904,11 +1935,15 @@ class QHStates(QH):
 
         return result
 
-    def conj(self, conj_type: int = 0) -> QHStates:
-        """Take the conjugates of states, default is zero, but also can do 1 or 2.
+    def conj(self: QHStates, conj_type: int = 0) -> QHStates:
+        """
+        Take the conjugates of states, default is zero, but also can do 1 or 2.
 
         Args:
-            conj_type (object):
+            conj_type: int   0-3 for which one remains positive.
+
+        Returns: QHStates
+
         """
 
         new_states = []
@@ -1920,8 +1955,13 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def conj_q(self, q_2: QHStates) -> QHStates:
-        """Does four conjugate operators on each state."""
+    def conj_q(self: QHStates, q_2: QHStates) -> QHStates:
+        """
+        Does four conjugate operators on each state.
+
+        Returns: QHStates
+
+        """
 
         new_states = []
 
@@ -1932,8 +1972,16 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def display_q(self, label=""):
-        """Try to display algebra in a pretty way."""
+    def display_q(self: QHStates, label: str = "") -> None:
+        """
+        Try to display algebra in a pretty LaTeX way.
+
+        Args:
+            label: str   Text to decorate printout.
+
+        Returns: None
+
+        """
 
         if label:
             print(label)
@@ -1943,8 +1991,13 @@ class QHStates(QH):
             ket.display_q()
             print("")
 
-    def simple_q(self, label=""):
-        """Simplify the states."""
+    def simple_q(self: QHStates) -> QHStates:
+        """
+        Simplify the states using sympy.
+
+        Returns: QHStates
+
+        """
 
         new_states = []
 
@@ -1955,8 +2008,16 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def subs(self, symbol_value_dict):
-        """Substitutes values into ."""
+    def subs(self: QHStates, symbol_value_dict) -> QHStates:
+        """
+        Substitutes values into a symbolic expresion.
+
+        Args:
+            symbol_value_dict: Dict   {t: 3, x: 4}
+
+        Returns: QHStates
+
+        """
 
         new_states = []
 
@@ -1967,8 +2028,13 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def scalar(self):
-        """Returns the scalar part of a quaternion."""
+    def scalar(self: QHStates) -> QHStates:
+        """
+        Returns the scalar part of a quaternion as a quaternion.
+
+        Returns: QHStates
+
+        """
 
         new_states = []
 
@@ -1979,8 +2045,13 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def vector(self):
-        """Returns the vector part of a quaternion."""
+    def vector(self: QHStates) -> QHStates:
+        """
+        Returns the vector part of a quaternion.
+
+        Returns: QHStates
+
+        """
 
         new_states = []
 
@@ -1991,8 +2062,11 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def xyz(self):
-        """Returns the vector as an np.array."""
+    def xyz(self: QHStates) -> List:
+        """
+        Returns the 3-vector for each state.
+
+        """
 
         new_states = []
 
@@ -2170,7 +2244,7 @@ class QHStates(QH):
 
         return qr
 
-    def flip_signs(self) -> QHStates:
+    def flip_signs(self: QHStates) -> QHStates:
         """
         Flip signs of all states.
 
@@ -2187,7 +2261,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def norm(self) -> QHStates:
+    def norm(self: QHStates) -> QHStates:
         """
         Norm of states.
 
@@ -2204,11 +2278,12 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def normalize(self, n: float = 1.0) -> QHStates:
+    def normalize(self: QHStates, n: float = 1.0, **kwargs) -> QHStates:
         """
         Normalize all states.
 
         Args:
+            **kwargs:
             n: float   number to normalize to, default is 1.0
 
         Returns: QHStates
@@ -2224,7 +2299,7 @@ class QHStates(QH):
                 zero_norm_count += 1
                 new_states.append(QH().q_0())
             else:
-                new_states.append(bra.normalize(n))
+                new_states.append(bra.normalize(n, ))
 
         new_states_normalized = []
 
@@ -2242,7 +2317,7 @@ class QHStates(QH):
             columns=self.columns,
         )
 
-    def orthonormalize(self) -> QHStates:
+    def orthonormalize(self: QHStates) -> QHStates:
         """
         Given a quaternion series, returns an orthonormal basis.
 
@@ -2250,12 +2325,12 @@ class QHStates(QH):
 
         """
 
-        last_q = self.qs.pop(0).normalize(math.sqrt(1 / self.dim))
+        last_q = self.qs.pop(0).normalize(math.sqrt(1 / self.dim), )
         orthonormal_qs = [last_q]
 
         for q in self.qs:
             qp = q.conj().product(last_q)
-            orthonormal_q = q.dif(qp).normalize(math.sqrt(1 / self.dim))
+            orthonormal_q = q.dif(qp).normalize(math.sqrt(1 / self.dim), )
             orthonormal_qs.append(orthonormal_q)
             last_q = orthonormal_q
 
@@ -2263,7 +2338,7 @@ class QHStates(QH):
             orthonormal_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def determinant(self) -> QHStates:
+    def determinant(self: QHStates) -> QHStates:
         """
         Calculate the determinant of a 'square' quaternion series.
 
@@ -2297,7 +2372,7 @@ class QHStates(QH):
 
         return q_det
 
-    def add(self, ket: QHStates) -> QHStates:
+    def add(self: QHStates, ket: QHStates) -> QHStates:
         """
         Add two states.
 
@@ -2322,7 +2397,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def summation(self) -> QHStates:
+    def summation(self: QHStates) -> QHStates:
         """
         Add them all up, return one quaternion. Not sure if this ever is meaningful.
 
@@ -2340,7 +2415,7 @@ class QHStates(QH):
 
         return result
 
-    def dif(self, ket: QHStates) -> QHStates:
+    def dif(self: QHStates, ket: QHStates) -> QHStates:
         """
         Take the difference of two states.
 
@@ -2360,7 +2435,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def diagonal(self, dim: int) -> QHStates:
+    def diagonal(self: QHStates, dim: int) -> QHStates:
         """
         Make a state dim * dim with q or qs along the 'diagonal'. Always returns an operator.
 
@@ -2391,7 +2466,7 @@ class QHStates(QH):
 
         return QHStates(diagonal, qs_type="op", rows=dim, columns=dim)
 
-    def trace(self) -> QHStates:
+    def trace(self: QHStates) -> QHStates:
         """
         Return the trace as a scalar quaternion series.
 
@@ -2411,7 +2486,8 @@ class QHStates(QH):
         return QHStates([trace])
 
     @staticmethod
-    def identity(dim, operator: bool = False, additive: bool = False, non_zeroes=None, qs_type: str = "ket") -> QHStates:
+    def identity(dim: int = 1, operator: bool = False, additive: bool = False, non_zeroes=None, qs_type: str = "ket") \
+            -> QHStates:
         """
         Identity operator for states or operators which are diagonal.
 
@@ -2459,7 +2535,7 @@ class QHStates(QH):
 
         return ident
 
-    def product(self, q_2: QHStates, kind: str = "", reverse: bool = False) -> QHStates:
+    def product(self: QHStates, q_2: QHStates, kind: str = "", reverse: bool = False) -> QHStates:
         """
         Forms the quaternion product for each state.
 
@@ -2554,7 +2630,7 @@ class QHStates(QH):
         else:
             return new_states
 
-    def inverse(self, additive: bool = False) -> QHStates:
+    def inverse(self: QHStates, additive: bool = False) -> QHStates:
         """
         Inversing bras and kets calls inverse() once for each.
         Inversing operators is more tricky as one needs a diagonal identity matrix.
@@ -2689,7 +2765,7 @@ class QHStates(QH):
 
         return q_inv
 
-    def divide_by(self, ket: QHStates, additive: bool = False) -> QHStates:
+    def divide_by(self: QHStates, ket: QHStates, additive: bool = False) -> QHStates:
         """
         Take a quaternion and divide it by another using an inverse. Can only handle up to 3 states.
 
@@ -2712,7 +2788,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def triple_product(self, ket: QHStates, ket_2: QHStates) -> QHStates:
+    def triple_product(self: QHStates, ket: QHStates, ket_2: QHStates) -> QHStates:
         """
         A quaternion triple product of states.
 
@@ -2733,7 +2809,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def rotate(self, ket: QHStates) -> QHStates:
+    def rotate(self: QHStates, ket: QHStates) -> QHStates:
         """
         Rotate one state by another.
 
@@ -2753,7 +2829,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def rotation_and_or_boost(self, ket: QHStates) -> QHStates:
+    def rotation_and_or_boost(self: QHStates, ket: QHStates) -> QHStates:
         """
         Do state-by-state rotations or boosts.
 
@@ -2827,7 +2903,7 @@ class QHStates(QH):
             new_states, qs_type=q.qs_type, rows=q.rows, columns=q.columns
         )
 
-    def g_shift(self, g_factor: float = 1.0, g_form="exp") -> QHStates:
+    def g_shift(self: QHStates, g_factor: float = 1.0, g_form="exp") -> QHStates:
         """
         Do the g_shift to each state.
 
@@ -2912,7 +2988,7 @@ class QHStates(QH):
 
         return b
 
-    def op_q(self, q: QH, first: bool = True, kind: str = "", reverse: bool = False) -> QHStates:
+    def op_q(self: QHStates, q: QH, first: bool = True, kind: str = "", reverse: bool = False) -> QHStates:
         """
         Multiply an operator times a quaternion, in that order. Set first=false for n * Op
 
@@ -2940,7 +3016,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def square(self) -> QHStates:
+    def square(self: QHStates) -> QHStates:
         """
         The square of each state.
 
@@ -2957,7 +3033,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def norm_squared(self) -> QHStates:
+    def norm_squared(self: QHStates) -> QHStates:
         """
         Take the inner product, returning a scalar series.
 
@@ -2969,7 +3045,7 @@ class QHStates(QH):
 
         return norm_scalar
 
-    def norm_squared_of_vector(self) -> QHStates:
+    def norm_squared_of_vector(self: QHStates) -> QHStates:
         """
         Take the inner product of the vector, returning a scalar.
 
@@ -2981,7 +3057,7 @@ class QHStates(QH):
 
         return vector_norm_scalar
 
-    def transpose(self, m: int = None, n: int = None) -> QHStates:
+    def transpose(self: QHStates, m: int = None, n: int = None) -> QHStates:
         """
         Transposes a series.
 
@@ -3017,7 +3093,7 @@ class QHStates(QH):
         # Switch rows and columns.
         return QHStates(qs_t, rows=self.columns, columns=self.rows)
 
-    def Hermitian_conj(self, m: int = None, n: int = None, conj_type: int = 0) -> QHStates:
+    def Hermitian_conj(self: QHStates, m: int = None, n: int = None, conj_type: int = 0) -> QHStates:
         """
         Returns the Hermitian conjugate.
 
@@ -3032,7 +3108,7 @@ class QHStates(QH):
 
         return self.transpose(m, n).conj(conj_type)
 
-    def dagger(self, m: int = None, n: int = None, conj_type: int = 0) -> QHStates:
+    def dagger(self: QHStates, m: int = None, n: int = None, conj_type: int = 0) -> QHStates:
         """
         Just calls Hermitian_conj()
 
@@ -3047,7 +3123,7 @@ class QHStates(QH):
 
         return self.Hermitian_conj(m, n, conj_type)
 
-    def is_square(self) -> bool:
+    def is_square(self: QHStates) -> bool:
         """
         Tests if a quaternion series is square, meaning the dimenion is n^2.
 
@@ -3057,7 +3133,7 @@ class QHStates(QH):
 
         return math.sqrt(self.dim).is_integer()
 
-    def is_Hermitian(self) -> bool:
+    def is_Hermitian(self: QHStates) -> bool:
         """
         Tests if a series is Hermitian.
 
@@ -3119,7 +3195,7 @@ class QHStates(QH):
 
         return sigma[kind].normalize()
 
-    def sin(self) -> QHStates:
+    def sin(self: QHStates) -> QHStates:
         """
         sine of states.
 
@@ -3136,7 +3212,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def cos(self) -> QHStates:
+    def cos(self: QHStates) -> QHStates:
         """
         cosine of states.
 
@@ -3153,7 +3229,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def tan(self) -> QHStates:
+    def tan(self: QHStates) -> QHStates:
         """
         tan() of states.
 
@@ -3170,7 +3246,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def sinh(self) -> QHStates:
+    def sinh(self: QHStates) -> QHStates:
         """
         sinh() of states.
 
@@ -3187,7 +3263,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def cosh(self) -> QHStates:
+    def cosh(self: QHStates) -> QHStates:
         """
         cosh() of states.
 
@@ -3204,7 +3280,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def tanh(self) -> QHStates:
+    def tanh(self: QHStates) -> QHStates:
         """
         tanh() of states.
 
@@ -3221,7 +3297,7 @@ class QHStates(QH):
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
 
-    def exp(self) -> QHStates:
+    def exp(self: QHStates) -> QHStates:
         """
         exponential of states.
 
