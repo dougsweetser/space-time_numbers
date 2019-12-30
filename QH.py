@@ -532,14 +532,17 @@ class QH(object):
         )
         return du
 
-    def equals(self: QH, q_2: QH) -> QH:
+    def equals(self: QH, q_2: QH, scalar: bool = True, vector: bool = True) -> QH:
         """
-        Tests if self and q_2 quaternions are close to equal.
+        Tests if self and q_2 quaternions are close to equal. If vector is set to False, will compare
+        only the scalar. If scalar is set to False, will compare 3-vectors.
 
         $ q.equals(q\_2) = q == q\_2 = True $
 
         Args:
             q_2: QH
+            scalar: bool    Will compare quaternion scalars
+            vector: bool    Will compare quaternion 3-vectors
 
         Returns: QH
 
@@ -560,16 +563,26 @@ class QH(object):
             sp.expand(q_2.z),
         )
 
-        if (
-                math.isclose(self_t, q_2_t)
-                and math.isclose(self_x, q_2_x)
-                and math.isclose(self_y, q_2_y)
-                and math.isclose(self_z, q_2_z)
-        ):
-            return True
+        if not scalar and not vector:
+            raise ValueError("Equals needs either scalar or vector to be set to True")
 
-        else:
-            return False
+        t_equals = math.isclose(self_t, q_2_t)
+        x_equals = math.isclose(self_x, q_2_x)
+        y_equals = math.isclose(self_y, q_2_y)
+        z_equals = math.isclose(self_z, q_2_z)
+
+        result = False
+
+        if scalar and not vector and t_equals:
+            result = True
+
+        elif not scalar and vector and x_equals and y_equals and z_equals:
+            result = True
+
+        elif scalar and vector and t_equals and x_equals and y_equals and z_equals:
+            result = True
+
+        return result
 
     def conj(self: QH, conj_type: int = 0) -> QH:
         """
@@ -1913,9 +1926,10 @@ class QHStates(QH):
         if spacer:
             print("")
 
-    def equals(self: QHStates, q_2: QHStates) -> bool:
+    def equals(self: QHStates, q_2: QHStates, scalar: bool = True, vector: bool = True) -> bool:
         """
-        Test if two states are equal, state by state.
+        Test if two states are equal, state by state. Will compare the full quaternion
+        unless either scalar or vector is set to false.
 
         Args:
             q_2: QHStates   A quaternion state to compare with self.
@@ -1930,7 +1944,7 @@ class QHStates(QH):
         result = True
 
         for selfq, q_2q in zip(self.qs, q_2.qs):
-            if not selfq.equals(q_2q):
+            if not selfq.equals(q_2q, scalar, vector):
                 result = False
 
         return result

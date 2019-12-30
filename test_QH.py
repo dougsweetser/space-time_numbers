@@ -114,6 +114,8 @@ def test_1100_q_random():
 def test_1200_equals():
     assert Q.equals(Q)
     assert not Q.equals(P)
+    assert C.equals(q44, scalar=False)
+    assert q44.equals(q4321, vector=False)
 
 
 def test_1210_conj_0():
@@ -693,7 +695,7 @@ C = QH([2, 4, 0, 0], q_type="C")
 t, x, y, z = sp.symbols("t x y z")
 q_sym = QH([t, x, y, x * y * z])
 qs_22 = QHStates([QH([2, 2, 0, 0])])
-q44 = QHStates([QH([4, 4, 0, 0])])
+qs_44 = QHStates([QH([4, 4, 0, 0])])
 
 q1234 = QH([1, 2, 3, 4])
 q4321 = QH([4, 3, 2, 1])
