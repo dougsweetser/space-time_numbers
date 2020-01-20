@@ -1001,7 +1001,7 @@ class QH(object):
 
         return dif_q
 
-    def product(self: QH, q_2: QH, kind: str = "", reverse: bool = False):
+    def product(self: QH, q_2: QH, kind: str = "", reverse: bool = False) -> QH:
         """
         Form a product given 2 quaternions. Kind of product can be '' aka standard, even, odd, or even_minus_odd.
         Setting reverse=True is like changing the order.
@@ -1071,6 +1071,19 @@ class QH(object):
         result.representation = self.representation
 
         return result
+
+    def cross_product(self: QH, q_2: QH, reverse: bool = False) -> QH:
+        """
+        Convenience function, calling product with kind="odd".
+
+        Args:
+            q_2: QH
+            reverse: bool
+
+        Returns: QH
+
+        """
+        return self.product(q_2, kind="odd", reverse=bool)
 
     def inverse(self: QH, additive: bool = False) -> QH:
         """
