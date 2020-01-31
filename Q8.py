@@ -1347,7 +1347,7 @@ if __name__ == "__main__":
         def test_1070_q_i(self):
             q_z = self.q1.q_i()
             q_zn = self.q1.q_i(-1)
-            print("q_i: {}".format(q_z))
+            print("qi: {}".format(q_z))
             self.assertTrue(q_z[0] == 0)
             self.assertTrue(q_z[2] == 1)
             self.assertTrue(q_z[4] == 0)
@@ -3211,7 +3211,7 @@ if __name__ == "__main__":
 
         def test_1037_q_i(self):
             q = Q8States.q_i(3)
-            print("3 q_i s", q)
+            print("3 qi s", q)
             self.assertTrue(q.dim == 3)
             self.assertTrue(q.qs[0].equals(Q8.q_i()))
 

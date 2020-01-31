@@ -77,7 +77,7 @@ def test_1060_q_1():
 
 def test_1070_q_i():
     q_z = Q.q_i()
-    print("q_i: ", q_z)
+    print("qi: ", q_z)
     assert q_z.t == 0
     assert q_z.x == 1
     assert q_z.y == 0

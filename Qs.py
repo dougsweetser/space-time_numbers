@@ -988,13 +988,14 @@ def add(q_1: Qs, q_2: Qs) -> Qs:
     $ q.add(q\_2) = q_1 + q\_2 = (t + t\_2, R + R\_2) $
 
     Args:
+        q_1: Qs
         q_2: Qs
 
     Returns: Qs
 
     """
 
-    check_representations(q_1, q_2)
+    q_1.check_representations(q_2)
 
     add_q_type = f"{q_1.q_type}+{q_2.q_type}"
 
@@ -1024,7 +1025,7 @@ def dif(q_1: Qs, q_2: Qs) -> Qs:
 
     """
 
-    check_representations(q_1, q_2)
+    q_1.check_representations(q_2)
 
     end_dif_q_type = f"{q_1.q_type}-{q_2.q_type}"
 
@@ -1065,7 +1066,7 @@ def product(q_1: Qs, q_2: Qs, kind: str = "", reverse: bool = False) -> Qs:
 
     """
 
-    check_representations(q_1, q_2)
+    q_1.check_representations(q_2)
 
     commuting = _commuting_products(q_1, q_2)
     q_even = Qs()
@@ -1181,7 +1182,7 @@ def divide_by(q_1: Qs, q_2: Qs) -> Qs:
 
     """
 
-    check_representations(q_1, q_2)
+    q_1.check_representations(q_2)
 
     end_q_type = f"{q_1.q_type}/{q_2.q_type}"
 
@@ -1213,7 +1214,7 @@ def triple_product(q_1: Qs, q_2: Qs, q_3: Qs) -> Qs:
 
     """
 
-    q_1.check_representations(q_1, q_2)
+    q_1.check_representations(q_2)
     q_1.check_representations(q_3)
 
     triple = product(product(q_1, q_2), q_3)
@@ -1249,6 +1250,48 @@ def rotate(q_1: Qs, u: Qs) -> Qs:
 
     return q_rot
 
+
+def rotation_angle(q_1: Qs, q_2: Qs, origin: Qs = q0(), tangent_space_norm: float = 1.0, degrees: bool = False) -> Qs:
+    """
+    Returns the spatial angle between the origin and 2 points.
+
+    $$ scalar(normalize(vector(q_1) vector(q_2)^*)) = \cos(a) $$
+
+    The product of the 3-vectors is a mix of symmetric and anti-symmetric terms.
+    The normalized scalar is $\cos(a)$. Take the inverse cosine to get the angle
+    for the angle in the plane between q_1, the origin and q_2.
+
+    I have a radical view of space-time. It is where-when everything happens. In space-time, all algebra
+    operations are the same: $ 2 + 3 = 5 $ and $ 2 * 3 = 6 $. The same cannot be said about the tangent
+    space of space-time because it is tangent space that can be 'curved'. My proposal for gravity is that
+    changes in the tangent space measurements of time, dt, exactly cancel those of the tangent space
+    measurements of space, dR. When one is making a measurement that involves gravity, the tangent space
+    norm will not be equal to unity, but greater or lesser than unity.
+
+    There are a number of bothersome qualities about this function. The scalar term doesn't matter in the
+    slightest way. As a consequence, this is a purely spatial function.
+
+    Args:
+        q_1: Qs
+        q_2: Qs
+        origin: Qs    default is zero.
+        tangent_space_norm: float   Will be different from unity in 'curved' tangent spaces
+        degrees: float    Use degrees instead of radians
+
+    Returns: Qs    only the scalar is possibly non-zero
+
+    """
+
+    q_1_shifted_vector = vector_q(dif(q_1, origin))
+    q_2_shifted_vector = vector_q(dif(q_2, origin))
+
+    q_1__q_2 = normalize(product(q_1_shifted_vector, conj(q_2_shifted_vector)), n=tangent_space_norm)
+    angle = math.acos(q_1__q_2.t)
+
+    if degrees:
+        angle = angle * 180 / math.pi
+
+    return Qs([angle, 0, 0, 0])
 
 def rotation_and_or_boost(q_1: Qs, h: Qs) -> Qs:
     """
@@ -2248,9 +2291,7 @@ class QsStates(Qs):
         for _ in range(dim):
             new_states.append(Qs().q_i(n))
 
-        qi = QsStates(new_states, qs_type=qs_type)
-
-        return qi
+        return QsStates(new_states, qs_type=qs_type)
 
     @staticmethod
     def q_j(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> QsStates:
@@ -2276,9 +2317,7 @@ class QsStates(Qs):
         for _ in range(dim):
             new_states.append(Qs().q_j(n))
 
-        qj = QsStates(new_states, qs_type=qs_type)
-
-        return qj
+        return QsStates(new_states, qs_type=qs_type)
 
     @staticmethod
     def q_k(n: float = 1, dim: int = 1, qs_type: str = "ket") -> QsStates:
@@ -2845,8 +2884,7 @@ class QsStates(Qs):
                     )
 
                 else:
-                    print("Oops, don't know how to inverse.")
-                    q_inv = QsStates([q0()])
+                    raise ValueError("Oops, don't know how to invert.")
 
         else:
             new_states = []
