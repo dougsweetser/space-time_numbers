@@ -30,7 +30,16 @@ class Qs(object):
     Add the usual operations should be here: add, dif, product, trig functions.
     """
 
-    def __init__(self, values: object = None, q_type: object = "Q", representation: object = "") -> Qs:
+    QS_TYPES = ["scalar_q", "bra", "ket", "op", "operator"]
+
+    def __init__(self, values: object = None, q_type: object = "Q", representation: str = "", qs=None,
+                 qs_type: str = "ket", rows: int = 0, columns: int = 0) -> Qs:
+
+        self.qs = qs
+        self.qs_type = qs_type
+        self.rows = rows
+        self.columns = columns
+
         if values is None:
             self.t, self.x, self.y, self.z = 0, 0, 0, 0
         elif len(values) == 4:
@@ -51,6 +60,188 @@ class Qs(object):
 
         self.q_type = q_type
 
+        if qs_type not in self.QS_TYPES:
+            raise ValueError(f"Oops, only know of these quaternion series types: {self.QS_TYPES}")
+
+        if qs is None:
+            self.d, self.dim, self.dimensions = 0, 0, 0
+        else:
+            self.d, self.dim, self.dimensions = int(len(qs)), int(len(qs)), int(len(qs))
+
+        self.set_qs_type(qs_type, rows, columns, copy=False)
+
+    def set_qs_type(self: QsStates, qs_type: str = "", rows: int = 0, columns: int = 0, copy: bool = True) -> Qs:
+        """
+        Set the qs_type to something sensible.
+
+        Args:
+            qs_type: str:    can be scalar_q, ket, bra, op or operator
+            rows: int        number of rows
+            columns:         number of columns
+            copy:
+
+        Returns: QsStates
+
+        """
+
+        # Checks.
+        if rows and columns and rows * columns != self.dim:
+            raise ValueError(
+                f"Oops, check those values again for rows:{rows} columns:{columns} dim:{self.dim}"
+            )
+
+        new_q = self
+
+        if copy:
+            new_q = deepcopy(self)
+
+        # Assign values if need be.
+        if new_q.qs_type != qs_type:
+            new_q.rows = 0
+
+        if qs_type == "ket" and not new_q.rows:
+            new_q.rows = new_q.dim
+            new_q.columns = 1
+
+        elif qs_type == "bra" and not new_q.rows:
+            new_q.rows = 1
+            new_q.columns = new_q.dim
+
+        elif qs_type in ["op", "operator"] and not new_q.rows:
+            # Square series
+            root_dim = math.sqrt(new_q.dim)
+
+            if root_dim.is_integer():
+                new_q.rows = int(root_dim)
+                new_q.columns = int(root_dim)
+                qs_type = "op"
+
+        elif rows * columns == new_q.dim and not new_q.qs_type:
+            if new_q.dim == 1:
+                qs_type = "scalar_q"
+            elif new_q.rows == 1:
+                qs_type = "bra"
+            elif new_q.columns == 1:
+                qs_type = "ket"
+            else:
+                qs_type = "op"
+
+        if not qs_type:
+            raise Exception(
+                "Oops, please set rows and columns for this quaternion series operator. Thanks."
+            )
+
+        if new_q.dim == 1:
+            qs_type = "scalar_q"
+
+        new_q.qs_type = qs_type
+
+        return new_q
+
+    def bra(self: QsStates) -> QsStates:
+        """
+        Quickly set the qs_type to bra by calling set_qs_type() with rows=1, columns=dim and taking a conjugate.
+
+        Returns: QsStates
+
+        """
+
+        if self.qs_type == "bra":
+            return self
+
+        bra = deepcopy(self).conj()
+        bra.rows = 1
+        bra.columns = self.dim
+
+        bra.qs_type = "bra" if self.dim > 1 else "scalar_q"
+
+        return bra
+
+    def ket(self: QsStates) -> QsStates:
+        """
+        Quickly set the qs_type to ket by calling set_qs_type() with rows=dim, columns=1 and taking a conjugate.
+
+        Returns: QsStates
+
+        """
+
+        if self.qs_type == "ket":
+            return self
+
+        ket = deepcopy(self).conj()
+        ket.rows = self.dim
+        ket.columns = 1
+
+        ket.qs_type = "ket" if self.dim > 1 else "scalar_q"
+
+        return ket
+
+    def op(self: QsStates, rows: int, columns: int) -> QsStates:
+        """
+        Quickly set the qs_type to op by calling set_qs_type().
+
+        Args:
+            rows: int:
+            columns: int:
+
+        Returns: QsStates
+
+        """
+
+        if rows * columns != self.dim:
+            raise Exception(
+                f"Oops, rows * columns != dim: {rows} * {columns}, {self.dimensions}"
+            )
+
+        op_q = deepcopy(self)
+
+        op_q.rows = rows
+        op_q.columns = columns
+
+        if self.dim > 1:
+            op_q.qs_type = "op"
+
+        return op_q
+
+    def __str__(self: QsStates, quiet: bool = False) -> str:
+        """
+        Print out all the states.
+
+        Args:
+            quiet: bool   Suppress printing the qtype.
+
+        Returns: str
+
+        """
+
+        states = ""
+
+        for n, q in enumerate(self.qs, start=1):
+            states = states + f"n={n}: {q.__str__(quiet)}\n"
+
+        return states.rstrip()
+
+    def print_state(self: QsStates, label: str = "", spacer: bool = True, quiet: bool = True) -> None:
+        """
+        Utility for printing states as a quaternion series.
+
+        Returns: None
+
+        """
+
+        print(label)
+
+        # Warn if empty.
+        if self.qs is None or len(self.qs) == 0:
+            raise ValueError("Oops, no quaternions in the series.")
+
+        for n, q in enumerate(self.qs):
+            print(f"n={n + 1}: {q.__str__(quiet)}")
+
+        print(f"{self.qs_type}: {self.rows}/{self.columns}")
+
+        if spacer:
+            print("")
     def __str__(self, quiet: bool = False) -> str:
         """
         Customizes the output of a quaternion
