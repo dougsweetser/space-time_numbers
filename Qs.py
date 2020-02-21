@@ -7,7 +7,10 @@ Define a class Q to manipulate quaternions as Hamilton would have done it so man
 The "q_type" is a little bit of text to leave a trail of breadcrumbs about how a particular quaternion was generated.
 
 The class Qs is a semi-group with inverses, that has a row * column = dimensions as seen in
-quantum mechanics.
+quantum mechanics. The importance of Qs is that one can deal with a great number of quaternions together. One quaternion
+cannot tell a story but a few tens of thousands can.
+
+This library was recently refactored so that functions are on the same level as the classes Q and Qs.
 
 The function calls for Q and Qs are meant to be very similar.
 """
@@ -23,1617 +26,13 @@ from IPython.display import display
 from bunch import Bunch
 
 
-class Qs(object):
-    """
-    A class made up of many quaternions. It also includes values for rows * columns = dimension(Qs).
-    To mimic language already in wide use in linear algebra, there are qs_types of scalar_q, bra, ket, op/operator
-    depending on the rows and column numbers.
-
-    Quaternion states are a semi-group with inverses. A semi-group has more than one possible identity element. For
-    quaternion states, there are $2^{dim}$ possible identities.
-    """
-    columns: int
-
-    QS_TYPES = ["scalar_q", "bra", "ket", "op", "operator"]
-
-    def __init__(self, qs=None, qs_type: str = "ket", rows: int = 0, columns: int = 0):
-
-        super().__init__()
-        self.qs = qs
-        self.qs_type = qs_type
-        self.rows = rows
-        self.columns = columns
-
-        if qs_type not in self.QS_TYPES:
-            print(
-                "Oops, only know of these quaternion series types: {}".format(
-                    self.QS_TYPES
-                )
-            )
-
-        if qs is None:
-            self.d, self.dim, self.dimensions = 0, 0, 0
-        else:
-            self.d, self.dim, self.dimensions = int(len(qs)), int(len(qs)), int(len(qs))
-
-        self.set_qs_type(qs_type, rows, columns, copy=False)
-
-    def set_qs_type(self: Qs, qs_type: str = "", rows: int = 0, columns: int = 0, copy: bool = True) -> Qs:
-        """
-        Set the qs_type to something sensible.
-
-        Args:
-            qs_type: str:    can be scalar_q, ket, bra, op or operator
-            rows: int        number of rows
-            columns:         number of columns
-            copy:
-
-        Returns: Qs
-
-        """
-
-        # Checks.
-        if rows and columns and rows * columns != self.dim:
-            raise ValueError(
-                f"Oops, check those values again for rows:{rows} columns:{columns} dim:{self.dim}"
-            )
-
-        new_q = self
-
-        if copy:
-            new_q = deepcopy(self)
-
-        # Assign values if need be.
-        if new_q.qs_type != qs_type:
-            new_q.rows = 0
-
-        if qs_type == "ket" and not new_q.rows:
-            new_q.rows = new_q.dim
-            new_q.columns = 1
-
-        elif qs_type == "bra" and not new_q.rows:
-            new_q.rows = 1
-            new_q.columns = new_q.dim
-
-        elif qs_type in ["op", "operator"] and not new_q.rows:
-            # Square series
-            root_dim = math.sqrt(new_q.dim)
-
-            if root_dim.is_integer():
-                new_q.rows = int(root_dim)
-                new_q.columns = int(root_dim)
-                qs_type = "op"
-
-        elif rows * columns == new_q.dim and not new_q.qs_type:
-            if new_q.dim == 1:
-                qs_type = "scalar_q"
-            elif new_q.rows == 1:
-                qs_type = "bra"
-            elif new_q.columns == 1:
-                qs_type = "ket"
-            else:
-                qs_type = "op"
-
-        if not qs_type:
-            raise Exception(
-                "Oops, please set rows and columns for this quaternion series operator. Thanks."
-            )
-
-        if new_q.dim == 1:
-            qs_type = "scalar_q"
-
-        new_q.qs_type = qs_type
-
-        return new_q
-
-    def bra(self: Qs) -> Qs:
-        """
-        Quickly set the qs_type to bra by calling set_qs_type() with rows=1, columns=dim and taking a conjugate.
-
-        Returns: Qs
-
-        """
-
-        if self.qs_type == "bra":
-            return self
-
-        bra = deepcopy(self).conj()
-        bra.rows = 1
-        bra.columns = self.dim
-
-        bra.qs_type = "bra" if self.dim > 1 else "scalar_q"
-
-        return bra
-
-    def ket(self: Qs) -> Qs:
-        """
-        Quickly set the qs_type to ket by calling set_qs_type() with rows=dim, columns=1 and taking a conjugate.
-
-        Returns: Qs
-
-        """
-
-        if self.qs_type == "ket":
-            return self
-
-        ket = deepcopy(self).conj()
-        ket.rows = self.dim
-        ket.columns = 1
-
-        ket.qs_type = "ket" if self.dim > 1 else "scalar_q"
-
-        return ket
-
-    def op(self: Qs, rows: int, columns: int) -> Qs:
-        """
-        Quickly set the qs_type to op by calling set_qs_type().
-
-        Args:
-            rows: int:
-            columns: int:
-
-        Returns: Qs
-
-        """
-
-        if rows * columns != self.dim:
-            raise Exception(
-                f"Oops, rows * columns != dim: {rows} * {columns}, {self.dimensions}"
-            )
-
-        op_q = deepcopy(self)
-
-        op_q.rows = rows
-        op_q.columns = columns
-
-        if self.dim > 1:
-            op_q.qs_type = "op"
-
-        return op_q
-
-    def __str__(self: Qs, quiet: bool = False) -> str:
-        """
-        Print out all the states.
-
-        Args:
-            quiet: bool   Suppress printing the qtype.
-
-        Returns: str
-
-        """
-
-        states = ""
-
-        for n, q in enumerate(self.qs, start=1):
-            states = states + f"n={n}: {q.__str__(quiet)}\n"
-
-        return states.rstrip()
-
-    def print_state(self: Qs, label: str = "", spacer: bool = True, quiet: bool = True) -> None:
-        """
-        Utility for printing states as a quaternion series.
-
-        Returns: None
-
-        """
-
-        print(label)
-
-        # Warn if empty.
-        if self.qs is None or len(self.qs) == 0:
-            raise ValueError("Oops, no quaternions in the series.")
-
-        for n, q in enumerate(self.qs):
-            print(f"n={n + 1}: {q.__str__(quiet)}")
-
-        print(f"{self.qs_type}: {self.rows}/{self.columns}")
-
-        if spacer:
-            print("")
-
-    def equals(self: Qs, q_2: Qs, scalar: bool = True, vector: bool = True) -> bool:
-        """
-        Test if two states are equal, state by state. Will compare the full quaternion
-        unless either scalar_q or vector_q is set to false.
-
-        Args:
-            scalar: bool
-            vector: bool
-            q_2: Qs   A quaternion state to compare with self.
-
-        Returns: Qs
-
-        """
-
-        if self.dim != q_2.dim:
-            return False
-
-        result = True
-
-        for selfq, q_2q in zip(self.qs, q_2.qs):
-            if not equals(selfq, q_2q, scalar, vector):
-                result = False
-
-        return result
-
-    def conj(self: Qs, conj_type: int = 0) -> Qs:
-        """
-        Take the conjugates of states, default is zero, but also can do 1 or 2.
-
-        Args:
-            conj_type: int   0-3 for which one remains positive.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(conj(ket, conj_type))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def conj_q(self: Qs, q_2: Qs) -> Qs:
-        """
-        Does four conjugate operators on each state.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(conj_q(ket, q_2))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def display_q(self: Qs, label: str = "") -> None:
-        """
-        Try to display algebra in a pretty LaTeX way.
-
-        Args:
-            label: str   Text to decorate printout.
-
-        Returns: None
-
-        """
-
-        if label:
-            print(label)
-
-        for i, ket in enumerate(self.qs, start=1):
-            print(f"n={i}")
-            ket.display_q()
-            print("")
-
-    def simple_q(self: Qs) -> Qs:
-        """
-        Simplify the states using sympy.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(ket.simple_q())
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def subs(self: Qs, symbol_value_dict) -> Qs:
-        """
-        Substitutes values into a symbolic expresion.
-
-        Args:
-            symbol_value_dict: Dict   {t: 3, x: 4}
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(ket.subs(symbol_value_dict))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def scalar(self: Qs) -> Qs:
-        """
-        Returns the scalar_q part of a quaternion as a quaternion.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(scalar_q(ket))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def vector(self: Qs) -> Qs:
-        """
-        Returns the vector_q part of a quaternion.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(vector_q(ket))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def xyz(self: Qs) -> List:
-        """
-        Returns the 3-vector_q for each state.
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(xyz(ket))
-
-        return new_states
-
-    @staticmethod
-    def q_0(dim: int = 1, qs_type: str = "ket") -> Qs:
-        """
-        Return zero dim quaternion states.
-
-        print(q_0(3))
-        n=1: (0, 0, 0, 0) 0
-        n=2: (0, 0, 0, 0) 0
-        n=3: (0, 0, 0, 0) 0
-
-        Args:
-            dim: int
-            qs_type: str
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for _ in range(dim):
-            new_states.append(q0())
-
-        return Qs(new_states, qs_type=qs_type)
-
-
-    @staticmethod
-    def q1(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
-        """
-        Return n * 1 dim quaternion states.
-
-        print(q1(n, 3))
-        n=1: (n, 0, 0, 0) 1
-        n=2: (n, 0, 0, 0) 1
-        n=3: (n, 0, 0, 0) 1
-        Args:
-            n: float    real valued
-            dim: int
-            qs_type: str
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for _ in range(dim):
-            new_states.append(q1(n))
-
-        return Qs(new_states, qs_type=qs_type)
-
-    @staticmethod
-    def qi(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
-        """
-        Return n * i dim quaternion states.
-
-        print(qi(3))
-        n=1: (0, n, 0, 0) i
-        n=2: (0, n, 0, 0) i
-        n=3: (0, n, 0, 0) i
-
-        Args:
-            n: float    n times i
-            dim: int
-            qs_type: str
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for _ in range(dim):
-            new_states.append(qi(n))
-
-        return Qs(new_states, qs_type=qs_type)
-
-    @staticmethod
-    def qj(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
-        """
-        Return n * j dim quaternion states.
-
-        print(qj(3))
-        n=1: (0, 0, n, 0) j
-        n=2: (0, 0, n, 0) j
-        n=3: (0, 0, n, 0) j
-
-        Args:
-            n: float
-            dim: int
-            qs_type: str
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for _ in range(dim):
-            new_states.append(qj(n))
-
-        return Qs(new_states, qs_type=qs_type)
-
-    @staticmethod
-    def qk(n: float = 1, dim: int = 1, qs_type: str = "ket") -> Qs:
-        """
-        Return n * k dim quaternion states.
-
-        print(qk(3))
-        n=1: (0, 0, 0, n) 0
-        n=2: (0, 0, 0, n) 0
-        n=3: (0, 0, 0, n) 0
-
-        Args:
-            n: float
-            dim: int
-            qs_type: str
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for _ in range(dim):
-            new_states.append(qk(n))
-
-        return Qs(new_states, qs_type=qs_type)
-
-    @staticmethod
-    def qrandom(low: float = -1.0, high: float = 1.0, distribution: str = "uniform", dim: int = 1,
-                 qs_type: str = "ket", q_type: str = "?", representation: str = "") -> Qs:
-        """
-        Return a random-valued quaternion.
-        The distribution is uniform, but one could add to options.
-        It would take some work to make this clean so will skip for now.
-
-        Args:
-            low: float
-            high: float
-            distribution: str     have only implemented uniform distribution
-            dim: int              number of states
-            qs_type: str          bra/ket/op
-            q_type: str           ?
-            representation:       Cartesian by default
-
-        Returns: QHState
-
-        """
-
-        new_states = []
-
-        for _ in range(dim):
-            new_states.append(qrandom(low=low, high=high, distribution=distribution, q_type=q_type,
-                                            representation=representation))
-
-        return Qs(new_states, qs_type=qs_type)
-
-    def flip_signs(self: Qs) -> Qs:
-        """
-        Flip signs of all states.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(flip_signs(ket))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def norm(self: Qs) -> Qs:
-        """
-        Norm of states.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for bra in self.qs:
-            new_states.append(norm(bra))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def normalize(self: Qs, n: float = 1.0, **kwargs) -> Qs:
-        """
-        Normalize all states.
-
-        Args:
-            **kwargs:
-            n: float   number to normalize to, default is 1.0
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        zero_norm_count = 0
-
-        for bra in self.qs:
-            if norm_squared(bra).t == 0:
-                zero_norm_count += 1
-                new_states.append(q0())
-            else:
-                new_states.append(normalize(bra, n))
-
-        new_states_normalized = []
-
-        non_zero_states = self.dim - zero_norm_count
-
-        for new_state in new_states:
-            new_states_normalized.append(
-                product(new_state, Q([math.sqrt(1 / non_zero_states), 0, 0, 0]))
-            )
-
-        return Qs(
-            new_states_normalized,
-            qs_type=self.qs_type,
-            rows=self.rows,
-            columns=self.columns,
-        )
-
-    def orthonormalize(self: Qs) -> Qs:
-        """
-        Given a quaternion series, returns an orthonormal basis.
-
-        Returns: Qs
-
-        """
-
-        last_q = self.qs.pop(0).normalize(math.sqrt(1 / self.dim), )
-        orthonormal_qs = [last_q]
-
-        for q in self.qs:
-            qp = product(conj(q), last_q)
-            orthonormal_q = normalize(dif(q, qp), math.sqrt(1 / self.dim), )
-            orthonormal_qs.append(orthonormal_q)
-            last_q = orthonormal_q
-
-        return Qs(
-            orthonormal_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def determinant(self: Qs) -> Qs:
-        """
-        Calculate the determinant of a 'square' quaternion series.
-
-        Returns: Qs
-
-        """
-
-        if self.dim == 1:
-            q_det = self.qs[0]
-
-        elif self.dim == 4:
-            ad = product(self.qs[0], self.qs[3])
-            bc = product(self.qs[1], self.qs[2])
-            q_det = dif(ad, bc)
-
-        elif self.dim == 9:
-            aei = product(product(self.qs[0], self.qs[4]), self.qs[8])
-            bfg = product(product(self.qs[3], self.qs[7]), self.qs[2])
-            cdh = product(product(self.qs[6], self.qs[1]), self.qs[5])
-            ceg = product(product(self.qs[6], self.qs[4]), self.qs[2])
-            bdi = product(product(self.qs[3], self.qs[1]), self.qs[8])
-            afh = product(product(self.qs[0], self.qs[7]), self.qs[5])
-
-            sum_pos = add(aei, add(bfg, cdh))
-            sum_neg = add(ceg, add(bdi, afh))
-
-            q_det = dif(sum_pos, sum_neg)
-
-        else:
-            raise ValueError("Oops, don't know how to calculate the determinant of this one.")
-
-        return Qs(
-            [q_det], qs_type=self.qs_type, rows=1, columns=1
-        )
-
-    def add(self: Qs, ket: Qs) -> Qs:
-        """
-        Add two states.
-
-        Args:
-            ket: Qs
-
-        Returns: Qs
-
-        """
-
-        if (self.rows != ket.rows) or (self.columns != ket.columns):
-            error_msg = "Oops, can only add if rows and columns are the same.\n"
-            error_msg += f"rows are {self.rows}/{ket.rows}, col: {self.columns}/{ket.columns}"
-            raise ValueError(error_msg)
-
-        new_states = []
-
-        for bra, ket in zip(self.qs, ket.qs):
-            new_states.append(add(bra, ket))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def summation(self: Qs) -> Qs:
-        """
-        Add them all up, return one quaternion. Not sure if this ever is meaningful.
-
-        Returns: Qs
-
-        """
-
-        result = None
-
-        for q in self.qs:
-            if result is None:
-                result = q
-            else:
-                result = add(result, q)
-
-        return Qs([result], qs_type=self.qs_type, rows=1, columns=1)
-
-    def dif(self: Qs, ket: Qs) -> Qs:
-        """
-        Take the difference of two states.
-
-        Args:
-            ket: Qs
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for bra, ket in zip(self.qs, ket.qs):
-            new_states.append(dif(bra, ket))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def diagonal(self: Qs, dim: int) -> Qs:
-        """
-        Make a state dim * dim with q or qs along the 'diagonal'. Always returns an operator.
-
-        Args:
-            dim: int
-
-        Returns: Qs
-
-        """
-
-        diagonal = []
-
-        if len(self.qs) == 1:
-            q_values = [self.qs[0]] * dim
-        elif len(self.qs) == dim:
-            q_values = self.qs
-        elif self.qs is None:
-            raise ValueError("Oops, the qs here is None.")
-        else:
-            raise ValueError("Oops, need the length to be equal to the dimensions.")
-
-        for i in range(dim):
-            for j in range(dim):
-                if i == j:
-                    diagonal.append(q_values.pop(0))
-                else:
-                    diagonal.append(q0())
-
-        return Qs(diagonal, qs_type="op", rows=dim, columns=dim)
-
-    def trace(self: Qs) -> Qs:
-        """
-        Return the trace as a scalar_q quaternion series.
-
-        Returns: Qs
-
-        """
-
-        if self.rows != self.columns:
-            raise ValueError(f"Oops, not a square quaternion series: {self.rows}/{self.columns}")
-
-        else:
-            trace = self.qs[0]
-
-        for i in range(1, self.rows):
-            trace = add(trace, self.qs[i * (self.rows + 1)])
-
-        return Qs([trace])
-
-    @staticmethod
-    def identity(dim: int = 1, operator: bool = False, additive: bool = False, non_zeroes=None, qs_type: str = "ket") \
-            -> Qs:
-        """
-        Identity operator for states or operators which are diagonal.
-
-        Args:
-            dim: int
-            operator: bool
-            additive: bool
-            non_zeroes:
-            qs_type: str
-
-        Returns: Qs
-
-        """
-
-        if additive:
-            id_q = [Q() for _ in range(dim)]
-
-        elif non_zeroes is not None:
-            id_q = []
-
-            if len(non_zeroes) != dim:
-                    raise ValueError(f"Oops, len(non_zeroes)={len(nz)}, should be: {dim}")
-
-            else:
-                for non_zero in non_zeroes:
-                    if non_zero:
-                        id_q.append(Q([1, 0, 0, 0]))
-                    else:
-                        id_q.append(Q())
-
-        else:
-            id_q = [q1() for _ in range(dim)]
-
-        if operator:
-            q_1 = Qs(id_q)
-            ident = Qs.diagonal(q_1, dim)
-
-        else:
-            ident = Qs(id_q, qs_type=qs_type)
-
-        return ident
-
-    def product(self: Qs, q_2: Qs, kind: str = "", reverse: bool = False) -> Qs:
-        """
-        Forms the quaternion product for each state.
-
-        Args:
-            q_2: Qs
-            kind: str
-            reverse: bool
-
-        Returns: Qs
-
-        """
-
-        self_copy = deepcopy(self)
-        q_2_copy = deepcopy(q_2)
-        qs_left, qs_right = Qs(), Qs()
-
-        # Diagonalize if need be.
-        if ((self.rows == q_2.rows) and (self.columns == q_2.columns)) or (
-                "scalar_q" in [self.qs_type, q_2.qs_type]
-        ):
-
-            if self.columns == 1:
-                qs_right = q_2_copy
-                qs_left = self_copy.diagonal(qs_right.rows)
-
-            elif q_2.rows == 1:
-                qs_left = self_copy
-                qs_right = q_2_copy.diagonal(qs_left.columns)
-
-            else:
-                qs_left = self_copy
-                qs_right = q_2_copy
-
-        # Typical matrix multiplication criteria.
-        elif self.columns == q_2.rows:
-            qs_left = self_copy
-            qs_right = q_2_copy
-
-        else:
-            print(
-                "Oops, cannot multiply series with row/column dimensions of {}/{} to {}/{}".format(
-                    self.rows, self.columns, q_2.rows, q_2.columns
-                )
-            )
-
-        # Operator products need to be transposed.
-        operator_flag = False
-        if qs_left in ["op", "operator"] and qs_right in ["op", "operator"]:
-            operator_flag = True
-
-        outer_row_max = qs_left.rows
-        outer_column_max = qs_right.columns
-        shared_inner_max = qs_left.columns
-        projector_flag = (
-                (shared_inner_max == 1) and (outer_row_max > 1) and (outer_column_max > 1)
-        )
-
-        result = [
-            [q0(q_type="") for _i in range(outer_column_max)]
-            for _j in range(outer_row_max)
-        ]
-
-        for outer_row in range(outer_row_max):
-            for outer_column in range(outer_column_max):
-                for shared_inner in range(shared_inner_max):
-
-                    # For projection operators.
-                    left_index = outer_row
-                    right_index = outer_column
-
-                    if outer_row_max >= 1 and shared_inner_max > 1:
-                        left_index = outer_row + shared_inner * outer_row_max
-
-                    if outer_column_max >= 1 and shared_inner_max > 1:
-                        right_index = shared_inner + outer_column * shared_inner_max
-
-                    result[outer_row][outer_column] = add(result[outer_row][outer_column],
-                        product(qs_left.qs[left_index],
-                            qs_right.qs[right_index], kind=kind, reverse=reverse
-                        )
-                    )
-
-        # Flatten the list.
-        new_qs = [item for sublist in result for item in sublist]
-        new_states = Qs(new_qs, rows=outer_row_max, columns=outer_column_max)
-
-        if projector_flag or operator_flag:
-            return new_states.transpose()
-
-        else:
-            return new_states
-
-    def inverse(self: Qs, additive: bool = False) -> Qs:
-        """
-        Inversing bras and kets calls inverse() once for each.
-        Inversing operators is more tricky as one needs a diagonal identity matrix.
-
-        Args:
-            additive: bool
-
-        Returns: Qs
-
-        """
-
-        if self.qs_type in ["op", "operator"]:
-
-            if additive:
-
-                q_flip = self.inverse(additive=True)
-                q_inv = q_flip.diagonal(self.dim)
-
-            else:
-                if self.dim == 1:
-                    q_inv = Qs(self.qs[0].inverse())
-
-                elif self.qs_type in ["bra", "ket"]:
-
-                    new_qs = []
-
-                    for q in self.qs:
-                        new_qs.append(q.inverse())
-
-                    q_inv = Qs(
-                        new_qs,
-                        qs_type=self.qs_type,
-                        rows=self.rows,
-                        columns=self.columns,
-                    )
-
-                elif self.dim == 4:
-                    det = self.determinant()
-                    detinv = det.inverse()
-
-                    q0 = self.qs[3].product(detinv)
-                    q_2 = self.qs[1].flip_signs().product(detinv)
-                    q2 = self.qs[2].flip_signs().product(detinv)
-                    q3 = self.qs[0].product(detinv)
-
-                    q_inv = Qs(
-                        [q0, q_2, q2, q3],
-                        qs_type=self.qs_type,
-                        rows=self.rows,
-                        columns=self.columns,
-                    )
-
-                elif self.dim == 9:
-                    det = self.determinant()
-                    detinv = det.inverse()
-
-                    q0 = (
-                        self.qs[4]
-                            .product(self.qs[8])
-                            .dif(self.qs[5].product(self.qs[7]))
-                            .product(detinv)
-                    )
-                    q_2 = (
-                        self.qs[7]
-                            .product(self.qs[2])
-                            .dif(self.qs[8].product(self.qs[1]))
-                            .product(detinv)
-                    )
-                    q2 = (
-                        self.qs[1]
-                            .product(self.qs[5])
-                            .dif(self.qs[2].product(self.qs[4]))
-                            .product(detinv)
-                    )
-                    q3 = (
-                        self.qs[6]
-                            .product(self.qs[5])
-                            .dif(self.qs[8].product(self.qs[3]))
-                            .product(detinv)
-                    )
-                    q4 = (
-                        self.qs[0]
-                            .product(self.qs[8])
-                            .dif(self.qs[2].product(self.qs[6]))
-                            .product(detinv)
-                    )
-                    q5 = (
-                        self.qs[3]
-                            .product(self.qs[2])
-                            .dif(self.qs[5].product(self.qs[0]))
-                            .product(detinv)
-                    )
-                    q6 = (
-                        self.qs[3]
-                            .product(self.qs[7])
-                            .dif(self.qs[4].product(self.qs[6]))
-                            .product(detinv)
-                    )
-                    q7 = (
-                        self.qs[6]
-                            .product(self.qs[1])
-                            .dif(self.qs[7].product(self.qs[0]))
-                            .product(detinv)
-                    )
-                    q8 = (
-                        self.qs[0]
-                            .product(self.qs[4])
-                            .dif(self.qs[1].product(self.qs[3]))
-                            .product(detinv)
-                    )
-
-                    q_inv = Qs(
-                        [q0, q_2, q2, q3, q4, q5, q6, q7, q8],
-                        qs_type=self.qs_type,
-                        rows=self.rows,
-                        columns=self.columns,
-                    )
-
-                else:
-                    raise ValueError("Oops, don't know how to invert.")
-
-        else:
-            new_states = []
-
-            for bra in self.qs:
-                new_states.append(inverse(bra, additive=additive))
-
-            q_inv = Qs(
-                new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-            )
-
-        return q_inv
-
-    def divide_by(self: Qs, ket: Qs, additive: bool = False) -> Qs:
-        """
-        Take a quaternion and divide it by another using an inverse. Can only handle up to 3 states.
-
-        Args:
-            ket: Qs
-            additive: bool
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        ket_inv = ket.inverse(additive)
-
-        for bra, k in zip(self.qs, ket_inv.qs):
-            new_states.append(product(bra, k))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def triple_product(self: Qs, ket: Qs, ket_2: Qs) -> Qs:
-        """
-        A quaternion triple product of states.
-
-        Args:
-            ket: Qs
-            ket_2: Qs
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for bra, k, k2 in zip(self.qs, ket.qs, ket_2.qs):
-            new_states.append(product(product(bra, k), k2))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def rotate(self: Qs, ket: Qs) -> Qs:
-        """
-        Rotate one state by another.
-
-        Args:
-            ket: Qs
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for bra, k in zip(self.qs, ket.qs):
-            new_states.append(rotate(bra, k))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def rotation_and_or_boost(self: Qs, ket: Qs) -> Qs:
-        """
-        Do state-by-state rotations or boosts.
-
-        Args:
-            ket: Qs
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for bra, k in zip(self.qs, ket.qs):
-            new_states.append(rotation_and_or_boost(bra, k))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    @staticmethod
-    def Lorentz_next_rotation(q: Qs, q_2: Qs) -> Qs:
-        """
-        Does multiple rotations of a QHState given another QHState of equal dimensions.
-
-        Args:
-            q: Qs
-            q_2: QHStaes
-
-        Returns:
-
-        """
-
-        if q.dim != q_2.dim:
-            raise ValueError(
-                "Oops, this tool requires 2 quaternion states with the same number of dimensions."
-            )
-
-        new_states = []
-
-        for ket, q2 in zip(q.qs, q_2.qs):
-            new_states.append(Lorentz_next_rotation(ket, q2))
-
-        return Qs(
-            new_states, qs_type=q.qs_type, rows=q.rows, columns=q.columns
-        )
-
-    @staticmethod
-    def Lorentz_next_boost(q: Qs, q_2: Qs) -> Qs:
-        """
-        Does multiple boosts of a QHState given another QHState of equal dimensions.
-
-        Args:
-            q: Qs
-            q_2: Qs
-
-        Returns: Qs
-
-        """
-
-        if q.dim != q_2.dim:
-            raise ValueError(
-                "Oops, this tool requires 2 quaternion states with the same number of dimensions."
-            )
-
-        new_states = []
-
-        for ket, q2 in zip(q.qs, q_2.qs):
-            new_states.append(Lorentz_next_boost(ket, q2))
-
-        return Qs(
-            new_states, qs_type=q.qs_type, rows=q.rows, columns=q.columns
-        )
-
-    def g_shift(self: Qs, g_factor: float = 1.0, g_form="exp") -> Qs:
-        """
-        Do the g_shift to each state.
-
-        Args:
-            g_factor: float
-            g_form: str
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for bra in self.qs:
-            new_states.append(g_shift(bra, g_factor, g_form))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    @staticmethod
-    def bracket(bra: Qs, op: Qs, ket: Qs) -> Qs:
-        """
-        Forms <bra|op|ket>. Note: if fed 2 kets, will take a conjugate.
-
-        Args:
-            bra: Qs
-            op: Qs
-            ket: Qs
-
-        Returns: Qs
-
-        """
-
-        flip = 0
-
-        if bra.qs_type == "ket":
-            bra = bra.bra()
-            flip += 1
-
-        if ket.qs_type == "bra":
-            ket = ket.ket()
-            flip += 1
-
-        if flip == 1:
-            print("fed 2 bras or kets, took a conjugate. Double check.")
-
-        b = bra.product(op).product(ket)
-
-        return b
-
-    @staticmethod
-    def braket(bra: Qs, ket: Qs) -> Qs:
-        """
-        Forms <bra|ket>, no operator. Note: if fed 2 kets, will take a conjugate.
-
-        Args:
-            bra: Qs
-            ket: Qs
-
-        Returns: Qs
-
-        """
-
-        flip = 0
-
-        if bra.qs_type == "ket":
-            bra = bra.bra()
-            flip += 1
-
-        if ket.qs_type == "bra":
-            ket = ket.ket()
-            flip += 1
-
-        if flip == 1:
-            print("fed 2 bras or kets, took a conjugate. Double check.")
-
-        else:
-            print("Assumes your <bra| already has been conjugated. Double check.")
-
-        b = bra.product(ket)
-
-        return b
-
-    def op_q(self: Qs, q: Qs, first: bool = True, kind: str = "", reverse: bool = False) -> Qs:
-        """
-        Multiply an operator times a quaternion, in that order. Set first=false for n * Op
-
-        Args:
-            q: Qs
-            first: bool
-            kind: str
-            reverse: bool
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for op in self.qs:
-
-            if first:
-                new_states.append(product(op, q, kind, reverse))
-
-            else:
-                new_states.append(product(q, op, kind, reverse))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def square(self: Qs) -> Qs:
-        """
-        The square of each state.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for bra in self.qs:
-            new_states.append(square(bra))
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def norm_squared(self: Qs) -> Qs:
-        """
-        Take the inner product, returning a scalar_q series.
-
-        Returns: Qs
-
-        """
-
-        norm_scalar = self.set_qs_type("bra").conj().product(self.set_qs_type("ket"))
-
-        return norm_scalar
-
-    def norm_squared_of_vector(self: Qs) -> Qs:
-        """
-        Take the inner product of the vector_q, returning a scalar_q.
-
-        Returns: Qs
-
-        """
-
-        vector_norm_scalar: Qs = self.set_qs_type("bra").vector().conj().product(self.set_qs_type("ket").vector())
-
-        return vector_norm_scalar
-
-    def transpose(self: Qs, m: int = None, n: int = None) -> Qs:
-        """
-        Transposes a series.
-
-        Args:
-            m: int
-            n: int
-
-        Returns: Qs
-
-        """
-
-        if m is None:
-            # test if it is square.
-            if math.sqrt(self.dim).is_integer():
-                m = int(sp.sqrt(self.dim))
-                n = m
-
-        if n is None:
-            n = int(self.dim / m)
-
-        matrix = [[0 for _x in range(m)] for _y in range(n)]
-
-        for mi in range(m):
-            for ni in range(n):
-                matrix[ni][mi] = self.qs[mi * n + ni]
-
-        qs_t = []
-
-        for t in matrix:
-            for q in t:
-                qs_t.append(q)
-
-        # Switch rows and columns.
-        return Qs(qs_t, rows=self.columns, columns=self.rows)
-
-    def Hermitian_conj(self: Qs, m: int = None, n: int = None, conj_type: int = 0) -> Qs:
-        """
-        Returns the Hermitian conjugate.
-
-        Args:
-            m: int
-            n: int
-            conj_type: int    0-3
-
-        Returns: Qs
-
-        """
-
-        return self.transpose(m, n).conj(conj_type)
-
-    def dagger(self: Qs, m: int = None, n: int = None, conj_type: int = 0) -> Qs:
-        """
-        Just calls Hermitian_conj()
-
-        Args:
-            m: int
-            n: int
-            conj_type: 0-3
-
-        Returns: Qs
-
-        """
-
-        return self.Hermitian_conj(m, n, conj_type)
-
-    def is_square(self: Qs) -> bool:
-        """
-        Tests if a quaternion series is square, meaning the dimenion is n^2.
-
-        Returns: bool
-
-        """
-
-        return math.sqrt(self.dim).is_integer()
-
-    def is_Hermitian(self: Qs) -> bool:
-        """
-        Tests if a series is Hermitian.
-
-        Returns: bool
-
-        """
-
-        hc = self.Hermitian_conj()
-
-        return self.equals(hc)
-
-    @staticmethod
-    def sigma(kind: str = "x", theta: float = None, phi: float = None) -> Qs:
-        """
-        Returns a sigma when given a type like, x, y, z, xy, xz, yz, xyz, with optional angles theta and phi.
-
-        Args:
-            kind: str  x, y, z, xy, etc
-            theta: float   an angle
-            phi: float     an angle
-
-        Returns:
-
-        """
-
-        q0, q_2, qi = q0(), q1(), qi()
-
-        # Should work if given angles or not.
-        if theta is None:
-            sin_theta = 1
-            cos_theta = 1
-        else:
-            sin_theta = math.sin(theta)
-            cos_theta = math.cos(theta)
-
-        if phi is None:
-            sin_phi = 1
-            cos_phi = 1
-        else:
-            sin_phi = math.sin(phi)
-            cos_phi = math.cos(phi)
-
-        x_factor = q_2.product(Qs([sin_theta * cos_phi, 0, 0, 0]))
-        y_factor = qi.product(Qs([sin_theta * sin_phi, 0, 0, 0]))
-        z_factor = q_2.product(Qs([cos_theta, 0, 0, 0]))
-
-        sigma = Bunch()
-        sigma.x = Qs([q0, x_factor, x_factor, q0], "op")
-        sigma.y = Qs([q0, y_factor, y_factor.flip_signs(), q0], "op")
-        sigma.z = Qs([z_factor, q0, q0, z_factor.flip_signs()], "op")
-
-        sigma.xy = sigma.x.add(sigma.y)
-        sigma.xz = sigma.x.add(sigma.z)
-        sigma.yz = sigma.y.add(sigma.z)
-        sigma.xyz = sigma.x.add(sigma.y).add(sigma.z)
-
-        if kind not in sigma:
-            raise ValueError("Oops, I only know about x, y, z, and their combinations.")
-
-        return sigma[kind].normalize()
-
-
-    def sin(self: Qs) -> Qs:
-        """
-        sine of states.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(ket.sin())
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def cos(self: Qs) -> Qs:
-        """
-        cosine of states.
-
-        Returns:
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(ket.cos())
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def tan(self: Qs) -> Qs:
-        """
-        tan() of states.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(ket.tan())
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def sinh(self: Qs) -> Qs:
-        """
-        sinh() of states.
-
-        Returns:
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(ket.sinh())
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def cosh(self: Qs) -> Qs:
-        """
-        cosh() of states.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(ket.cosh())
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def tanh(self: Qs) -> Qs:
-        """
-        tanh() of states.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(ket.tanh())
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-    def exp(self: Qs) -> Qs:
-        """
-        exponential of states.
-
-        Returns: Qs
-
-        """
-
-        new_states = []
-
-        for ket in self.qs:
-            new_states.append(ket.exp())
-
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
-
-class Q(Qs):
+class Q(object):
     """
     Quaternions as Hamilton would have defined them, on the manifold R^4.
-    Add the usual operations should be here: add, dif, product, trig functions.
+    Different representations are possible.
     """
 
-    QS_TYPES = ["scalar_q", "bra", "ket", "op", "operator"]
-
-    def __init__(self, values: object = None, q_type: object = "Q", representation: str = "", qs=None,
-                 qs_type: str = "ket", rows: int = 0, columns: int = 0) -> Q:
-
-        self.qs = qs
-        self.qs_type = qs_type
-        self.rows = rows
-        self.columns = columns
+    def __init__(self, values: object = None, q_type: object = "Q", representation: str = "") -> Q:
 
         if values is None:
             self.t, self.x, self.y, self.z = 0, 0, 0, 0
@@ -1655,188 +54,6 @@ class Q(Qs):
 
         self.q_type = q_type
 
-        if qs_type not in self.QS_TYPES:
-            raise ValueError(f"Oops, only know of these quaternion series types: {self.QS_TYPES}")
-
-        if qs is None:
-            self.d, self.dim, self.dimensions = 0, 0, 0
-        else:
-            self.d, self.dim, self.dimensions = int(len(qs)), int(len(qs)), int(len(qs))
-
-        self.set_qs_type(qs_type, rows, columns, copy=False)
-
-    def set_qs_type(self: Qs, qs_type: str = "", rows: int = 0, columns: int = 0, copy: bool = True) -> Qs:
-        """
-        Set the qs_type to something sensible.
-
-        Args:
-            qs_type: str:    can be scalar_q, ket, bra, op or operator
-            rows: int        number of rows
-            columns:         number of columns
-            copy:
-
-        Returns: Qs
-
-        """
-
-        # Checks.
-        if rows and columns and rows * columns != self.dim:
-            raise ValueError(
-                f"Oops, check those values again for rows:{rows} columns:{columns} dim:{self.dim}"
-            )
-
-        new_q = self
-
-        if copy:
-            new_q = deepcopy(self)
-
-        # Assign values if need be.
-        if new_q.qs_type != qs_type:
-            new_q.rows = 0
-
-        if qs_type == "ket" and not new_q.rows:
-            new_q.rows = new_q.dim
-            new_q.columns = 1
-
-        elif qs_type == "bra" and not new_q.rows:
-            new_q.rows = 1
-            new_q.columns = new_q.dim
-
-        elif qs_type in ["op", "operator"] and not new_q.rows:
-            # Square series
-            root_dim = math.sqrt(new_q.dim)
-
-            if root_dim.is_integer():
-                new_q.rows = int(root_dim)
-                new_q.columns = int(root_dim)
-                qs_type = "op"
-
-        elif rows * columns == new_q.dim and not new_q.qs_type:
-            if new_q.dim == 1:
-                qs_type = "scalar_q"
-            elif new_q.rows == 1:
-                qs_type = "bra"
-            elif new_q.columns == 1:
-                qs_type = "ket"
-            else:
-                qs_type = "op"
-
-        if not qs_type:
-            raise Exception(
-                "Oops, please set rows and columns for this quaternion series operator. Thanks."
-            )
-
-        if new_q.dim == 1:
-            qs_type = "scalar_q"
-
-        new_q.qs_type = qs_type
-
-        return new_q
-
-    def bra(self: Qs) -> Qs:
-        """
-        Quickly set the qs_type to bra by calling set_qs_type() with rows=1, columns=dim and taking a conjugate.
-
-        Returns: Qs
-
-        """
-
-        if self.qs_type == "bra":
-            return self
-
-        bra = deepcopy(self).conj()
-        bra.rows = 1
-        bra.columns = self.dim
-
-        bra.qs_type = "bra" if self.dim > 1 else "scalar_q"
-
-        return bra
-
-    def ket(self: Qs) -> Qs:
-        """
-        Quickly set the qs_type to ket by calling set_qs_type() with rows=dim, columns=1 and taking a conjugate.
-
-        Returns: Qs
-
-        """
-
-        if self.qs_type == "ket":
-            return self
-
-        ket = deepcopy(self).conj()
-        ket.rows = self.dim
-        ket.columns = 1
-
-        ket.qs_type = "ket" if self.dim > 1 else "scalar_q"
-
-        return ket
-
-    def op(self: Qs, rows: int, columns: int) -> Qs:
-        """
-        Quickly set the qs_type to op by calling set_qs_type().
-
-        Args:
-            rows: int:
-            columns: int:
-
-        Returns: Qs
-
-        """
-
-        if rows * columns != self.dim:
-            raise Exception(
-                f"Oops, rows * columns != dim: {rows} * {columns}, {self.dimensions}"
-            )
-
-        op_q = deepcopy(self)
-
-        op_q.rows = rows
-        op_q.columns = columns
-
-        if self.dim > 1:
-            op_q.qs_type = "op"
-
-        return op_q
-
-    def __str__(self: Qs, quiet: bool = False) -> str:
-        """
-        Print out all the states.
-
-        Args:
-            quiet: bool   Suppress printing the qtype.
-
-        Returns: str
-
-        """
-
-        states = ""
-
-        for n, q in enumerate(self.qs, start=1):
-            states = states + f"n={n}: {q.__str__(quiet)}\n"
-
-        return states.rstrip()
-
-    def print_state(self: Qs, label: str = "", spacer: bool = True, quiet: bool = True) -> None:
-        """
-        Utility for printing states as a quaternion series.
-
-        Returns: None
-
-        """
-
-        print(label)
-
-        # Warn if empty.
-        if self.qs is None or len(self.qs) == 0:
-            raise ValueError("Oops, no quaternions in the series.")
-
-        for n, q in enumerate(self.qs):
-            print(f"n={n + 1}: {q.__str__(quiet)}")
-
-        print(f"{self.qs_type}: {self.rows}/{self.columns}")
-
-        if spacer:
-            print("")
     def __str__(self, quiet: bool = False) -> str:
         """
         Customizes the output of a quaternion
@@ -2147,6 +364,463 @@ class Q(Qs):
         return q_txyz
 
 
+    def t(q_1: Q) -> np.array:
+        """
+        Returns the t as an np.array.
+
+        Returns: np.array
+
+        """
+
+        return np.array([q_1.t])
+
+
+    def xyz(q_1: Q) -> np.array:
+        """
+        Returns the vector_q x, y, z as an np.array.
+
+        Returns: np.array
+
+        """
+
+        return np.array([q_1.x, q_1.y, q_1.z])
+
+
+class Qs(object):
+    """
+    A class made up of many quaternions. It also includes values for rows * columns = dimension(Qs).
+    To mimic language already in wide use in linear algebra, there are qs_types of scalar, bra, ket, op/operator
+    depending on the rows and column numbers.
+
+    Quaternion states are a semi-group with inverses. A semi-group has more than one possible identity element. For
+    quaternion states, there are $2^{dim}$ possible identities.
+    """
+
+    QS_TYPES = ["scalar_q", "bra", "ket", "op", "operator"]
+
+    def __init__(self, qs=None, qs_type: str = "ket", rows: int = 0, columns: int = 0):
+
+        super().__init__()
+        self.qs = qs
+        self.qs_type = qs_type
+        self.rows = rows
+        self.columns = columns
+
+        if qs_type not in self.QS_TYPES:
+            print(
+                "Oops, only know of these quaternion series types: {}".format(
+                    self.QS_TYPES
+                )
+            )
+
+        if qs is None:
+            self.d, self.dim, self.dimensions = 0, 0, 0
+        else:
+            self.d, self.dim, self.dimensions = int(len(qs)), int(len(qs)), int(len(qs))
+
+        self.set_qs_type(qs_type, rows, columns, copy=False)
+
+    def set_qs_type(self: Qs, qs_type: str = "", rows: int = 0, columns: int = 0, copy: bool = True) -> Qs:
+        """
+        Set the qs_type to something sensible.
+
+        Args:
+            qs_type: str:    can be scalar_q, ket, bra, op or operator
+            rows: int        number of rows
+            columns:         number of columns
+            copy:
+
+        Returns: Qs
+
+        """
+
+        # Checks.
+        if rows and columns and rows * columns != self.dim:
+            raise ValueError(
+                f"Oops, check those values again for rows:{rows} columns:{columns} dim:{self.dim}"
+            )
+
+        new_q = self
+
+        if copy:
+            new_q = deepcopy(self)
+
+        # Assign values if need be.
+        if new_q.qs_type != qs_type:
+            new_q.rows = 0
+
+        if qs_type == "ket" and not new_q.rows:
+            new_q.rows = new_q.dim
+            new_q.columns = 1
+
+        elif qs_type == "bra" and not new_q.rows:
+            new_q.rows = 1
+            new_q.columns = new_q.dim
+
+        elif qs_type in ["op", "operator"] and not new_q.rows:
+            # Square series
+            root_dim = math.sqrt(new_q.dim)
+
+            if root_dim.is_integer():
+                new_q.rows = int(root_dim)
+                new_q.columns = int(root_dim)
+                qs_type = "op"
+
+        elif rows * columns == new_q.dim and not new_q.qs_type:
+            if new_q.dim == 1:
+                qs_type = "scalar_q"
+            elif new_q.rows == 1:
+                qs_type = "bra"
+            elif new_q.columns == 1:
+                qs_type = "ket"
+            else:
+                qs_type = "op"
+
+        if not qs_type:
+            raise Exception(
+                "Oops, please set rows and columns for this quaternion series operator. Thanks."
+            )
+
+        if new_q.dim == 1:
+            qs_type = "scalar_q"
+
+        new_q.qs_type = qs_type
+
+        return new_q
+
+    def bra(self: Qs) -> Qs:
+        """
+        Quickly set the qs_type to bra by calling set_qs_type() with rows=1, columns=dim and taking a conjugate.
+
+        Returns: Qs
+
+        """
+
+        if self.qs_type == "bra":
+            return self
+
+        bra = conjs(deepcopy(self))
+        bra.rows = 1
+        bra.columns = self.dim
+        bra.qs_type = "bra" if self.dim > 1 else "scalar_q"
+
+        return bra
+
+    def ket(self: Qs) -> Qs:
+        """
+        Quickly set the qs_type to ket by calling set_qs_type() with rows=dim, columns=1 and taking a conjugate.
+
+        Returns: Qs
+
+        """
+
+        if self.qs_type == "ket":
+            return self
+
+        ket = conjs(deepcopy(self))
+        ket.rows = self.dim
+        ket.columns = 1
+
+        ket.qs_type = "ket" if self.dim > 1 else "scalar_q"
+
+        return ket
+
+    def op(self: Qs, rows: int, columns: int) -> Qs:
+        """
+        Quickly set the qs_type to op by calling set_qs_type().
+
+        Args:
+            rows: int:
+            columns: int:
+
+        Returns: Qs
+
+        """
+
+        if rows * columns != self.dim:
+            raise Exception(
+                f"Oops, rows * columns != dim: {rows} * {columns}, {self.dimensions}"
+            )
+
+        op_q = deepcopy(self)
+
+        op_q.rows = rows
+        op_q.columns = columns
+
+        if self.dim > 1:
+            op_q.qs_type = "op"
+
+        return op_q
+
+    def __str__(self: Qs, quiet: bool = False) -> str:
+        """
+        Print out all the states.
+
+        Args:
+            quiet: bool   Suppress printing the qtype.
+
+        Returns: str
+
+        """
+
+        states = ""
+
+        for n, q in enumerate(self.qs, start=1):
+            states = states + f"n={n}: {q.__str__(quiet)}\n"
+
+        return states.rstrip()
+
+    def print_state(self: Qs, label: str = "", spacer: bool = True, quiet: bool = True) -> None:
+        """
+        Utility for printing states as a quaternion series.
+
+        Returns: None
+
+        """
+
+        print(label)
+
+        # Warn if empty.
+        if self.qs is None or len(self.qs) == 0:
+            raise ValueError("Oops, no quaternions in the series.")
+
+        for n, q in enumerate(self.qs):
+            print(f"n={n + 1}: {q.__str__(quiet)}")
+
+        print(f"{self.qs_type}: {self.rows}/{self.columns}")
+
+        if spacer:
+            print("")
+
+    def display_q(self: Qs, label: str = "") -> None:
+        """
+        Try to display algebra in a pretty LaTeX way.
+
+        Args:
+            label: str   Text to decorate printout.
+
+        Returns: None
+
+        """
+
+        if label:
+            print(label)
+
+        for i, ket in enumerate(self.qs, start=1):
+            print(f"n={i}")
+            ket.display_q()
+            print("")
+
+    def simple_q(self: Qs) -> Qs:
+        """
+        Simplify the states using sympy.
+
+        Returns: Qs
+
+        """
+
+        new_states = []
+
+        for ket in self.qs:
+            new_states.append(ket.simple_q())
+
+        return Qs(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
+    def subs(self: Qs, symbol_value_dict) -> Qs:
+        """
+        Substitutes values into a symbolic expresion.
+
+        Args:
+            symbol_value_dict: Dict   {t: 3, x: 4}
+
+        Returns: Qs
+
+        """
+
+        new_states = []
+
+        for ket in self.qs:
+            new_states.append(ket.subs(symbol_value_dict))
+
+        return Qs(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
+    def t(self: Qs) -> List:
+        """
+        Returns the t for each state.
+
+        """
+
+        new_states = []
+
+        for ket in self.qs:
+            new_states.append(t(ket))
+
+        return new_states
+
+    def xyz(self: Qs) -> List:
+        """
+        Returns the 3-vector_q for each state.
+
+        """
+
+        new_states = []
+
+        for ket in self.qs:
+            new_states.append(ket.xyz())
+
+        return new_states
+
+    @staticmethod
+    def bracket(bra: Qs, op: Qs, ket: Qs) -> Qs:
+        """
+        Forms <bra|op|ket>. Note: if fed 2 kets, will take a conjugate.
+
+        Args:
+            bra: Qs
+            op: Qs
+            ket: Qs
+
+        Returns: Qs
+
+        """
+
+        flip = 0
+
+        if bra.qs_type == "ket":
+            bra = bra.bra()
+            flip += 1
+
+        if ket.qs_type == "bra":
+            ket = ket.ket()
+            flip += 1
+
+        if flip == 1:
+            print("fed 2 bras or kets, took a conjugate. Double check.")
+
+        b = products(bra, products(op, ket))
+
+        return b
+
+    @staticmethod
+    def braket(bra: Qs, ket: Qs) -> Qs:
+        """
+        Forms <bra|ket>, no operator. Note: if fed 2 kets, will take a conjugate.
+
+        Args:
+            bra: Qs
+            ket: Qs
+
+        Returns: Qs
+
+        """
+
+        flip = 0
+
+        if bra.qs_type == "ket":
+            bra = bra.bra()
+            flip += 1
+
+        if ket.qs_type == "bra":
+            ket = ket.ket()
+            flip += 1
+
+        if flip == 1:
+            print("fed 2 bras or kets, took a conjugate. Double check.")
+
+        else:
+            print("Assumes your <bra| already has been conjugated. Double check.")
+
+        b = bra.product(ket)
+
+        return b
+
+    def op_q(self: Qs, q: Qs, first: bool = True, kind: str = "", reverse: bool = False) -> Qs:
+        """
+        Multiply an operator times a quaternion, in that order. Set first=false for n * Op
+
+        Args:
+            q: Qs
+            first: bool
+            kind: str
+            reverse: bool
+
+        Returns: Qs
+
+        """
+
+        new_states = []
+
+        for op in self.qs:
+
+            if first:
+                new_states.append(product(op, q, kind, reverse))
+
+            else:
+                new_states.append(product(q, op, kind, reverse))
+
+        return Qs(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
+
+# # Aids to transform Q functions to Qs functions.
+
+def q_to_qs_function(func, q_1):
+    """
+    Utility to transform quaternion functions to quaternion state function
+    that operate separately on each qs state.
+
+    Args:
+        func:    pointer to a function
+        q_1: Q   a quaternion argument
+
+    Returns: Qs
+
+    """
+
+    return Qs([func(q) for q in q_1.qs], qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns)
+
+
+def qq_to_qs_function(func, q_1, q_2):
+    """
+    Utility to transform quaternion functions to quaternion state function
+    that operate separately on each qs state.
+
+    Args:
+        func:    pointer to a function
+        q_1: Qs   a quaternion state
+        q_2: Qs   a quaternion state
+
+    Returns: Qs
+
+    """
+
+    return Qs([func(q, r) for q, r in zip(q_1.qs, q_2.qs)], qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns)
+
+
+def qqq_to_qs_function(func, q_1, q_2, q_3):
+    """
+    Utility to transform quaternion functions to quaternion state function
+    that operate separately on each qs state.
+
+    Args:
+        func:    pointer to a function
+        q_1: Q   a quaternion argument
+        q_2: Q   a quaternion argument
+        q_3: Q   a quaternion argument
+
+    Returns: Qs
+
+    """
+
+    return Qs([func(q, r, s) for q, r, s in zip(q_1.qs, q_2.qs, q_3.qs)], qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns)
+
+
+# # Parts of quaternions
+
 def scalar_q(q_1: Q) -> Q:
     """
     Returns the scalar_q part of a quaternion as a quaternion.
@@ -2163,9 +837,13 @@ def scalar_q(q_1: Q) -> Q:
     """
 
     end_q_type = f"scalar_q({q_1.q_type})"
-
     s = Q([q_1.t, 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
     return s
+
+
+def scalar_qs(q_1: Qs) -> Qs:
+    f"""{scalar_q.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(scalar_q, q_1)
 
 
 def vector_q(q_1: Q) -> Q:
@@ -2187,26 +865,9 @@ def vector_q(q_1: Q) -> Q:
     return v
 
 
-def t(q_1: Q) -> np.array:
-    """
-    Returns the scalar_q t as an np.array.
-
-    Returns: np.array
-
-    """
-
-    return np.array([q_1.t])
-
-
-def xyz(q_1: Q) -> np.array:
-    """
-    Returns the vector_q x, y, z as an np.array.
-
-    Returns: np.array
-
-    """
-
-    return np.array([q_1.x, q_1.y, q_1.z])
+def vector_qs(q_1: Qs) -> Qs:
+    f"""{vector_q.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(vector_q, q_1)
 
 
 def q0(q_type: str = "0", representation: str = "") -> Q:
@@ -2222,6 +883,11 @@ def q0(q_type: str = "0", representation: str = "") -> Q:
     return Q([0, 0, 0, 0], q_type=q_type, representation=representation)
 
 
+def q0s(dim: int = 1, qs_type: str = "ket") -> Qs:
+    f"""{q0.__doc__}""".replace("Q", "Qs")
+    return Qs([q0() for _ in range(dim)], qs_type=qs_type)
+
+
 def q1(n: float = 1.0, q_type: str = "1", representation: str = "") -> Q:
     """
     Return a real-valued quaternion multiplied by n.
@@ -2233,6 +899,10 @@ def q1(n: float = 1.0, q_type: str = "1", representation: str = "") -> Q:
     """
 
     return Q([n, 0, 0, 0], q_type=q_type, representation=representation)
+
+def q1s(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
+    f"""{q1.__doc__}""".replace("Q", "Qs")
+    return Qs([q1(n) for _ in range(dim)], qs_type=qs_type)
 
 
 def qi(n: float = 1.0, q_type: str = "i", representation: str = "") -> Q:
@@ -2248,6 +918,11 @@ def qi(n: float = 1.0, q_type: str = "i", representation: str = "") -> Q:
     return Q([0, n, 0, 0], q_type=q_type, representation=representation)
 
 
+def qis(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
+    f"""{qi.__doc__}""".replace("Q", "Qs")
+    return Qs([qi(n) for _ in range(dim)], qs_type=qs_type)
+
+
 def qj(n: float = 1.0, q_type: str = "j", representation: str = "") -> Q:
     """
     Return a quaternion with $ j * n $.
@@ -2261,6 +936,11 @@ def qj(n: float = 1.0, q_type: str = "j", representation: str = "") -> Q:
     return Q([0, 0, n, 0], q_type=q_type, representation=representation)
 
 
+def qjs(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
+    f"""{qj.__doc__}""".replace("Q", "Qs")
+    return Qs([qj(n) for _ in range(dim)], qs_type=qs_type)
+
+
 def qk(n: float = 1, q_type: str = "k", representation: str = "") -> Q:
     """
     Return a quaternion with $ k * n $.
@@ -2272,6 +952,11 @@ def qk(n: float = 1, q_type: str = "k", representation: str = "") -> Q:
     """
 
     return Q([0, 0, 0, n], q_type=q_type, representation=representation)
+
+
+def qks(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
+    f"""{qk.__doc__}""".replace("Q", "Qs")
+    return Qs([qk(n) for _ in range(dim)], qs_type=qs_type)
 
 
 def qrandom(low: float = -1.0, high: float = 1.0, distribution: str = "uniform", q_type: str = "?",
@@ -2308,6 +993,11 @@ def qrandom(low: float = -1.0, high: float = 1.0, distribution: str = "uniform",
     return qr
 
 
+def qrandoms(low: float = -1.0, high: float = 1.0, distribution: str = "uniform", dim: int = 1, qs_type: str = "ket") -> Qs:
+    f"""{qrandom.__doc__}""".replace("Q", "Qs")
+    return Qs([qrandom(low, high, distribution) for _ in range(dim)], qs_type=qs_type)
+
+
 def dupe(q_1: Q) -> Q:
     """
     Return a duplicate copy.
@@ -2324,12 +1014,12 @@ def dupe(q_1: Q) -> Q:
     return du
 
 
-def equals(q_1: Q, q_2: Q, scalar: bool = True, vector: bool = True) -> bool:
+def equal(q_1: Q, q_2: Q, scalar: bool = True, vector: bool = True) -> bool:
     """
     Tests if q1 and q_2 quaternions are close to equal. If vector_q is set to False, will compare
     only the scalar_q. If scalar_q is set to False, will compare 3-vectors.
 
-    $ q.equals(q\_2) = q == q\_2 = True $
+    $ q.equal(q\_2) = q == q\_2 = True $
 
     Args:
         q_1: Q
@@ -2374,6 +1064,21 @@ def equals(q_1: Q, q_2: Q, scalar: bool = True, vector: bool = True) -> bool:
 
     elif scalar and vector and t_equals and x_equals and y_equals and z_equals:
         result = True
+
+    return result
+
+
+def equals(q_1: Qs, q_2: Qs, scalar: bool = True, vector: bool = True) -> bool:
+    f"""{equal.__doc__}""".replace("Q", "Qs")
+
+    if q_1.dim != q_2.dim:
+        return False
+
+    result = True
+
+    for q_1q, q_2q in zip(q_1.qs, q_2.qs):
+        if not equal(q_1q, q_2q, scalar, vector):
+            result = False
 
     return result
 
@@ -2444,6 +1149,11 @@ def conj(q_1: Q, conj_type: int = 0) -> Q:
     return cq
 
 
+def conjs(q_1: Qs, conj_type: int = 0) -> Qs:
+    f"""{conj.__doc__}""".replace("Q", "Qs")
+    return Qs([conj(q, conj_type) for q in q_1.qs], qs_type=q_1.qs_type)
+
+
 def conj_q(q_1: Q, q_2: Q) -> Q:
     """
     Given a quaternion with 0s or 1s, will do the standard conjugate, first conjugate
@@ -2471,16 +1181,21 @@ def conj_q(q_1: Q, q_2: Q) -> Q:
         _conj = conj(_conj, conj_type=2)
 
     if q_2.z:
-        _conj = flip_signs(_conj)
+        _conj = flip_sign(_conj)
 
     return _conj
 
 
-def flip_signs(q_1: Q) -> Q:
+def conj_qs(q_1: Qs, q_2: Q) -> Qs:
+    f"""{conj_q.__doc__}""".replace("Q", "Qs")
+    return Qs([conj_q(q, q_2) for q in q_1.qs], qs_type=q_1.qs_type)
+
+
+def flip_sign(q_1: Q) -> Q:
     """
     Flip the signs of all terms.
 
-    $ q.flip\_signs() = -q = (-t, -R) $
+    $ q.flip\_sign() = -q = (-t, -R) $
 
     Args:
         q_1: Q
@@ -2503,6 +1218,11 @@ def flip_signs(q_1: Q) -> Q:
         flip_q.z = -1 * flip_z
 
     return flip_q
+
+
+def flip_signs(q_1: Qs) -> Qs:
+    f"""{flip_sign.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(flip_sign, q_1)
 
 
 def vahlen_conj(q_1: Q, conj_type: str = "-", q_type: str = "vc") -> Q:
@@ -2558,6 +1278,11 @@ def vahlen_conj(q_1: Q, conj_type: str = "-", q_type: str = "vc") -> Q:
     c_q.representation = q_1.representation
 
     return c_q
+
+
+def valhen_conjs(q_1: Qs, conj_type: str = "-") -> Qs:
+    f"""{vahlen_conj.__doc__}""".replace("Q", "Qs")
+    return Qs([vahlen_conj(q, conj_type) for q in q_1.qs], qs_type=q_1.qs_type)
 
 
 def _commuting_products(q_1: Q, q_2: Q) -> Dict:
@@ -2658,6 +1383,11 @@ def square(q_1: Q) -> Q:
     return sq_q
 
 
+def squares(q_1: Qs) -> Qs:
+    f"""{square.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(square, q_1)
+
+
 def norm_squared(q_1: Q) -> Q:
     """
     The norm_squared of a quaternion.
@@ -2676,6 +1406,11 @@ def norm_squared(q_1: Q) -> Q:
     n_q.t = qxq["tt"] + qxq["xx+yy+zz"]
 
     return n_q
+
+
+def norm_squareds(q_1: Qs) -> Qs:
+    f"""{norm_squared.__doc__}""".replace("Q", "Qs")
+    return products(conjs(q_1.set_qs_type("bra")), q_1.set_qs_type("ket"))
 
 
 def norm_squared_of_vector(q_1: Q):
@@ -2697,6 +1432,11 @@ def norm_squared_of_vector(q_1: Q):
     return nv_q
 
 
+def norm_squared_of_vectors(q_1: Qs) -> Qs:
+    f"""{norm_squared_of_vector.__doc__}""".replace("Q", "Qs")
+    return products(vector_qs(conjs(q_1.set_qs_type("bra"))), vector_qs(q_1.set_qs_type("ket")))
+
+
 def abs_of_q(q_1: Q) -> Q:
     """
     The absolute value, the square root of the norm_squared.
@@ -2716,6 +1456,13 @@ def abs_of_q(q_1: Q) -> Q:
     a.representation = q_1.representation
 
     return a
+
+
+def abs_of_qs(q_1: Qs) -> Qs:
+    f"""{abs_of_q.__doc__}""".replace("Q", "Qs")
+    squared_norm = norm_squareds(q_1)
+    sqrt_t = squared_norm.qs[0].t ** (1 / 2)
+    return q1s(sqrt_t, dim=1)
 
 
 def normalize(q_1: Q, n: float = 1.0, q_type: str = "U") -> Q:
@@ -2742,6 +1489,102 @@ def normalize(q_1: Q, n: float = 1.0, q_type: str = "U") -> Q:
 
     return n_q
 
+def normalizes(self: Qs, n: float = 1.0, **kwargs) -> Qs:
+    """
+    Normalize all states.
+
+    Args:
+        **kwargs:
+        n: float   number to normalize to, default is 1.0
+
+    Returns: Qs
+
+    """
+
+    new_states = []
+
+    zero_norm_count = 0
+
+    for bra in self.qs:
+        if norm_squared(bra).t == 0:
+            zero_norm_count += 1
+            new_states.append(q0())
+        else:
+            new_states.append(normalize(bra, n))
+
+    new_states_normalized = []
+
+    non_zero_states = self.dim - zero_norm_count
+
+    for new_state in new_states:
+        new_states_normalized.append(
+            product(new_state, Q([math.sqrt(1 / non_zero_states), 0, 0, 0]))
+        )
+
+    return Qs(
+        new_states_normalized,
+        qs_type=self.qs_type,
+        rows=self.rows,
+        columns=self.columns,
+    )
+
+def orthonormalize(self: Qs) -> Qs:
+    """
+    Given a quaternion series, returns an orthonormal basis.
+
+    Returns: Qs
+
+    """
+
+    last_q = self.qs.pop(0).normalize(math.sqrt(1 / self.dim), )
+    orthonormal_qs = [last_q]
+
+    for q in self.qs:
+        qp = product(conj(q), last_q)
+        orthonormal_q = normalize(dif(q, qp), math.sqrt(1 / self.dim), )
+        orthonormal_qs.append(orthonormal_q)
+        last_q = orthonormal_q
+
+    return Qs(
+        orthonormal_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+    )
+
+def determinant(self: Qs) -> Qs:
+    """
+    Calculate the determinant of a 'square' quaternion series.
+
+    Returns: Qs
+
+    """
+
+    if self.dim == 1:
+        q_det = self.qs[0]
+
+    elif self.dim == 4:
+        ad = product(self.qs[0], self.qs[3])
+        bc = product(self.qs[1], self.qs[2])
+        q_det = dif(ad, bc)
+
+    elif self.dim == 9:
+        aei = product(product(self.qs[0], self.qs[4]), self.qs[8])
+        bfg = product(product(self.qs[3], self.qs[7]), self.qs[2])
+        cdh = product(product(self.qs[6], self.qs[1]), self.qs[5])
+        ceg = product(product(self.qs[6], self.qs[4]), self.qs[2])
+        bdi = product(product(self.qs[3], self.qs[1]), self.qs[8])
+        afh = product(product(self.qs[0], self.qs[7]), self.qs[5])
+
+        sum_pos = add(aei, add(bfg, cdh))
+        sum_neg = add(ceg, add(bdi, afh))
+
+        q_det = dif(sum_pos, sum_neg)
+
+    else:
+        raise ValueError("Oops, don't know how to calculate the determinant of this one.")
+
+    return Qs(
+        [q_det], qs_type=self.qs_type, rows=1, columns=1
+    )
+
 
 def abs_of_vector(q_1: Q) -> Q:
     """
@@ -2765,6 +1608,11 @@ def abs_of_vector(q_1: Q) -> Q:
     av.q_type = end_q_type
 
     return av
+
+
+def abs_of_vectors(q_1: Qs) -> Qs:
+    f"""{abs_of_vector.__doc__}"""
+    return q_to_qs_function(abs_of_vector, q_1)
 
 
 def add(q_1: Q, q_2: Q) -> Q:
@@ -2797,6 +1645,17 @@ def add(q_1: Q, q_2: Q) -> Q:
     return add_q
 
 
+def adds(q_1: Qs, q_2: Qs) -> Qs:
+    f"""{add.__doc__}""".replace("Q", "Qs")
+
+    if (q_1.rows != q_2.rows) or (q_1.columns != q_2.columns):
+        error_msg = "Oops, can only add if rows and columns are the same.\n"
+        error_msg += f"rows are {q_1.rows}/{q_2.rows}, col: {q_1.columns}/{q_2.columns}"
+        raise ValueError(error_msg)
+
+    return qq_to_qs_function(add, q_1, q_2)
+
+
 def dif(q_1: Q, q_2: Q) -> Q:
     """
     Takes the difference of 2 quaternions.
@@ -2827,6 +1686,17 @@ def dif(q_1: Q, q_2: Q) -> Q:
     return dif_q
 
 
+def difs(q_1: Qs, q_2: Qs) -> Qs:
+    f"""{dif.__doc__}""".replace("Q", "Qs")
+
+    if (q_1.rows != q_2.rows) or (q_1.columns != q_2.columns):
+        error_msg = "Oops, can only dif if rows and columns are the same.\n"
+        error_msg += f"rows are {q_1.rows}/{q_2.rows}, col: {q_1.columns}/{q_2.columns}"
+        raise ValueError(error_msg)
+
+    return qq_to_qs_function(dif, q_1, q_2)
+
+
 def product(q_1: Q, q_2: Q, kind: str = "", reverse: bool = False) -> Q:
     """
     Form a product given 2 quaternions. Kind of product can be '' aka standard, even, odd, or even_minus_odd.
@@ -2845,7 +1715,7 @@ def product(q_1: Q, q_2: Q, kind: str = "", reverse: bool = False) -> Q:
     Args:
         q_1: Q
         q_2: Q:
-        kind: str:    can be blank, even, odd, or even_minus_odd
+        kind: str:    can be '', even, odd, or even_minus_odd
         reverse: bool:  if true, returns even_minus_odd
 
     Returns: Q
@@ -2900,6 +1770,101 @@ def product(q_1: Q, q_2: Q, kind: str = "", reverse: bool = False) -> Q:
     return result
 
 
+def products(q_1: Qs, q_2: Qs, kind: str = "", reverse: bool = False) -> Qs:
+    """
+    Forms the quaternion product for each state. The details for handling the variety of cases for lengths
+    of rows, states, and operators makes this code the most complex in this library.
+
+    Args:
+        q_2: Qs
+        kind: str    can be '', even, odd, or even_minus_odd
+        reverse: bool
+
+    Returns: Qs
+
+    """
+
+    q_1_copy = deepcopy(q_1)
+    q_2_copy = deepcopy(q_2)
+    qs_left, qs_right = Qs(), Qs()
+
+    # Diagonalize if need be.
+    if ((q_1.rows == q_2.rows) and (q_1.columns == q_2.columns)) or (
+            "scalar_q" in [q_1.qs_type, q_2.qs_type]
+    ):
+
+        if q_1.columns == 1:
+            qs_right = q_2_copy
+            qs_left = diagonal(q_1_copy, qs_right.rows)
+
+        elif q_2.rows == 1:
+            qs_left = q_1_copy
+            qs_right = diagonal(q_2_copy, qs_left.columns)
+
+        else:
+            qs_left = q_1_copy
+            qs_right = q_2_copy
+
+    # Typical matrix multiplication criteria.
+    elif q_1.columns == q_2.rows:
+        qs_left = q_1_copy
+        qs_right = q_2_copy
+
+    else:
+        print(
+            "Oops, cannot multiply series with row/column dimensions of {}/{} to {}/{}".format(
+                q_1.rows, q_1.columns, q_2.rows, q_2.columns
+            )
+        )
+
+    # Operator products need to be transposed.
+    operator_flag = False
+    if qs_left in ["op", "operator"] and qs_right in ["op", "operator"]:
+        operator_flag = True
+
+    outer_row_max = qs_left.rows
+    outer_column_max = qs_right.columns
+    shared_inner_max = qs_left.columns
+    projector_flag = (
+            (shared_inner_max == 1) and (outer_row_max > 1) and (outer_column_max > 1)
+    )
+
+    result = [
+        [q0(q_type="") for _i in range(outer_column_max)]
+        for _j in range(outer_row_max)
+    ]
+
+    for outer_row in range(outer_row_max):
+        for outer_column in range(outer_column_max):
+            for shared_inner in range(shared_inner_max):
+
+                # For projection operators.
+                left_index = outer_row
+                right_index = outer_column
+
+                if outer_row_max >= 1 and shared_inner_max > 1:
+                    left_index = outer_row + shared_inner * outer_row_max
+
+                if outer_column_max >= 1 and shared_inner_max > 1:
+                    right_index = shared_inner + outer_column * shared_inner_max
+
+                result[outer_row][outer_column] = add(result[outer_row][outer_column],
+                                                      product(qs_left.qs[left_index],
+                                                              qs_right.qs[right_index], kind=kind, reverse=reverse
+                                                              )
+                                                      )
+
+    # Flatten the list.
+    new_qs = [item for sublist in result for item in sublist]
+    new_states = Qs(new_qs, rows=outer_row_max, columns=outer_column_max)
+
+    if projector_flag or operator_flag:
+        return transpose(new_states)
+
+    else:
+        return new_states
+
+
 def cross_q(q_1: Q, q_2: Q, reverse: bool = False) -> Q:
     """
     Convenience function, calling product with kind="odd".
@@ -2914,6 +1879,11 @@ def cross_q(q_1: Q, q_2: Q, reverse: bool = False) -> Q:
 
     """
     return product(q_1, q_2, kind="odd", reverse=reverse)
+
+
+def cross_qs(q_1: Qs, q_2: Qs) -> Qs:
+    f""""{cross_q.__doc__}""".replace("Q", "Qs")
+    qq_to_qs_function(cross_q, q_1, q_2)
 
 
 def inverse(q_1: Q, additive: bool = False) -> Q:
@@ -2934,7 +1904,7 @@ def inverse(q_1: Q, additive: bool = False) -> Q:
 
     if additive:
         end_q_type = f"-{q_1.q_type}"
-        q_inv = flip_signs(q_1)
+        q_inv = flip_sign(q_1)
         q_inv.q_type = end_q_type
 
     else:
@@ -2944,12 +1914,113 @@ def inverse(q_1: Q, additive: bool = False) -> Q:
         q_norm_squared = norm_squared(q_1)
 
         if (not q_1.is_symbolic()) and (q_norm_squared.t == 0):
-            return q0()
+            q_inv = q0()
 
-        q_norm_squared_inv = Q([1.0 / q_norm_squared.t, 0, 0, 0])
-        q_inv = product(q_conj, q_norm_squared_inv)
+        else:
+            q_norm_squared_inv = Q([1.0 / q_norm_squared.t, 0, 0, 0])
+            q_inv = product(q_conj, q_norm_squared_inv)
+
         q_inv.q_type = end_q_type
         q_inv.representation = q_1.representation
+
+    return q_inv
+
+
+def inverses(q_1: Qs, additive: bool = False) -> Qs:
+    """
+    Inversing bras and kets calls inverse() once for each.
+    Inversing operators is more tricky as one needs a diagonal identity matrix.
+
+    Args:
+        q_1: Qs
+        additive: bool
+
+    Returns: Qs
+
+    """
+
+    if q_1.qs_type in ["op", "operator"]:
+
+        if additive:
+
+            q_flip = q_1.inverse(additive=True)
+            q_inv = q_flip.diagonal(q_1.dim)
+
+        else:
+            if q_1.dim == 1:
+                q_inv = Qs(inverse(q_1.qs[0]))
+
+            elif q_1.qs_type in ["bra", "ket"]:
+
+                new_qs = []
+
+                for q in q_1.qs:
+                    new_qs.append(inverse(q))
+
+                q_inv = Qs(
+                    new_qs,
+                    qs_type=q_1.qs_type,
+                    rows=q_1.rows,
+                    columns=q_1.columns,
+                )
+
+            elif q_1.dim == 4:
+                det = determinant(q_1)
+                detinv = inverse(det)
+
+                q0 = product(q_1.qs[3], detinv)
+                q_2 = product(flip_sign(q_1.qs[1]), detinv)
+                q2 = product(flip_sign(q_1.qs[2]), detinv)
+                q3 = product(q_1.qs[0], detinv)
+
+                q_inv = Qs(
+                    [q0, q_2, q2, q3],
+                    qs_type=q_1.qs_type,
+                    rows=q_1.rows,
+                    columns=q_1.columns,
+                )
+
+            elif q_1.dim == 9:
+                det = determinant(q_1)
+                detinv = inverse(det)
+
+                q0 = product(dif(q_1.qs[4], product(q_1.qs[8]), product(q_1.qs[5], q_1.qs[7])), detinv)
+
+                q_2 = product(dif(q_1.qs[7], product(q_1.qs[2]), product(q_1.qs[8], q_1.qs[1])), detinv)
+
+                q2 = product(dif(q_1.qs[1], product(q_1.qs[5]), product(q_1.qs[2], q_1.qs[4])), detinv)
+
+                q3 = product(dif(q_1.qs[6], product(q_1.qs[5]), product(q_1.qs[8], q_1.qs[3])), detinv)
+
+                q4 = product(dif(q_1.qs[0], product(q_1.qs[8]), product(q_1.qs[2], q_1.qs[6])), detinv)
+
+                q5 = product(dif(q_1.qs[3], product(q_1.qs[2]), product(q_1.qs[5], q_1.qs[0])), detinv)
+
+                q6 = product(dif(q_1.qs[3], product(q_1.qs[7]), product(q_1.qs[4], q_1.qs[6])), detinv)
+
+                q7 = product(dif(q_1.qs[6], product(q_1.qs[1]), product(q_1.qs[7], q_1.qs[0])), detinv)
+
+                q8 = product(dif(q_1.qs[0], product(q_1.qs[4]), product(q_1.qs[1], q_1.qs[3])), detinv)
+
+                q_inv = Qs(
+                    [q0, q_2, q2, q3, q4, q5, q6, q7, q8],
+                    qs_type=q_1.qs_type,
+                    rows=q_1.rows,
+                    columns=q_1.columns,
+                )
+
+            else:
+                raise ValueError("Oops, don't know how to invert.")
+
+    else:
+        new_states = []
+
+        for bra in q_1.qs:
+            new_states.append(inverse(bra, additive=additive))
+
+        q_inv = Qs(
+            new_states, qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns
+        )
 
     return q_inv
 
@@ -2977,6 +2048,11 @@ def divide_by(q_1: Q, q_2: Q) -> Q:
     q_div.representation = q_1.representation
 
     return q_div
+
+
+def divide_bys(q_1: Qs, q_2: Qs) -> Qs:
+    f"""{divide_by.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(divide_by, q_1, q_2)
 
 
 def triple_product(q_1: Q, q_2: Q, q_3: Q) -> Q:
@@ -3009,7 +2085,11 @@ def triple_product(q_1: Q, q_2: Q, q_3: Q) -> Q:
     return triple
 
 
-# Quaternion rotation involves a triple product:  u R 1/u
+def triple_products(q_1: Qs, q_2: Qs, q_3: Qs) -> Qs:
+    f"""{triple_product.__doc__}""".replace("Q", "Qs")
+    return qqq_to_qs_function(triple_product, q_1, q_2, q_3)
+
+
 def rotate(q_1: Q, u: Q) -> Q:
     """
     Do a rotation using a triple product: u R 1/u.
@@ -3035,6 +2115,11 @@ def rotate(q_1: Q, u: Q) -> Q:
     q_rot.representation = q_1.representation
 
     return q_rot
+
+
+def rotates(q_1: Qs, u: Qs) -> Qs:
+    f"""{rotate.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(rotate, q_1, u)
 
 
 def rotation_angle(q_1: Q, q_2: Q, origin: Q = q0(), tangent_space_norm: float = 1.0, degrees: bool = False) -> Q:
@@ -3079,12 +2164,13 @@ def rotation_angle(q_1: Q, q_2: Q, origin: Q = q0(), tangent_space_norm: float =
 
     return Q([angle, 0, 0, 0])
 
+
 def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
     """
     The method for doing a rotation in 3D space discovered by Rodrigues in the 1840s used a quaternion triple
     product. After Minkowski characterized Einstein's work in special relativity as a 4D rotation, efforts were
     made to do the same with one quaternion triple product. That obvious goal was not achieved until 2010 by
-    D. Sweetser and indpendently by M. Kharinov. Two other triple products need to be used like so:
+    D. Sweetser and independently by M. Kharinov. Two other triple products need to be used like so:
 
     $ b.rotation_and_or_boost(h) = h b h^* + 1/2 ((hhb)^* -(h^* h^* b)^*) $
 
@@ -3101,7 +2187,7 @@ def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
     There has been no issue about the ability of this function to do boosts. There has been a spirited debate
     as to whether the function can do rotations. Notice that the form reduces to the Rodrigues triple product.
     I consider this so elementary that I cannot argue the other side. Please see the wiki page or use this code
-    to see for yourq_1.
+    to see for yourself.
 
     Args:
         q_1: Q
@@ -3137,6 +2223,11 @@ def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
     return triple_123
 
 
+def rotation_and_or_boosts(q_1: Qs, h: Qs) -> Qs:
+    f"""{rotation_and_or_boost.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(rotation_and_or_boost, q_1, h)
+
+
 def Lorentz_next_rotation(q_1: Q, q_2: Q) -> Q:
     """
     Given 2 quaternions, creates a new quaternion to do a rotation
@@ -3146,7 +2237,7 @@ def Lorentz_next_rotation(q_1: Q, q_2: Q) -> Q:
 
     Args:
         q_1: Q   any quaternion
-        q_2: Q   any quaternion whose first term equals the first term of q and
+        q_2: Q   any quaternion whose first term equal the first term of q and
                   for the first terms of each squared.
 
     Returns: Q
@@ -3172,6 +2263,11 @@ def Lorentz_next_rotation(q_1: Q, q_2: Q) -> Q:
         next_rotation = normalize(vector_q(q_1))
 
     return next_rotation
+
+
+def Lorentz_next_rotations(q_1: Qs, q_2: Qs) -> Qs:
+    f"""{Lorentz_next_rotation.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(Lorentz_next_rotation, q_1, q_2)
 
 
 def Lorentz_next_boost(q_1: Q, q_2: Q) -> Q:
@@ -3204,12 +2300,17 @@ def Lorentz_next_boost(q_1: Q, q_2: Q) -> Q:
     if np.abs(q_s.t) > 1:
         q_s = inverse(q_s)
 
-    exp_sum = product(add(exp(q_s), exp(flip_signs(q_s))), q1(1.0 / 2.0))
-    exp_dif = product(dif(exp(q_s), exp(flip_signs(q_s))), q1(1.0 / 2.0))
+    exp_sum = product(add(exp(q_s), exp(flip_sign(q_s))), q1(1.0 / 2.0))
+    exp_dif = product(dif(exp(q_s), exp(flip_sign(q_s))), q1(1.0 / 2.0))
 
     boost = add(exp_sum, product(q_v, exp_dif))
 
     return boost
+
+
+def Lorentz_next_boosts(q_1: Qs, q_2: Qs) -> Qs:
+    f"""{Lorentz_next_boost.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(Lorentz_next_boost, q_1, q_2)
 
 
 # g_shift is a function based on the space-times-time invariance proposal for gravity,
@@ -3240,6 +2341,11 @@ def g_shift(q_1: Q, dimensionless_g, g_form="exp"):
     g_q.representation = q_1.representation
 
     return g_q
+
+
+def g_shifts(q_1: Qs, g: float, g_form="exp") -> Qs:
+    f"""{g_shift.__doc__}""".replace("Q", "Qs")
+    return Qs([g_shift(q, g, g_form) for q in q_1.qs], qs_type=q_1.qs_type)
 
 
 def sin(q_1: Q) -> Q:
@@ -3278,6 +2384,11 @@ def sin(q_1: Q) -> Q:
     return q_sin
 
 
+def sins(q_1: Qs) -> Qs:
+    f"""{sin.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(sin, q_1)
+
+
 def cos(q_1: Q) -> Q:
     """
     Take the cosine of a quaternion.
@@ -3313,6 +2424,11 @@ def cos(q_1: Q) -> Q:
     return q_cos
 
 
+def coss(q_1: Qs) -> Qs:
+    f"""{cos.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(cos, q_1)
+
+
 def tan(q_1: Q) -> Q:
     """
     Take the tan of a quaternion.
@@ -3341,6 +2457,11 @@ def tan(q_1: Q) -> Q:
     q_tan.representation = q_1.representation
 
     return q_tan
+
+
+def tans(q_1: Qs) -> Qs:
+    f"""{tan.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(tan, q_1)
 
 
 def sinh(q_1: Q) -> Q:
@@ -3376,6 +2497,11 @@ def sinh(q_1: Q) -> Q:
     return q_sinh
 
 
+def sinhs(q_1: Qs) -> Qs:
+    f"""{sinh.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(sinh, q_1)
+
+
 def cosh(q_1: Q) -> Q:
     """
     Take the cosh of a quaternion.
@@ -3409,6 +2535,11 @@ def cosh(q_1: Q) -> Q:
     return q_cosh
 
 
+def coshs(q_1: Qs) -> Qs:
+    f"""{cosh.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(cosh, q_1)
+
+
 def tanh(q_1: Q) -> Q:
     """
     Take the tanh of a quaternion.
@@ -3434,6 +2565,11 @@ def tanh(q_1: Q) -> Q:
     q_tanh.representation = q_1.representation
 
     return q_tanh
+
+
+def tanhs(q_1: Qs) -> Qs:
+    f"""{tanh.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(tanh, q_1)
 
 
 def exp(q_1: Q) -> Q:
@@ -3464,6 +2600,11 @@ def exp(q_1: Q) -> Q:
     )
 
     return q_exp
+
+
+def exps(q_1: Qs) -> Qs:
+    f"""{exp.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(exp, q_1)
 
 
 def ln(q_1: Q) -> Q:
@@ -3499,6 +2640,11 @@ def ln(q_1: Q) -> Q:
     return q_ln
 
 
+def lns(q_1: Qs) -> Qs:
+    f"""{ln.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(ln, q_1)
+
+
 def q_2_q(q_1: Q, q_2: Q) -> Q:
     """Take the natural log of a quaternion.
 
@@ -3519,6 +2665,11 @@ def q_2_q(q_1: Q, q_2: Q) -> Q:
     return q2q
 
 
+def q_2_qs(q_1: Qs, q_2: Qs) -> Qs:
+    f"""{q_2_q.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(q_2_q, q_1, q_2)
+
+
 def trunc(q_1: Q) -> Q:
     """
     Truncates values.
@@ -3536,3 +2687,252 @@ def trunc(q_1: Q) -> Q:
     return q_1
 
 
+def truncs(q_1: Qs) -> Qs:
+    f"""{trunc.__doc__}""".replace("Q", "Qs")
+    return q_to_qs_function(trunc, q_1)
+
+
+def transpose(q_1: Qs, m: int = None, n: int = None) -> Qs:
+    """
+    Transposes a series.
+
+    Args:
+        m: int
+        n: int
+
+    Returns: Qs
+
+    """
+
+    if m is None:
+        # test if it is square.
+        if math.sqrt(q_1.dim).is_integer():
+            m = int(sp.sqrt(q_1.dim))
+            n = m
+
+    if n is None:
+        n = int(q_1.dim / m)
+
+    matrix = [[0 for _x in range(m)] for _y in range(n)]
+
+    for mi in range(m):
+        for ni in range(n):
+            matrix[ni][mi] = q_1.qs[mi * n + ni]
+
+    qs_t = []
+
+    for t in matrix:
+        for q in t:
+            qs_t.append(q)
+
+    # Switch rows and columns.
+    return Qs(qs_t, rows=q_1.columns, columns=q_1.rows)
+
+
+def Hermitian_conj(q_1: Qs, m: int = None, n: int = None, conj_type: int = 0) -> Qs:
+    """
+    Returns the Hermitian conjugate.
+
+    Args:
+        m: int
+        n: int
+        conj_type: int    0-3
+
+    Returns: Qs
+
+    """
+
+    # return q_1.transpose(m, n).conj(conj_type)
+    return conjs(transpose(q_1, m, n), conj_type)
+
+
+def dagger(q_1: Qs, m: int = None, n: int = None, conj_type: int = 0) -> Qs:
+    """
+    Just calls Hermitian_conj()
+
+    Args:
+        m: int
+        n: int
+        conj_type: 0-3
+
+    Returns: Qs
+
+    """
+
+    return q_1.Hermitian_conj(m, n, conj_type)
+
+
+def is_square(q_1: Qs) -> bool:
+    """
+    Tests if a quaternion series is square, meaning the dimenion is n^2.
+
+    Returns: bool
+
+    """
+
+    return math.sqrt(q_1.dim).is_integer()
+
+
+def is_Hermitian(q_1: Qs) -> bool:
+    """
+    Tests if a series is Hermitian.
+
+    Returns: bool
+
+    """
+
+    hc = Hermitian_conj(q_1)
+
+    return equals(q_1, hc)
+
+
+def diagonal(q_1: Qs, dim: int) -> Qs:
+    """
+    Make a state dim * dim with q or qs along the 'diagonal'. Always returns an operator.
+
+    Args:
+        dim: int
+
+    Returns: Qs
+
+    """
+
+    diagonal = []
+
+    if len(q_1.qs) == 1:
+        q_values = [q_1.qs[0]] * dim
+    elif len(q_1.qs) == dim:
+        q_values = q_1.qs
+    elif q_1.qs is None:
+        raise ValueError("Oops, the qs here is None.")
+    else:
+        raise ValueError("Oops, need the length to be equal to the dimensions.")
+
+    for i in range(dim):
+        for j in range(dim):
+            if i == j:
+                diagonal.append(q_values.pop(0))
+            else:
+                diagonal.append(q0())
+
+    return Qs(diagonal, qs_type="op", rows=dim, columns=dim)
+
+
+def identity(dim: int = 1, operator: bool = False, additive: bool = False, non_zeroes=None, qs_type: str = "ket") \
+        -> Qs:
+    """
+    Identity operator for states or operators which are diagonal.
+
+    Args:
+        dim: int
+        operator: bool
+        additive: bool
+        non_zeroes:
+        qs_type: str
+
+    Returns: Qs
+
+    """
+
+    if additive:
+        id_q = [Q() for _ in range(dim)]
+
+    elif non_zeroes is not None:
+        id_q = []
+
+        if len(non_zeroes) != dim:
+            raise ValueError(f"Oops, len(non_zeroes)={len(non_zeroes)}, should be: {dim}")
+
+        else:
+            for non_zero in non_zeroes:
+                if non_zero:
+                    id_q.append(Q([1, 0, 0, 0]))
+                else:
+                    id_q.append(Q())
+
+    else:
+        id_q = [q1() for _ in range(dim)]
+
+    if operator:
+        q_1 = Qs(id_q)
+        ident = diagonal(q_1, dim)
+
+    else:
+        ident = Qs(id_q, qs_type=qs_type)
+
+    return ident
+
+
+def trace(q_1: Qs) -> Qs:
+    """
+    Return the trace as a scalar_q quaternion series.
+
+    Returns: Qs
+
+    Args:
+        q_1: Qs
+
+    Returns: Qs
+
+    """
+
+    if q_1.rows != q_1.columns:
+        raise ValueError(f"Oops, not a square quaternion series: {q_1.rows}/{q_1.columns}")
+
+    else:
+        tr = q_1.qs[0]
+
+    for i in range(1, q_1.rows):
+        tr = add(tr, q_1.qs[i * (q_1.rows + 1)])
+
+    return Qs([tr])
+
+
+def sigma(kind: str = "x", theta: float = None, phi: float = None) -> Qs:
+    """
+    Returns a sigma when given a type like, x, y, z, xy, xz, yz, xyz, with optional angles theta and phi.
+
+    Args:
+        kind: str  x, y, z, xy, etc
+        theta: float   an angle
+        phi: float     an angle
+
+    Returns:
+
+    """
+
+    q0, q_2, qi = Q([0, 0, 0, 0]), Q([1, 0, 0, 0]), Q([0, 1, 0, 0])
+
+    # Should work if given angles or not.
+    if theta is None:
+        sin_theta = 1
+        cos_theta = 1
+    else:
+        sin_theta = math.sin(theta)
+        cos_theta = math.cos(theta)
+
+    if phi is None:
+        sin_phi = 1
+        cos_phi = 1
+    else:
+        sin_phi = math.sin(phi)
+        cos_phi = math.cos(phi)
+
+    x_factor = q_2.product(Qs([sin_theta * cos_phi, 0, 0, 0]))
+    y_factor = qi.product(Qs([sin_theta * sin_phi, 0, 0, 0]))
+    z_factor = q_2.product(Qs([cos_theta, 0, 0, 0]))
+
+    sigma = Bunch()
+    sigma.x = Qs([q0, x_factor, x_factor, q0], "op")
+    sigma.y = Qs([q0, y_factor, y_factor.flip_signs(), q0], "op")
+    sigma.z = Qs([z_factor, q0, q0, z_factor.flip_signs()], "op")
+
+    sigma.xy = sigma.x.add(sigma.y)
+    sigma.xz = sigma.x.add(sigma.z)
+    sigma.yz = sigma.y.add(sigma.z)
+    sigma.xyz = sigma.x.add(sigma.y).add(sigma.z)
+
+    if kind not in sigma:
+        raise ValueError("Oops, I only know about x, y, z, and their combinations.")
+
+    return sigma[kind].normalize()
