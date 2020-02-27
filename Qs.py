@@ -2090,11 +2090,11 @@ def triple_products(q_1: Qs, q_2: Qs, q_3: Qs) -> Qs:
     return qqq_to_qs_function(triple_product, q_1, q_2, q_3)
 
 
-def rotate(q_1: Q, u: Q) -> Q:
+def rotation(q_1: Q, u: Q) -> Q:
     """
     Do a rotation using a triple product: u R 1/u.
 
-    $ q.rotate(u) = u q u^{-1} $
+    $ q.rotation(u) = u q u^{-1} $
 
     $ = (u^2 t - u V.R + u R.V + t V.V, $
     $ ... - u t V + (V.R) V + u^2 R + V t u + VxR u - u RxV - VxRxV) $
@@ -2117,9 +2117,9 @@ def rotate(q_1: Q, u: Q) -> Q:
     return q_rot
 
 
-def rotates(q_1: Qs, u: Qs) -> Qs:
-    f"""{rotate.__doc__}""".replace("Q", "Qs")
-    return qq_to_qs_function(rotate, q_1, u)
+def rotations(q_1: Qs, u: Qs) -> Qs:
+    f"""{rotation.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(rotation, q_1, u)
 
 
 def rotation_angle(q_1: Q, q_2: Q, origin: Q = q0(), tangent_space_norm: float = 1.0, degrees: bool = False) -> Q:
