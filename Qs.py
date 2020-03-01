@@ -20,6 +20,7 @@ import math
 from copy import deepcopy
 
 import numpy as np
+import pandas as pd
 import sympy as sp
 from typing import Dict, List
 from IPython.display import display
@@ -35,16 +36,19 @@ class Q(object):
     def __init__(self, values: object = None, q_type: object = "Q", representation: str = "") -> Q:
 
         if values is None:
-            self.t, self.x, self.y, self.z = 0, 0, 0, 0
+            self.df = pd.DataFrame(data=[0, 0, 0, 0])
         elif len(values) == 4:
-            self.t, self.x, self.y, self.z = values[0], values[1], values[2], values[3]
+            self.df = pd.DataFrame(data=values)
 
         elif len(values) == 8:
-            self.t, self.x = values[0] - values[1], values[2] - values[3]
-            self.y, self.z = values[4] - values[5], values[6] - values[7]
+            self.df = pd.DataFrame(data=[values[0] - values[1], values[2] - values[3],
+                                         values[4] - values[5], values[6] - values[7]])
 
         else:
             raise ValueError(f"The program accepts lists/arrays of 4 or 8 dimensions, not {len(values)}")
+
+        self.t, self.x, self.y, self.z = self.df.iloc(0)[0][0], self.df.iloc(0)[1][0], self.df.iloc(0)[2][0], \
+                                         self.df.iloc(0)[3][0]
 
         self.representation = representation
 
@@ -143,7 +147,6 @@ class Q(object):
         """
 
         symbolic = self.is_symbolic()
-        rep = ""
 
         if representation == "":
             rep = [self.t, self.x, self.y, self.z]
@@ -293,14 +296,14 @@ class Q(object):
         else:
             raise Exception(f"Oops, 2 have different representations: {self.representation} {q_2.representation}")
 
-    def display_q(self: Q, label: str = "") -> Q:
+    def display_q(self: Q, label: str = ""):
         """
         Prints LaTeX-like output, one line for each of th 4 terms.
 
         Args:
             label: str  an additional bit of text.
 
-        Returns: Q
+        Returns:
 
         """
 
@@ -310,7 +313,6 @@ class Q(object):
         display(self.x)
         display(self.y)
         display(self.z)
-        return
 
     def simple_q(self: Q) -> Q:
         """
@@ -363,7 +365,6 @@ class Q(object):
 
         return q_txyz
 
-
     def t(q_1: Q) -> np.array:
         """
         Returns the t as an np.array.
@@ -373,7 +374,6 @@ class Q(object):
         """
 
         return np.array([q_1.t])
-
 
     def xyz(q_1: Q) -> np.array:
         """
@@ -402,6 +402,7 @@ class Qs(object):
 
         super().__init__()
         self.qs = qs
+        self.df = pd.DataFrame(qs)
         self.qs_type = qs_type
         self.rows = rows
         self.columns = columns
@@ -657,7 +658,7 @@ class Qs(object):
         new_states = []
 
         for ket in self.qs:
-            new_states.append(t(ket))
+            new_states.append(ket.t())
 
         return new_states
 
@@ -734,7 +735,7 @@ class Qs(object):
         else:
             print("Assumes your <bra| already has been conjugated. Double check.")
 
-        b = bra.product(ket)
+        b = products(bra, ket)
 
         return b
 
@@ -765,6 +766,7 @@ class Qs(object):
         return Qs(
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
         )
+
 
 # # Aids to transform Q functions to Qs functions.
 
@@ -816,7 +818,8 @@ def qqq_to_qs_function(func, q_1, q_2, q_3):
 
     """
 
-    return Qs([func(q, r, s) for q, r, s in zip(q_1.qs, q_2.qs, q_3.qs)], qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns)
+    return Qs([func(q, r, s) for q, r, s in zip(q_1.qs, q_2.qs, q_3.qs)], qs_type=q_1.qs_type, rows=q_1.rows,
+              columns=q_1.columns)
 
 
 # # Parts of quaternions
@@ -899,6 +902,7 @@ def q1(n: float = 1.0, q_type: str = "1", representation: str = "") -> Q:
     """
 
     return Q([n, 0, 0, 0], q_type=q_type, representation=representation)
+
 
 def q1s(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
     f"""{q1.__doc__}""".replace("Q", "Qs")
@@ -993,7 +997,8 @@ def qrandom(low: float = -1.0, high: float = 1.0, distribution: str = "uniform",
     return qr
 
 
-def qrandoms(low: float = -1.0, high: float = 1.0, distribution: str = "uniform", dim: int = 1, qs_type: str = "ket") -> Qs:
+def qrandoms(low: float = -1.0, high: float = 1.0, distribution: str = "uniform", dim: int = 1,
+             qs_type: str = "ket") -> Qs:
     f"""{qrandom.__doc__}""".replace("Q", "Qs")
     return Qs([qrandom(low, high, distribution) for _ in range(dim)], qs_type=qs_type)
 
@@ -1300,7 +1305,7 @@ def _commuting_products(q_1: Q, q_2: Q) -> Dict:
     s_t, s_x, s_y, s_z = q_1.t, q_1.x, q_1.y, q_1.z
     q_2_t, q_2_x, q_2_y, q_2_z = q_2.t, q_2.x, q_2.y, q_2.z
 
-    products = {
+    product_dict = {
         "tt": s_t * q_2_t,
         "xx+yy+zz": s_x * q_2_x + s_y * q_2_y + s_z * q_2_z,
         "tx+xt": s_t * q_2_x + s_x * q_2_t,
@@ -1308,7 +1313,7 @@ def _commuting_products(q_1: Q, q_2: Q) -> Dict:
         "tz+zt": s_t * q_2_z + s_z * q_2_t,
     }
 
-    return products
+    return product_dict
 
 
 def _anti_commuting_products(q_1: Q, q_2: Q) -> Dict:
@@ -1326,7 +1331,7 @@ def _anti_commuting_products(q_1: Q, q_2: Q) -> Dict:
     s_x, s_y, s_z = q_1.x, q_1.y, q_1.z
     q_2_x, q_2_y, q_2_z = q_2.x, q_2.y, q_2.z
 
-    products = {
+    dif_dict = {
         "yz-zy": s_y * q_2_z - s_z * q_2_y,
         "zx-xz": s_z * q_2_x - s_x * q_2_z,
         "xy-yx": s_x * q_2_y - s_y * q_2_x,
@@ -1335,7 +1340,7 @@ def _anti_commuting_products(q_1: Q, q_2: Q) -> Dict:
         "yx-xy": -s_x * q_2_y + s_y * q_2_x,
     }
 
-    return products
+    return dif_dict
 
 
 def _all_products(q_1: Q, q_2: Q) -> Dict:
@@ -1489,12 +1494,12 @@ def normalize(q_1: Q, n: float = 1.0, q_type: str = "U") -> Q:
 
     return n_q
 
-def normalizes(self: Qs, n: float = 1.0, **kwargs) -> Qs:
+
+def normalizes(self: Qs, n: float = 1.0) -> Qs:
     """
     Normalize all states.
 
     Args:
-        **kwargs:
         n: float   number to normalize to, default is 1.0
 
     Returns: Qs
@@ -1528,6 +1533,7 @@ def normalizes(self: Qs, n: float = 1.0, **kwargs) -> Qs:
         columns=self.columns,
     )
 
+
 def orthonormalize(self: Qs) -> Qs:
     """
     Given a quaternion series, returns an orthonormal basis.
@@ -1548,6 +1554,7 @@ def orthonormalize(self: Qs) -> Qs:
     return Qs(
         orthonormal_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns
     )
+
 
 def determinant(self: Qs) -> Qs:
     """
@@ -2169,8 +2176,10 @@ def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
     """
     The method for doing a rotation in 3D space discovered by Rodrigues in the 1840s used a quaternion triple
     product. After Minkowski characterized Einstein's work in special relativity as a 4D rotation, efforts were
-    made to do the same with one quaternion triple product. That obvious goal was not achieved until 2010 by
-    D. Sweetser and independently by M. Kharinov. Two other triple products need to be used like so:
+    made to do the same with one quaternion triple product. Two people were able to do the trick with complex-valued
+    quaternions in 1910-1911, but complex-valued quaternion are not a division altebra. The goal to do the transformation
+    with a division algebra took a century (not of work, but ignoring the issue). In 2010 D. Sweetser and independently
+    by M. Kharinov (year unknown to me) the same algebra was found. Two other triple products need to be used like so:
 
     $ b.rotation_and_or_boost(h) = h b h^* + 1/2 ((hhb)^* -(h^* h^* b)^*) $
 
@@ -2178,6 +2187,8 @@ def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
     rotation, it must have a norm of unity and have the first term equal to zero.
 
     $ h = (0, R), scalar_q(h) = 0, scalar_q(h h^*) = 1 $
+
+    For such a value of h, the second and third terms cancel leaving
 
     To do a boost which may or may not also do a rotation, then the parameter h must have a square whose first
     term is equal to zero:
@@ -2199,16 +2210,16 @@ def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
     q_1.check_representations(h)
     end_q_type = f"{q_1.q_type}rotation/boost"
 
-    # if not h.is_symbolic():
-    #     if math.isclose(h.t, 0):
-    #         if not math.isclose(h.norm_squared().t, 1):
-    #             h = h.normalize()
-    #             h.print_state("To do a 3D rotation, h adjusted value so scalar_q(h h^*) = 1")
+    if not h.is_symbolic():
+        if math.isclose(h.t, 0):
+            if not math.isclose(norm_squared(h).t, 1):
+                h = normalize(h)
+                h.print_state("To do a 3D rotation, h adjusted value so scalar_q(h h^*) = 1")
 
-    #     else:
-    #         if not math.isclose(h.square().t, 1):
-    #             h = Q.Lorentz_next_boost(h, Q.q1())
-    #             h.print_state("To do a Lorentz boost, h adjusted value so scalar_q(h²) = 1")
+        else:
+            if not math.isclose(square(h).t, 1):
+                h = Lorentz_next_boost(h, q1())
+                h.print_state("To do a Lorentz boost, h adjusted value so scalar_q(h²) = 1")
 
     triple_1 = triple_product(h, q_1, conj(h))
     triple_2 = conj(triple_product(h, h, q_1))
@@ -2226,6 +2237,31 @@ def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
 def rotation_and_or_boosts(q_1: Qs, h: Qs) -> Qs:
     f"""{rotation_and_or_boost.__doc__}""".replace("Q", "Qs")
     return qq_to_qs_function(rotation_and_or_boost, q_1, h)
+
+
+def rotation_only(q_1: Q, h: Q) -> Q:
+    """
+    The function calls another function, rotations_and_or_boost() but does so hy constraining the parameter h
+    to have a scalar of zero.
+
+    $ b.rotation_and_or_boost(h) = h b h^* + 1/2 ((hhb)^* -(h^* h^* b)^*) $
+
+    The second and third terms drop out, leaving the Rodrigues 3D spatial rotation formula.
+
+    Args:
+        q_1: Q
+        h: Q
+
+    Returns: Q
+
+    """
+    h_4_rotation = vector_q(h)
+    return rotation_and_or_boost(q_1, h_4_rotation)
+
+
+def rotation_onlys(q_1: Qs, h: Qs) -> Qs:
+    f"""{rotation_only.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(rotation_only, q_1, h)
 
 
 def Lorentz_next_rotation(q_1: Q, q_2: Q) -> Q:
@@ -2936,3 +2972,98 @@ def sigma(kind: str = "x", theta: float = None, phi: float = None) -> Qs:
         raise ValueError("Oops, I only know about x, y, z, and their combinations.")
 
     return sigma[kind].normalize()
+
+
+# Generators of quaternion series.
+def generate_Qs(func: FunctionType, q_1: Union[Q, FunctionType], dim: int = 10, qs_type: str = "ket"):
+    """
+    One quaternion cannot tell a story. generate_Qs provides a general way to create a
+    quaternion series given a function and one quaternion/another function. The function
+    is applied to each subsequent value of the function. If q_1 is itself a function, it
+    will be called each time.
+
+    Args:
+        func: FunctionType   a function that generates an instance of the class Q
+        q_1: Q, FunctionType  Either an instance of Q or a Q function
+        dim: int    The dimensions of the quaternion series
+        qs_type:    bra/ket/operator  Only works for a square operator at this time
+
+    Returns: Qs
+
+    """
+
+    if type(q_1) == Q:
+        new_qs = [func(q_1)]
+
+        for _ in range(dim - 1):
+            new_qs.append(func(new_qs[-1]))
+
+    elif type(q_1) == FunctionType:
+        new_qs = [func(q_1())]
+
+        for _ in range(dim - 1):
+            new_qs.append(func(q_1()))
+
+    else:
+        raise ValueError(f"Cannot work with q_1's type: {type(q_1)}")
+
+    return Qs(new_qs, qs_type=qs_type)
+
+
+def generate_QQs(func, q_1, q_2, dim=10, qs_type="ket"):
+    """
+    One quaternion cannot tell a story. generate_QQs provides a general way to create a
+    quaternion series given a function and two other quaternions/functions. The function
+    is applied to each subsequent value of the function. If q_1 or q_2 is itself a function, it
+    will be called each time.
+
+    This function was written for the function add to be
+    able to represent inertial motion, adding the same value over and over again.
+
+    Args:
+        func: FunctionType   a function that generates an instance of the class Q
+        q_1: Q, FunctionType  Either an instance of Q or a Q function
+        q_2: Q, FunctionType  Either an instance of Q or a Q function
+        dim: int    The dimensions of the quaternion series
+        qs_type:    bra/ket/operator  Only works for a square operator at this time
+
+    Returns: Qs
+
+    """
+
+    if (type(q_1) == Q) and (type(q_2) == Q):
+
+        new_qs = [func(q_1, q_2)]
+
+        for _ in range(dim - 1):
+            new_qs.append(func(new_qs[-1], q_2))
+
+    elif ((type(q_1) == Q) and (type(q_2) == FunctionType)):
+        new_qs = [func(q_1, q_2())]
+
+        for _ in range(dim - 1):
+            new_qs.append(func(new_qs[-1], q_2()))
+
+    elif ((type(q_1) == FunctionType) and (type(q_2) == Q)):
+        new_qs = [func(q_1(), q_2)]
+
+        for _ in range(dim - 1):
+            new_qs.append(func(q_1(), new_qs[-1]))
+
+    elif ((type(q_1) == FunctionType) and (type(q_2) == FunctionType)):
+        new_qs = [func(q_1(), q_2())]
+
+        for _ in range(dim - 1):
+            new_qs.append(func(q_1(), q_2()))
+
+    else:
+        raise ValueError(f"Cannot work with q_1's type: {type(q_1)}")
+
+    return Qs(new_qs, qs_type=qs_type)
+
+    new_qs = [func(q_1, q_2)]
+
+    for _ in range(dim - 1):
+        new_qs.append(func(new_qs[-1], q_2))
+
+    return Qs(new_qs, qs_type=qs_type)
