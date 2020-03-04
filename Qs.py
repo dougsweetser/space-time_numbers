@@ -18,11 +18,12 @@ The function calls for Q and Qs are meant to be very similar.
 from __future__ import annotations
 import math
 from copy import deepcopy
+from types import FunctionType
 
 import numpy as np
 import pandas as pd
 import sympy as sp
-from typing import Dict, List
+from typing import Dict, List, Union
 from IPython.display import display
 from bunch import Bunch
 
@@ -33,7 +34,7 @@ class Q(object):
     Different representations are possible.
     """
 
-    def __init__(self, values: object = None, q_type: object = "Q", representation: str = "") -> Q:
+    def __init__(self, values: List = None, q_type: object = "Q", representation: str = ""):
 
         if values is None:
             self.df = pd.DataFrame(data=[0, 0, 0, 0])
@@ -365,7 +366,7 @@ class Q(object):
 
         return q_txyz
 
-    def t(q_1: Q) -> np.array:
+    def t(self: Q) -> np.array:
         """
         Returns the t as an np.array.
 
@@ -373,9 +374,9 @@ class Q(object):
 
         """
 
-        return np.array([q_1.t])
+        return np.array([self.t])
 
-    def xyz(q_1: Q) -> np.array:
+    def xyz(self: Q) -> np.array:
         """
         Returns the vector_q x, y, z as an np.array.
 
@@ -383,7 +384,7 @@ class Q(object):
 
         """
 
-        return np.array([q_1.x, q_1.y, q_1.z])
+        return np.array([self.x, self.y, self.z])
 
 
 class Qs(object):
@@ -400,9 +401,7 @@ class Qs(object):
 
     def __init__(self, qs=None, qs_type: str = "ket", rows: int = 0, columns: int = 0):
 
-        super().__init__()
         self.qs = qs
-        self.df = pd.DataFrame(qs)
         self.qs_type = qs_type
         self.rows = rows
         self.columns = columns
@@ -418,6 +417,7 @@ class Qs(object):
             self.d, self.dim, self.dimensions = 0, 0, 0
         else:
             self.d, self.dim, self.dimensions = int(len(qs)), int(len(qs)), int(len(qs))
+            self.df = pd.DataFrame([[q.t, q.x, q.y, q.z] for q in qs])
 
         self.set_qs_type(qs_type, rows, columns, copy=False)
 
@@ -1355,10 +1355,10 @@ def _all_products(q_1: Q, q_2: Q) -> Dict:
 
     """
 
-    products = _commuting_products(q_1, q_2)
-    products.update(_anti_commuting_products(q_1, q_2))
+    all_dict = _commuting_products(q_1, q_2)
+    all_dict.update(_anti_commuting_products(q_1, q_2))
 
-    return products
+    return all_dict
 
 
 def square(q_1: Q) -> Q:
@@ -1495,11 +1495,12 @@ def normalize(q_1: Q, n: float = 1.0, q_type: str = "U") -> Q:
     return n_q
 
 
-def normalizes(self: Qs, n: float = 1.0) -> Qs:
+def normalizes(q_1: Qs, n: float = 1.0) -> Qs:
     """
     Normalize all states.
 
     Args:
+        q_1: Qs
         n: float   number to normalize to, default is 1.0
 
     Returns: Qs
@@ -1510,7 +1511,7 @@ def normalizes(self: Qs, n: float = 1.0) -> Qs:
 
     zero_norm_count = 0
 
-    for bra in self.qs:
+    for bra in q_1.qs:
         if norm_squared(bra).t == 0:
             zero_norm_count += 1
             new_states.append(q0())
@@ -1519,7 +1520,7 @@ def normalizes(self: Qs, n: float = 1.0) -> Qs:
 
     new_states_normalized = []
 
-    non_zero_states = self.dim - zero_norm_count
+    non_zero_states = q_1.dim - zero_norm_count
 
     for new_state in new_states:
         new_states_normalized.append(
@@ -1528,9 +1529,9 @@ def normalizes(self: Qs, n: float = 1.0) -> Qs:
 
     return Qs(
         new_states_normalized,
-        qs_type=self.qs_type,
-        rows=self.rows,
-        columns=self.columns,
+        qs_type=q_1.qs_type,
+        rows=q_1.rows,
+        columns=q_1.columns,
     )
 
 
@@ -1783,6 +1784,7 @@ def products(q_1: Qs, q_2: Qs, kind: str = "", reverse: bool = False) -> Qs:
     of rows, states, and operators makes this code the most complex in this library.
 
     Args:
+        q_1: Qs
         q_2: Qs
         kind: str    can be '', even, odd, or even_minus_odd
         reverse: bool
@@ -1890,7 +1892,7 @@ def cross_q(q_1: Q, q_2: Q, reverse: bool = False) -> Q:
 
 def cross_qs(q_1: Qs, q_2: Qs) -> Qs:
     f""""{cross_q.__doc__}""".replace("Q", "Qs")
-    qq_to_qs_function(cross_q, q_1, q_2)
+    return qq_to_qs_function(cross_q, q_1, q_2)
 
 
 def inverse(q_1: Q, additive: bool = False) -> Q:
@@ -2177,9 +2179,10 @@ def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
     The method for doing a rotation in 3D space discovered by Rodrigues in the 1840s used a quaternion triple
     product. After Minkowski characterized Einstein's work in special relativity as a 4D rotation, efforts were
     made to do the same with one quaternion triple product. Two people were able to do the trick with complex-valued
-    quaternions in 1910-1911, but complex-valued quaternion are not a division altebra. The goal to do the transformation
-    with a division algebra took a century (not of work, but ignoring the issue). In 2010 D. Sweetser and independently
-    by M. Kharinov (year unknown to me) the same algebra was found. Two other triple products need to be used like so:
+    quaternions in 1910-1911, but complex-valued quaternion are not a division altebra. The goal to do the
+    transformation with a division algebra took a century (not of work, but ignoring the issue). In 2010 D. Sweetser
+    and independently by M. Kharinov (year unknown to me) the same algebra was found. Two other triple products need to
+    be used like so:
 
     $ b.rotation_and_or_boost(h) = h b h^* + 1/2 ((hhb)^* -(h^* h^* b)^*) $
 
@@ -2733,6 +2736,7 @@ def transpose(q_1: Qs, m: int = None, n: int = None) -> Qs:
     Transposes a series.
 
     Args:
+        q_1: Qs
         m: int
         n: int
 
@@ -2765,11 +2769,12 @@ def transpose(q_1: Qs, m: int = None, n: int = None) -> Qs:
     return Qs(qs_t, rows=q_1.columns, columns=q_1.rows)
 
 
-def Hermitian_conj(q_1: Qs, m: int = None, n: int = None, conj_type: int = 0) -> Qs:
+def Hermitian_conj(q_1: Qs, m: int, n: int, conj_type: object = 0) -> Qs:
     """
     Returns the Hermitian conjugate.
 
     Args:
+        q_1, Qs
         m: int
         n: int
         conj_type: int    0-3
@@ -2782,11 +2787,12 @@ def Hermitian_conj(q_1: Qs, m: int = None, n: int = None, conj_type: int = 0) ->
     return conjs(transpose(q_1, m, n), conj_type)
 
 
-def dagger(q_1: Qs, m: int = None, n: int = None, conj_type: int = 0) -> Qs:
+def dagger(q_1: Qs, m: int, n: int, conj_type: int = 0) -> Qs:
     """
     Just calls Hermitian_conj()
 
     Args:
+        q_1: Qs
         m: int
         n: int
         conj_type: 0-3
@@ -2795,7 +2801,7 @@ def dagger(q_1: Qs, m: int = None, n: int = None, conj_type: int = 0) -> Qs:
 
     """
 
-    return q_1.Hermitian_conj(m, n, conj_type)
+    return Hermitian_conj(q_1, m, n, conj_type)
 
 
 def is_square(q_1: Qs) -> bool:
@@ -2817,7 +2823,7 @@ def is_Hermitian(q_1: Qs) -> bool:
 
     """
 
-    hc = Hermitian_conj(q_1)
+    hc = Hermitian_conj(q_1, q_1.rows, q_1.columns)
 
     return equals(q_1, hc)
 
@@ -2827,13 +2833,14 @@ def diagonal(q_1: Qs, dim: int) -> Qs:
     Make a state dim * dim with q or qs along the 'diagonal'. Always returns an operator.
 
     Args:
+        q_1: Qs
         dim: int
 
     Returns: Qs
 
     """
 
-    diagonal = []
+    the_diagonal = []
 
     if len(q_1.qs) == 1:
         q_values = [q_1.qs[0]] * dim
@@ -2847,11 +2854,11 @@ def diagonal(q_1: Qs, dim: int) -> Qs:
     for i in range(dim):
         for j in range(dim):
             if i == j:
-                diagonal.append(q_values.pop(0))
+                the_diagonal.append(q_values.pop(0))
             else:
-                diagonal.append(q0())
+                the_diagonal.append(q0())
 
-    return Qs(diagonal, qs_type="op", rows=dim, columns=dim)
+    return Qs(the_diagonal, qs_type="op", rows=dim, columns=dim)
 
 
 def identity(dim: int = 1, operator: bool = False, additive: bool = False, non_zeroes=None, qs_type: str = "ket") \
@@ -2954,24 +2961,24 @@ def sigma(kind: str = "x", theta: float = None, phi: float = None) -> Qs:
         sin_phi = math.sin(phi)
         cos_phi = math.cos(phi)
 
-    x_factor = q_2.product(Qs([sin_theta * cos_phi, 0, 0, 0]))
-    y_factor = qi.product(Qs([sin_theta * sin_phi, 0, 0, 0]))
-    z_factor = q_2.product(Qs([cos_theta, 0, 0, 0]))
+    x_factor = products(q_2, Qs([sin_theta * cos_phi, 0, 0, 0]))
+    y_factor = products(qi, Qs([sin_theta * sin_phi, 0, 0, 0]))
+    z_factor = products(q_2, Qs([cos_theta, 0, 0, 0]))
 
-    sigma = Bunch()
-    sigma.x = Qs([q0, x_factor, x_factor, q0], "op")
-    sigma.y = Qs([q0, y_factor, y_factor.flip_signs(), q0], "op")
-    sigma.z = Qs([z_factor, q0, q0, z_factor.flip_signs()], "op")
+    sigma_bunch = Bunch()
+    sigma_bunch.x = Qs([q0, x_factor, x_factor, q0], "op")
+    sigma_bunch.y = Qs([q0, y_factor, flip_sign(y_factor), q0], "op")
+    sigma_bunch.z = Qs([z_factor, q0, q0, flip_sign(z_factor)], "op")
 
-    sigma.xy = sigma.x.add(sigma.y)
-    sigma.xz = sigma.x.add(sigma.z)
-    sigma.yz = sigma.y.add(sigma.z)
-    sigma.xyz = sigma.x.add(sigma.y).add(sigma.z)
+    sigma_bunch.xy = adds(sigma_bunch.x, sigma_bunch.y)
+    sigma_bunch.xz = adds(sigma_bunch.x, sigma_bunch.z)
+    sigma_bunch.yz = adds(sigma_bunch.y, sigma_bunch.z)
+    sigma_bunch.xyz = adds(adds(sigma_bunch.x, sigma_bunch.y), sigma_bunch.z)
 
-    if kind not in sigma:
+    if kind not in sigma_bunch:
         raise ValueError("Oops, I only know about x, y, z, and their combinations.")
 
-    return sigma[kind].normalize()
+    return normalizes(sigma_bunch[kind])
 
 
 # Generators of quaternion series.
@@ -3050,7 +3057,7 @@ def generate_QQs(func, q_1, q_2, dim=10, qs_type="ket"):
         for _ in range(dim - 1):
             new_qs.append(func(q_1(), new_qs[-1]))
 
-    elif ((type(q_1) == FunctionType) and (type(q_2) == FunctionType)):
+    elif type(q_1) == FunctionType and type(q_2) == FunctionType:
         new_qs = [func(q_1(), q_2())]
 
         for _ in range(dim - 1):
@@ -3061,9 +3068,9 @@ def generate_QQs(func, q_1, q_2, dim=10, qs_type="ket"):
 
     return Qs(new_qs, qs_type=qs_type)
 
-    new_qs = [func(q_1, q_2)]
-
-    for _ in range(dim - 1):
-        new_qs.append(func(new_qs[-1], q_2))
-
-    return Qs(new_qs, qs_type=qs_type)
+    # new_qs = [func(q_1, q_2)]
+    #
+    # for _ in range(dim - 1):
+    #     new_qs.append(func(new_qs[-1], q_2))
+    #
+    # return Qs(new_qs, qs_type=qs_type)
