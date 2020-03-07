@@ -37,19 +37,18 @@ class Q(object):
     def __init__(self, values: List = None, q_type: object = "Q", representation: str = ""):
 
         if values is None:
-            self.df = pd.DataFrame(data=[0, 0, 0, 0])
+            self.df = pd.DataFrame(data=[0, 0, 0, 0], index=["t", "x", "y", "z"])
         elif len(values) == 4:
-            self.df = pd.DataFrame(data=values)
+            self.df = pd.DataFrame(data=values, index=["t", "x", "y", "z"])
 
         elif len(values) == 8:
             self.df = pd.DataFrame(data=[values[0] - values[1], values[2] - values[3],
-                                         values[4] - values[5], values[6] - values[7]])
+                                         values[4] - values[5], values[6] - values[7]], index=["t", "x", "y", "z"])
 
         else:
             raise ValueError(f"The program accepts lists/arrays of 4 or 8 dimensions, not {len(values)}")
 
-        self.t, self.x, self.y, self.z = self.df.iloc(0)[0][0], self.df.iloc(0)[1][0], self.df.iloc(0)[2][0], \
-                                         self.df.iloc(0)[3][0]
+        self.t, self.x, self.y, self.z = self.df.at["t", 0], self.df.at["x", 0], self.df.at["y", 0], self.df.at["z", 0]
 
         self.representation = representation
 
@@ -2979,6 +2978,48 @@ def sigma(kind: str = "x", theta: float = None, phi: float = None) -> Qs:
         raise ValueError("Oops, I only know about x, y, z, and their combinations.")
 
     return normalizes(sigma_bunch[kind])
+
+
+def zero_out(q_1: Q, t: bool = False, x: bool = False, y: bool = False, z: bool = False) -> Q:
+    """
+    Puts a zero in one or more of the four places.
+
+    Args:
+        q_1 Q
+        t: bool    zero out t
+        x: bool    zero out x
+        y: bool    zero out y
+        z: bool    zero out z
+
+    Returns: Qs
+    """
+
+    new_q = deepcopy(q_1)
+
+    if t:
+        new_q.t = 0
+
+    if x:
+        new_q.x = 0
+
+    if y:
+        new_q.y = 0
+
+    if z:
+        new_q.z = 0
+
+    return new_q
+
+
+def zero_outs(q_1: Qs, t: bool = False, x: bool = False, y: bool = False, z: bool = False):
+    f"""{zero_out.__doc__}""".replace("Q", "Qs")
+
+    return Qs(
+        [zero_out(q, t, x, y, z) for q in q_1.qs],
+        qs_type=q_1.qs_type,
+        rows=q_1.rows,
+        columns=q_1.columns,
+    )
 
 
 # Generators of quaternion series.
