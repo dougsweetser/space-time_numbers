@@ -2216,12 +2216,23 @@ def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
         if math.isclose(h.t, 0):
             if not math.isclose(norm_squared(h).t, 1):
                 h = normalize(h)
-                h.print_state("To do a 3D rotation, h adjusted value so scalar_q(h h^*) = 1")
+                h.print_state("To do a 3D rotation, adjusted value of h so scalar_q(h h^*) = 1")
 
         else:
             if not math.isclose(square(h).t, 1):
-                h = Lorentz_next_boost(h, q1())
-                h.print_state("To do a Lorentz boost, h adjusted value so scalar_q(h²) = 1")
+                # The scalar part of h will be used to calculate cosh(h.t) and sinh(h.t)
+                # The normalized vector part will point sinh(t) in the direction of vector_q(h)
+                h_scalar = scalar_q(h)
+                h_nomralized_vector = normalize(vector_q(h))
+
+                if np.abs(h_scalar.t) > 1:
+                    h_scalar = inverse(h_scalar)
+
+                h_cosh = product(add(exp(h_scalar), exp(flip_sign(h_scalar))), q1(1.0 / 2.0))
+                h_sinh = product(dif(exp(h_scalar), exp(flip_sign(h_scalar))), q1(1.0 / 2.0))
+
+                h = add(h_cosh, product(h_nomralized_vector, h_sinh))
+                h.print_state("To do a Lorentz boost, adjusted value of h so scalar_q(h²) = 1")
 
     triple_1 = triple_product(h, q_1, conj(h))
     triple_2 = conj(triple_product(h, h, q_1))
@@ -2328,7 +2339,7 @@ def Lorentz_next_boost(q_1: Q, q_2: Q) -> Q:
     if not (q_1.t >= 1.0 and q_2.t >= 1.0):
         raise ValueError(f"Oops, to be a boost, the first values must both be greater than one: {q_1.t},  {q_2.t}")
 
-    if not math.isclose(square(q_1).t, square(q_2).t):
+    if not math.isclose(square(q_1).t, square(q_2).t) or  math.isclose(square(q_1).t, -square(q_2).t) :
         raise ValueError(f"Oops, the squares of these two are not equal: {square(q_1).t} != {square(q_2).t}")
 
     q_even = product(q_1, q_2, kind="even")
@@ -2338,8 +2349,8 @@ def Lorentz_next_boost(q_1: Q, q_2: Q) -> Q:
     if np.abs(q_s.t) > 1:
         q_s = inverse(q_s)
 
-    exp_sum = product(add(exp(q_s), exp(flip_sign(q_s))), q1(1.0 / 2.0))
-    exp_dif = product(dif(exp(q_s), exp(flip_sign(q_s))), q1(1.0 / 2.0))
+    exp_sum = product(add(exp(q_s), exp(flip_sign(q_s))), q1(-1.0 / 2.0))
+    exp_dif = product(dif(exp(q_s), exp(flip_sign(q_s))), q1(-1.0 / 2.0))
 
     boost = add(exp_sum, product(q_v, exp_dif))
 
