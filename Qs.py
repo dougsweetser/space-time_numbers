@@ -2339,7 +2339,7 @@ def Lorentz_next_boost(q_1: Q, q_2: Q) -> Q:
     if not (q_1.t >= 1.0 and q_2.t >= 1.0):
         raise ValueError(f"Oops, to be a boost, the first values must both be greater than one: {q_1.t},  {q_2.t}")
 
-    if not math.isclose(square(q_1).t, square(q_2).t) or  math.isclose(square(q_1).t, -square(q_2).t) :
+    if not math.isclose(square(q_1).t, square(q_2).t):
         raise ValueError(f"Oops, the squares of these two are not equal: {square(q_1).t} != {square(q_2).t}")
 
     q_even = product(q_1, q_2, kind="even")
@@ -3069,7 +3069,7 @@ def generate_Qs(func: FunctionType, q_1: Union[Q, FunctionType], dim: int = 10, 
     return Qs(new_qs, qs_type=qs_type)
 
 
-def generate_QQs(func, q_1, q_2, dim=10, qs_type="ket"):
+def generate_QQs(func, q_1: Union[Q, FunctionType], q_2: Union[Q, FunctionType], dim: int = 10, qs_type: str = "ket") -> Qs:
     """
     One quaternion cannot tell a story. generate_QQs provides a general way to create a
     quaternion series given a function and two other quaternions/functions. The function
@@ -3120,9 +3120,3 @@ def generate_QQs(func, q_1, q_2, dim=10, qs_type="ket"):
 
     return Qs(new_qs, qs_type=qs_type)
 
-    # new_qs = [func(q_1, q_2)]
-    #
-    # for _ in range(dim - 1):
-    #     new_qs.append(func(new_qs[-1], q_2))
-    #
-    # return Qs(new_qs, qs_type=qs_type)
