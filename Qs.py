@@ -413,10 +413,27 @@ class Qs(object):
             )
 
         if qs is None:
+            self.qs = [q0()]
             self.d, self.dim, self.dimensions = 0, 0, 0
+            self.df = pd.DataFrame([[0, 0, 0, 0]],  columns=('t', 'x', 'y', 'z'))
         else:
             self.d, self.dim, self.dimensions = int(len(qs)), int(len(qs)), int(len(qs))
-            self.df = pd.DataFrame([[q.t, q.x, q.y, q.z] for q in qs])
+            self.df = pd.DataFrame([[q.t, q.x, q.y, q.z] for q in qs], columns=('t', 'x', 'y', 'z'))
+
+        if not self.qs[0].is_symbolic():
+            mins = self.df.min()
+            self.min = Bunch()
+            self.min.t = float(math.floor(mins.t))
+            self.min.x = float(math.floor(mins.x))
+            self.min.y = float(math.floor(mins.y))
+            self.min.z = float(math.floor(mins.z))
+
+            maxs = self.df.max()
+            self.max = Bunch()
+            self.max.t = float(math.ceil(maxs.t))
+            self.max.x = float(math.ceil(maxs.x))
+            self.max.y = float(math.ceil(maxs.y))
+            self.max.z = float(math.ceil(maxs.z))
 
         self.set_qs_type(qs_type, rows, columns, copy=False)
 
@@ -1892,6 +1909,28 @@ def cross_q(q_1: Q, q_2: Q, reverse: bool = False) -> Q:
 def cross_qs(q_1: Qs, q_2: Qs) -> Qs:
     f""""{cross_q.__doc__}""".replace("Q", "Qs")
     return qq_to_qs_function(cross_q, q_1, q_2)
+
+
+def dot_product(q_1: Qs, q_2: Qs) -> Q:
+    """
+    Just runs products() on two quaternion states
+    If that evalues to a scalar quaternion series
+    converts that to a quaternion, ie not a series.
+
+    Args:
+        q_1: Qs
+        q_2: Qs
+
+    Returns: Q
+
+    """
+
+    scalar = products(q_1, q_2)
+
+    if scalar.qs_type != "scalar_q":
+        raise Exception(f"Oops, does not evaluate to a scalar: {scalar}")
+
+    return scalar.qs[0]
 
 
 def inverse(q_1: Q, additive: bool = False) -> Q:
