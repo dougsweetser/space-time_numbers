@@ -807,6 +807,68 @@ def test__1470_rotation_angle():
     assert math.isclose(r123 + r312 + r231, 180)
 
 
+def _test_the_square(function_to_test: FunctionType, numbers_dict: Dict = None, quiet_pass: bool = False,
+                     quiet_fail: bool = False) -> bool:
+    """
+    Pick out a few classes for q to test - real, imaginary, complex,
+    small norm quaternion, large norm quaternion
+
+    Pick out the same category for h to test.
+
+    Test the Cartesian product of q and h to see if the first term of
+    the squares are the same before and after the mapping.
+
+    Args:
+        function_to_test: FunctionType    The function to test
+        quiet_pass: bool   quiets all passes
+        quiet_fail: bool   quiets the failed tests
+
+    Returns: bool   passed all tests or not
+
+    Will print results to stdout.
+
+    """
+
+    if numbers_dict is None:
+        numbers_dict = {"zero": q0(), "one": q1()}
+        numbers_dict["real"], numbers_dict["imaginary"] = Q([2.0, 0, 0, 0]), Q([0, 3.0, 0, 0])
+        numbers_dict["complex"] = Q([2.0, 4.0, 0, 0])
+        numbers_dict["small"], numbers_dict["big"] = Q([0.1, 0.2, 0.3, 0.4]), Q([3.0, 4.0 , 2.0, 5.0])
+
+    good, evil = 0, 0
+
+    print(f"testing Cartesian product of these numbers: {', '.join(numbers_dict.keys())}, total={len(numbers_dict.keys()) ** 2}")
+
+    for q_name, q_number in numbers_dict.items():
+
+        q_square = square(q_number)
+
+        for h_name, h_number in numbers_dict.items():
+
+            applied = function_to_test(q_number, h_number)
+
+            applied_square = square(applied)
+
+            truth = equal(q_square, applied_square, vector=False)
+
+            if truth:
+
+                good += 1
+
+                if not quiet_pass:
+                    print(f"PASS: q={q_name} {q_number}, h={h_name} {h_number}")
+
+            else:
+
+                evil += 1
+
+                if not quiet_fail:
+                    print(f"FAIL: q={q_name} {q_number}, h={h_name} {h_number}")
+
+    print(f"Pass/Fail: {good}/{evil}")
+
+    return bool(not evil)
+
 def test__1470_rotation_and_or_boost():
     q1_sq = square(Q1)
     beta: float = 0.003
@@ -818,7 +880,7 @@ def test__1470_rotation_and_or_boost():
     print("boosted: ", q_z)
     print("boosted squared: ", q_z2)
     assert round(q_z2.t, 5) == round(q1_sq.t, 5)
-
+    assert _test_the_square(rotation_and_or_boost)
 
 def test__1471_rotation_and_or_boosts():
     q1_sq = squares(Q_states)

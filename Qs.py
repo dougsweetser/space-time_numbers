@@ -821,7 +821,7 @@ def qq_to_qs_function(func, q_1, q_2):
 
 def qqq_to_qs_function(func, q_1, q_2, q_3):
     """
-    Utility to transform quaternion functions to quaternion state function
+    Utility to transform quaternion functions to quaternion series function
     that operate separately on each qs state.
 
     Args:
@@ -836,6 +836,47 @@ def qqq_to_qs_function(func, q_1, q_2, q_3):
 
     return Qs([func(q, r, s) for q, r, s in zip(q_1.qs, q_2.qs, q_3.qs)], qs_type=q_1.qs_type, rows=q_1.rows,
               columns=q_1.columns)
+
+
+def qs_to_q_function(func: FunctionType, q_1: Qs) -> Q:
+    """
+    Utility to transform quaternion series functions to a quaternion function.
+
+    Args:
+        func:     Pointer to a function
+        q_1: Qs   A quaternion series
+
+    Returns: Q
+
+    """
+
+    scalar = func(q_1)
+
+    if scalar.qs_type != "scalar_q":
+        raise Exception(f"Oops, does not evaluate to a scalar: {scalar}")
+
+    return scalar.qs[0]
+
+
+def qs_qs_to_q_function(func: FunctionType, q_1: Qs, q_2: Qs) -> Q:
+    """
+    Utility to transform quaternion series functions to a quaternion function.
+
+    Args:
+        func:     Pointer to a function
+        q_1: Qs   A quaternion series
+        q_2: Qs   A quaternion series
+
+    Returns: Q
+
+    """
+
+    scalar = func(q_1, q_2)
+
+    if scalar.qs_type != "scalar_q":
+        raise Exception(f"Oops, does not evaluate to a scalar: {scalar}")
+
+    return scalar.qs[0]
 
 
 # # Parts of quaternions
@@ -1912,25 +1953,8 @@ def cross_qs(q_1: Qs, q_2: Qs) -> Qs:
 
 
 def dot_product(q_1: Qs, q_2: Qs) -> Q:
-    """
-    Just runs products() on two quaternion states
-    If that evalues to a scalar quaternion series
-    converts that to a quaternion, ie not a series.
-
-    Args:
-        q_1: Qs
-        q_2: Qs
-
-    Returns: Q
-
-    """
-
-    scalar = products(q_1, q_2)
-
-    if scalar.qs_type != "scalar_q":
-        raise Exception(f"Oops, does not evaluate to a scalar: {scalar}")
-
-    return scalar.qs[0]
+    f"""{products.__doc__}"""
+    return  qs_qs_to_q_function(products, q_1, q_2)
 
 
 def inverse(q_1: Q, additive: bool = False) -> Q:
@@ -2212,7 +2236,7 @@ def rotation_angle(q_1: Q, q_2: Q, origin: Q = q0(), tangent_space_norm: float =
     return Q([angle, 0, 0, 0])
 
 
-def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
+def rotation_and_or_boost(q_1: Q, h: Q, verbose=False) -> Q:
     """
     The method for doing a rotation in 3D space discovered by Rodrigues in the 1840s used a quaternion triple
     product. After Minkowski characterized Einstein's work in special relativity as a 4D rotation, efforts were
@@ -2252,12 +2276,9 @@ def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
     end_q_type = f"{q_1.q_type}rotation/boost"
 
     if not h.is_symbolic():
-        if math.isclose(h.t, 0):
-            if not math.isclose(norm_squared(h).t, 1):
-                h = normalize(h)
-                h.print_state("To do a 3D rotation, adjusted value of h so scalar_q(h h^*) = 1")
 
-        else:
+        if (not math.isclose(h.t, 0) and not equal(q0(), vector_q(h))) or equal(h, q0()):
+
             if not math.isclose(square(h).t, 1):
                 # The scalar part of h will be used to calculate cosh(h.t) and sinh(h.t)
                 # The normalized vector part will point sinh(t) in the direction of vector_q(h)
@@ -2271,7 +2292,15 @@ def rotation_and_or_boost(q_1: Q, h: Q) -> Q:
                 h_sinh = product(dif(exp(h_scalar), exp(flip_sign(h_scalar))), q1(1.0 / 2.0))
 
                 h = add(h_cosh, product(h_nomralized_vector, h_sinh))
-                h.print_state("To do a Lorentz boost, adjusted value of h so scalar_q(h²) = 1")
+
+                if verbose:
+                    h.print_state("To do a Lorentz boost, adjusted value of h so scalar_q(h²) = 1")
+
+        else:
+            if not math.isclose(norm_squared(h).t, 1):
+                h = normalize(h)
+                if verbose:
+                    h.print_state("To do a 3D rotation, adjusted value of h so scalar_q(h h^*) = 1")
 
     triple_1 = triple_product(h, q_1, conj(h))
     triple_2 = conj(triple_product(h, h, q_1))
@@ -3061,7 +3090,7 @@ def zero_out(q_1: Q, t: bool = False, x: bool = False, y: bool = False, z: bool 
     return new_q
 
 
-def zero_outs(q_1: Qs, t: bool = False, x: bool = False, y: bool = False, z: bool = False):
+def zero_outs(q_1: Qs, t: bool = False, x: bool = False, y: bool = False, z: bool = False) -> Qs:
     f"""{zero_out.__doc__}""".replace("Q", "Qs")
 
     return Qs(
@@ -3073,7 +3102,7 @@ def zero_outs(q_1: Qs, t: bool = False, x: bool = False, y: bool = False, z: boo
 
 
 # Generators of quaternion series.
-def generate_Qs(func: FunctionType, q_1: Union[Q, FunctionType], dim: int = 10, qs_type: str = "ket"):
+def generate_Qs(func: FunctionType, q_1: Union[Q, Qs, FunctionType], dim: int = 10, qs_type: str = "ket") -> Qs:
     """
     One quaternion cannot tell a story. generate_Qs provides a general way to create a
     quaternion series given a function and one quaternion/another function. The function
@@ -3082,7 +3111,7 @@ def generate_Qs(func: FunctionType, q_1: Union[Q, FunctionType], dim: int = 10, 
 
     Args:
         func: FunctionType   a function that generates an instance of the class Q
-        q_1: Q, FunctionType  Either an instance of Q or a Q function
+        q_1: Q, FunctionType  Either an instance of Q, Qs, or a Q function
         dim: int    The dimensions of the quaternion series
         qs_type:    bra/ket/operator  Only works for a square operator at this time
 
@@ -3096,6 +3125,9 @@ def generate_Qs(func: FunctionType, q_1: Union[Q, FunctionType], dim: int = 10, 
         for _ in range(dim - 1):
             new_qs.append(func(new_qs[-1]))
 
+    elif type(q_1) == Qs:
+        new_qs = q_1.qs
+
     elif type(q_1) == FunctionType:
         new_qs = [func(q_1())]
 
@@ -3108,7 +3140,7 @@ def generate_Qs(func: FunctionType, q_1: Union[Q, FunctionType], dim: int = 10, 
     return Qs(new_qs, qs_type=qs_type)
 
 
-def generate_QQs(func, q_1: Union[Q, FunctionType], q_2: Union[Q, FunctionType], dim: int = 10, qs_type: str = "ket") -> Qs:
+def generate_QQs(func, q_1: Union[Q, Qs, FunctionType], q_2: Union[Q, Qs, FunctionType], dim: int = 10, qs_type: str = "ket") -> Qs:
     """
     One quaternion cannot tell a story. generate_QQs provides a general way to create a
     quaternion series given a function and two other quaternions/functions. The function
@@ -3120,8 +3152,8 @@ def generate_QQs(func, q_1: Union[Q, FunctionType], q_2: Union[Q, FunctionType],
 
     Args:
         func: FunctionType   a function that generates an instance of the class Q
-        q_1: Q, FunctionType  Either an instance of Q or a Q function
-        q_2: Q, FunctionType  Either an instance of Q or a Q function
+        q_1: Q, Qs, FunctionType  Either an instance of Q, Qs, or a Q function
+        q_2: Q, Qs, FunctionType  Either an instance of Q, Qs, or a Q function
         dim: int    The dimensions of the quaternion series
         qs_type:    bra/ket/operator  Only works for a square operator at this time
 
