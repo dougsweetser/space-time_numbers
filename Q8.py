@@ -2788,7 +2788,7 @@ class Q8States(object):
         new_states = []
 
         for ket, q in zip(self.qs, q1.qs):
-            new_states.append(ket.Lorentz_next_rotation(q))
+            new_states.append(ket.next_rotation(q))
 
         return Q8States(
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
@@ -2806,7 +2806,7 @@ class Q8States(object):
         new_states = []
 
         for ket, q in zip(self.qs, q1.qs):
-            new_states.append(ket.Lorentz_next_boost(q))
+            new_states.append(ket.next_boost(q))
 
         return Q8States(
             new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns

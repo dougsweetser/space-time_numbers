@@ -913,27 +913,52 @@ def test_1473_rotations_onlys():
 #   assert equals(norm_squareds(Q1123s), norm_squareds(Q1123s_rot))
 
 
-def test__1471_Lorentz_next_rotation():
+def test__1471_next_rotation():
     with pytest.raises(ValueError):
-        Lorentz_next_rotation(Q1, q4321)
-    next_rotation = Lorentz_next_rotation(Q1, q1324)
-    print("next_rotation: ", next_rotation)
-    assert next_rotation.t == 0
-    rot = rotation_and_or_boost(q2244, next_rotation)
+        next_rotation(Q1, q4321)
+    next_rot = next_rotation(Q1, q1324)
+    print("next_rotation: ", next_rot)
+    assert next_rot.t == Q1.t
+    rot = rotation_and_or_boost(q2244, vector_q(next_rot))
     assert math.isclose(rot.t, 2)
     assert math.isclose(square(rot).t, square(q2244).t)
-    next_rotation = Lorentz_next_rotation(Q1, Q1)
-    assert equal(next_rotation, normalize(vector_q(Q1)))
+    next_rot = next_rotation(Q1, Q1)
+    assert equal(next_rot, Q1)
 
 
-def test__1472_Lorentz_next_boost():
+def test__1471_next_randomized_rotation():
     with pytest.raises(ValueError):
-        Lorentz_next_boost(Q1, q4321)
-    next_boost = Lorentz_next_boost(Q1, q1324)
-    print(f"next_boost: {next_boost}")
-    assert next_boost.t != 0
-    boost = rotation_and_or_boost(q2244, next_boost)
+        next_rotation_randomized(Q1, q4321)
+    next_randomized_rot = next_rotation_randomized(Q1, q1324)
+    print("next_rotation: ", next_randomized_rot)
+    assert next_randomized_rot.t == Q1.t
+    rot = rotation_and_or_boost(q2244, vector_q(next_randomized_rot))
+    assert math.isclose(rot.t, 2)
+    assert math.isclose(square(rot).t, square(q2244).t)
+    next_rot = next_rotation(Q1, Q1)
+    assert equal(next_rot, Q1)
+
+
+def test__1472_next_boost():
+    with pytest.raises(ValueError):
+        next_boost(Q1, q4321)
+    next_boo = next_boost(Q1, q1324)
+    print(f"next_boost: {next_boo}")
+    assert next_boo.t != 0
+    boost = rotation_and_or_boost(q2244, next_boo)
     assert math.isclose(square(boost).t, square(q2244).t)
+
+
+def test__1475_permutation():
+    with pytest.raises(ValueError):
+        permutation(Q1123, "tx")
+    new_p = permutation(q1234, "tyxz")
+    assert equal(new_p, q1324)
+
+
+def test__1476_all_permutations():
+    new_ps = all_permutations(q1234)
+    assert new_ps.dim == 24
 
 
 def test__1480_g_shift():
@@ -1282,21 +1307,21 @@ def test__1130_identity():
     assert equal(I2.qs[1], q1())
 
 
-def test__1305_Lorentz_next_rotations():
+def test__1305_next_rotations():
     with pytest.raises(ValueError):
-        Lorentz_next_rotations(qs_1234, q2_states)
-    next_rot: Qs = Lorentz_next_rotations(qs_1234, qs_1324)
+        next_rotations(qs_1234, q2_states)
+    next_rot: Qs = next_rotations(qs_1234, qs_1324)
     print("next_rotation: ", next_rot)
-    assert math.isclose(next_rot.qs[0].t, 0)
-    assert math.isclose(next_rot.qs[1].t, 0)
-    assert math.isclose(norm_squareds(next_rot).qs[0].t, 2)
+    assert math.isclose(next_rot.qs[0].t, 1)
+    assert math.isclose(next_rot.qs[1].t, 1)
+    assert math.isclose(norm_squareds(next_rot).qs[0].t, 60)
     assert not equal(next_rot.qs[0], next_rot.qs[1])
 
 
-def test__1305_Lorentz_next_boost():
+def test__1305_next_boost():
     with pytest.raises(ValueError):
-        Lorentz_next_boosts(qs_1234, q2_states)
-    next_boost: Qs = Lorentz_next_boosts(qs_1234, qs_1324)
+        next_boosts(qs_1234, q2_states)
+    next_boost: Qs = next_boosts(qs_1234, qs_1324)
     print("next_boost: ", next_boost)
     assert next_boost.qs[0].t != 0
     assert next_boost.qs[1].t != 0

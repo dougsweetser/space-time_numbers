@@ -1239,7 +1239,7 @@ class QH(object):
 
         #     else:
         #         if not math.isclose(h.square().t, 1):
-        #             h = QH.Lorentz_next_boost(h, QH.q_1())
+        #             h = QH.next_boost(h, QH.q_1())
         #             h.print_state("To do a Lorentz boost, h adjusted value so scalar(h²) = 1")
 
         triple_1 = h.triple_product(self, h.conj())
@@ -1260,7 +1260,7 @@ class QH(object):
         Given 2 quaternions, creates a new quaternion to do a rotation
         in the triple triple quaternion function by using a normalized cross product.
 
-        $ Lorentz_next_rotation(q, q_2) = (q q\_2 - q\_2 q) / 2|(q q\_2 - (q\_2 q)^*)| = (0, QxQ\_2)/|(0, QxQ\_2)| $
+        $ next_rotation(q, q_2) = (q q\_2 - q\_2 q) / 2|(q q\_2 - (q\_2 q)^*)| = (0, QxQ\_2)/|(0, QxQ\_2)| $
 
         Args:
             q:      any quaternion
@@ -1298,7 +1298,7 @@ class QH(object):
         using the triple triple quaternion product
         by using the scalar of an even product to form (cosh(x), i sinh(x)).
 
-        $ Lorentz_next_boost(q, q_2) = q q\_2 + q\_2 q
+        $ next_boost(q, q_2) = q q\_2 + q\_2 q
 
         Args:
             q: QH

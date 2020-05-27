@@ -20,6 +20,7 @@ import math
 from copy import deepcopy
 from types import FunctionType
 
+import itertools
 import numpy as np
 import pandas as pd
 import sympy as sp
@@ -2161,27 +2162,32 @@ def triple_products(q_1: Qs, q_2: Qs, q_3: Qs) -> Qs:
     return qqq_to_qs_function(triple_product, q_1, q_2, q_3)
 
 
-def rotation(q_1: Q, u: Q) -> Q:
+def rotation(q_1: Q, h: Q) -> Q:
     """
     Do a rotation using a triple product: u R 1/u.
+    SPECIAL NOTE: q_1 = 0 MUST WORK! Zero is just another number.
+    To make it work, view the rotation function as a 2-part function.
+    If h=0, then return q_1.
+    If h!=0, then form the Rodrigues triple product.
+    Also note one needs to use the inverse to not rescale the result.
 
-    $ q.rotation(u) = u q u^{-1} $
-
-    $ = (u^2 t - u V.R + u R.V + t V.V, $
-    $ ... - u t V + (V.R) V + u^2 R + V t u + VxR u - u RxV - VxRxV) $
+    $ rotation(q, h) = h q h^{-1} $
 
     Args:
         q_1: Q
-        u: Q    pre-multiply by u, post-multiply by $u^{-1}$.
+        h: Q    pre-multiply by u, post-multiply by $u^{-1}$.
 
     Returns: Q
 
     """
 
-    q_1.check_representations(u)
+    q_1.check_representations(h)
     end_q_type = f"{q_1.q_type}*rot"
 
-    q_rot = triple_product(u, q_1, inverse(u))
+    if equal(h, q0()):
+        return q_1
+
+    q_rot = triple_product(h, q_1, inverse(h))
     q_rot.q_type = end_q_type
     q_rot.representation = q_1.representation
 
@@ -2191,6 +2197,44 @@ def rotation(q_1: Q, u: Q) -> Q:
 def rotations(q_1: Qs, u: Qs) -> Qs:
     f"""{rotation.__doc__}""".replace("Q", "Qs")
     return qq_to_qs_function(rotation, q_1, u)
+
+
+def rotation_and_rescale(q_1: Q, h: Q) -> Q:
+    """
+    Do a rotation using a triple product: u R u^*.
+    The rescaling will be by a factor of ||u||^2
+
+    SPECIAL NOTE: q_1 = 0 MUST WORK! Zero is just another number.
+    To make it work, view the rotation function as a 2-part function.
+    If h=0, then return q_1.
+    If h!=0, then form the Rodrigues triple product.
+
+    $ rotation(q, h) = h q h^* $
+
+    Args:
+        q_1: Q
+        h: Q    pre-multiply by u, post-multiply by $u^{-1}$.
+
+    Returns: Q
+
+    """
+
+    q_1.check_representations(h)
+    end_q_type = f"{q_1.q_type}*rot"
+
+    if equal(h, q0()):
+        return q_1
+
+    q_rot = triple_product(u, q_1, inverse(h))
+    q_rot.q_type = end_q_type
+    q_rot.representation = q_1.representation
+
+    return q_rot
+
+
+def rotation_and_rescales(q_1: Qs, h: Qs) -> Qs:
+    f"""{rotation_and_rescale.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(rotation_and_rescale, q_1, h)
 
 
 def rotation_angle(q_1: Q, q_2: Q, origin: Q = q0(), tangent_space_norm: float = 1.0, degrees: bool = False) -> Q:
@@ -2345,12 +2389,12 @@ def rotation_onlys(q_1: Qs, h: Qs) -> Qs:
     return qq_to_qs_function(rotation_only, q_1, h)
 
 
-def Lorentz_next_rotation(q_1: Q, q_2: Q) -> Q:
+def next_rotation(q_1: Q, q_2: Q) -> Q:
     """
     Given 2 quaternions, creates a new quaternion to do a rotation
     in the triple triple quaternion function by using a normalized cross product.
 
-    $ Lorentz_next_rotation(q, q_2) = (q q\_2 - q\_2 q) / 2|(q q\_2 - (q\_2 q)^*)| = (0, QxQ\_2)/|(0, QxQ\_2)| $
+    $ next_rotation(q, q_2) = (q q\_2 - q\_2 q) / 2|(q q\_2 - (q\_2 q)^*)| = (0, QxQ\_2)/|(0, QxQ\_2)| $
 
     Args:
         q_1: Q   any quaternion
@@ -2365,35 +2409,65 @@ def Lorentz_next_rotation(q_1: Q, q_2: Q) -> Q:
     if not math.isclose(q_1.t, q_2.t):
         raise ValueError(f"Oops, to be a rotation, the first values must be the same: {q_1.t} != {q_2.t}")
 
-    if not math.isclose(square(q_1).t, square(q_2).t):
-        raise ValueError(f"Oops, the squares of these two are not equal: {square(q_1).t} != {square(q_2).t}")
+    if not math.isclose(norm_squared(q_1).t, norm_squared(q_2).t):
+        raise ValueError(f"Oops, the norm squared of these two are not equal: {norm_squared(q_1).t} != {norm_squared(q_2).t}")
 
-    next_rotation = normalize(product(q_1, q_2, kind="odd"))
+    next_rot = product(q_1, q_2)
+    v_abs_q_1 = abs_of_vector(q_1).t
+    next_vector_normalized = normalize(vector_q(next_rot), v_abs_q_1)
+    next_vector_normalized.t = q_1.t
 
-    # If the 2 quaternions point in exactly the same direction, the result is zero.
-    # That is unacceptable for closure, so return the normalized vector_q of one input.
-    # This does create some ambiguity since q and q_2 could point in exactly opposite
-    # directions. In that case, the first quaternion is always chosen.
-    v_norm = norm_squared_of_vector(next_rotation)
-
-    if v_norm.t == 0:
-        next_rotation = normalize(vector_q(q_1))
-
-    return next_rotation
+    return next_vector_normalized
 
 
-def Lorentz_next_rotations(q_1: Qs, q_2: Qs) -> Qs:
-    f"""{Lorentz_next_rotation.__doc__}""".replace("Q", "Qs")
-    return qq_to_qs_function(Lorentz_next_rotation, q_1, q_2)
+def next_rotations(q_1: Qs, q_2: Qs) -> Qs:
+    f"""{next_rotation.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(next_rotation, q_1, q_2)
 
 
-def Lorentz_next_boost(q_1: Q, q_2: Q) -> Q:
+def next_rotation_randomized(q_1: Q, q_2: Q) -> Q:
+    """
+    Given 2 quaternions, creates a new quaternion to do a rotation
+    in the triple triple quaternion function by using a normalized cross product.
+
+    To assure that repeated calls cover the sphere, multiply by a random factor.
+
+    Args:
+        q_1: Q   any quaternion
+        q_2: Q   any quaternion whose first term equal the first term of q and
+                  for the first terms of each squared.
+
+    Returns: Q
+
+    """
+    q_1.check_representations(q_2)
+
+    if not math.isclose(q_1.t, q_2.t):
+        raise ValueError(f"Oops, to be a rotation, the first values must be the same: {q_1.t} != {q_2.t}")
+
+    if not math.isclose(norm_squared(q_1).t, norm_squared(q_2).t):
+        raise ValueError(f"Oops, the norm squared of these two are not equal: {norm_squared(q_1).t} != {norm_squared(q_2).t}")
+
+    next_rot = product(product(q_1, q_2), qrandom())
+    v_abs_q_1 = abs_of_vector(q_1).t
+    next_vector_normalized = normalize(vector_q(next_rot), v_abs_q_1)
+    next_vector_normalized.t = q_1.t
+
+    return next_vector_normalized
+
+
+def next_rotation_randomizeds(q_1: Qs, q_2: Qs) -> Qs:
+    f"""{next_rotation_randomized.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(next_rotation_randomized, q_1, q_2)
+
+
+def next_boost(q_1: Q, q_2: Q) -> Q:
     """
     Given 2 quaternions, creates a new quaternion to do a boost/rotation
     using the triple triple quaternion product
     by using the scalar_q of an even product to form (cosh(x), i sinh(x)).
 
-    $ Lorentz_next_boost(q, q_2) = q q\_2 + q\_2 q
+    $ next_boost(q, q_2) = q q\_2 + q\_2 q
 
     Args:
         q_1: Q
@@ -2425,9 +2499,58 @@ def Lorentz_next_boost(q_1: Q, q_2: Q) -> Q:
     return boost
 
 
-def Lorentz_next_boosts(q_1: Qs, q_2: Qs) -> Qs:
-    f"""{Lorentz_next_boost.__doc__}""".replace("Q", "Qs")
-    return qq_to_qs_function(Lorentz_next_boost, q_1, q_2)
+def next_boosts(q_1: Qs, q_2: Qs) -> Qs:
+    f"""{next_boost.__doc__}""".replace("Q", "Qs")
+    return qq_to_qs_function(next_boost, q_1, q_2)
+
+
+def permutation(q_1: Q, perm: str = "txyz") -> Q:
+    """
+    All possible permutations can be set with the 4 character perm string, variations on t, x, y, z.
+
+    Args:
+        q_1: Q     The quaternion to permute
+        perm:      A shorthand for the 12 permutations
+
+    Returns: Q
+
+    """
+
+    if len(perm) != 4:
+        raise ValueError(f"The perm string must be 4 letters long: {perm}")
+
+    result = {}
+
+    result[f"{perm[0]}"] = q_1.t
+    result[f"{perm[1]}"] = q_1.x
+    result[f"{perm[2]}"] = q_1.y
+    result[f"{perm[3]}"] = q_1.z
+
+    rearranged = []
+
+    for letter in tuple("txyz"):
+        rearranged.append(result[letter])
+
+    return Q(rearranged)
+
+
+def all_permutations(q_1: Q) -> Qs:
+    """
+    Returns all permutations as a quaternion series. Can be made unique.
+
+    Args:
+        q_1: Q        The quaternion to permute
+
+    Returns: Q
+
+    """
+
+    results = []
+
+    for perm in itertools.permutations("txyz"):
+        results.append(permutation(q_1, perm=perm))
+
+    return Qs(results)
 
 
 # g_shift is a function based on the space-times-time invariance proposal for gravity,
@@ -2458,7 +2581,6 @@ def g_shift(q_1: Q, dimensionless_g, g_form="exp"):
     g_q.representation = q_1.representation
 
     return g_q
-
 
 def g_shifts(q_1: Qs, g: float, g_form="exp") -> Qs:
     f"""{g_shift.__doc__}""".replace("Q", "Qs")
