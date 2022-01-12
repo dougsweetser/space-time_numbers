@@ -38,8 +38,41 @@ this information in a tangent space that is all about changes:
 
 ![](images/2021-01-08__changes_and_symmetries__DS.jpg)
 
-Notice that a tangent space subtracts away the observer. Dimensionless momentum-energy
-is tiny. Changes in dimensionless
+Notice that a tangent space subtracts away the observer. Dimensionless
+momentum-energy is tiny. Changes in momentum-energy are even smaller. While
+there may be changes of higher order, they probably are rare. This would be
+consistent with the dominance of second-order differential equations explaining
+so much in Nature.
+
+Every point in space-time has this stock of tangent-spaces: momentum-energy,
+forces, and surges. In many cases, these will be zeros. One of the strange
+lessons of quantum field theory is that while the momentum-energy is often
+zero, one cannot say that the variaiton of the momentum-energy is also zero.
+That crazy property needs to be part of the implementation of any animation
+system.
+
+## Technology in Use Today
+
+The software to manipulate space-time numbers and space-time number series, 
+classes Q and Qs respectively, are in the library **Qs.py**. A Jupyter
+notebook has been included that shows some basic manipulations that may
+not be obvious. The library can be used for both symbolic and numerical
+studies with space-time numbers. The programming language is Python that 
+stressed that code should be easy to read. The software was refactored so
+one can treat both space-time number and space-time number series functions 
+like one would treat individual space-time numbers and series.
+
+## Technology for Tomorrow
+
+We need to have a technology stack that can allow users to manipulate
+space-time number and series expressions on the web and on a smart phone
+with the result being a 3D animation.
+
+I am testing out several alternatives:
+
+* Streamlit
+* Pluto.jl
+* D3?
 
 ## A Comment on Notation
 
