@@ -3,8 +3,9 @@
 ## Naming the Dragon Correctly
 
 Full disclosure: I have owned quaternions.com since 1997, purchased because I
-did not think the scalar of a square of a quaternion event could not be an
-accident. It used to be near the top of Google searches until I started to 
+thought the first term of the square of a quaternion event was precisely the Lorentz
+invariant inteval of special relativity. That could not be an
+accident. The website used to be near the top of Google searches until I started to 
 host it at Github using mkdocs. I made the move because I found it far easier 
 to maintain. So why ever use the name **space-time numbers** for exactly the 
 same algebraic structure?
