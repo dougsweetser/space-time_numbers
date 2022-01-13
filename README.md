@@ -1,4 +1,4 @@
-# Space-time Number (aka quaternion) Software Development
+# Space-time Numbers (aka quaternions) Software Development
 
 ## Naming the Dragon Correctly
 
