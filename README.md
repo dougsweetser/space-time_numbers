@@ -2,10 +2,12 @@
 
 ## Naming the Dragon Correctly
 
-Full disclosure: I have owned quaternions.com since 1997. It used to be near
-the top of Google searches until I started to host it at Github using mkdocs. I
-made the move because I found it far easier to maintain. So why ever use the
-name **space-time numbers** for exactly the same algebraic structure?
+Full disclosure: I have owned quaternions.com since 1997,purchased because I
+did not think the scalar of a square of a quaternion event could not be an
+accident. It used to be near the top of Google searches until I started to 
+host it at Github using mkdocs. I made the move because I found it far easier 
+to maintain. So why ever use the name **space-time numbers** for exactly the 
+same algebraic structure?
 
 The word **quaternions** is a name for four Roman soldiers. It is found in the
 King James version of the Bible for the group that took Saint Peter to be
