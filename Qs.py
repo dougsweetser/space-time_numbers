@@ -1582,7 +1582,8 @@ def normalizes(q_1: Qs, n: float = 1.0) -> Qs:
 
     for new_state in new_states:
         new_states_normalized.append(
-            product(new_state, Q([math.sqrt(1 / non_zero_states), 0, 0, 0]))
+            product(new_state, Q([math.
+                                  sqrt(1 / non_zero_states), 0, 0, 0]))
         )
 
     return Qs(
@@ -1601,12 +1602,20 @@ def orthonormalize(self: Qs) -> Qs:
 
     """
 
-    last_q = self.qs.pop(0).normalize(math.sqrt(1 / self.dim), )
-    orthonormal_qs = [last_q]
+    # last_q = normalize(self.qs.pop(0), math.sqrt(1 / self.dim))
+    # orthonormal_qs = [last_q]
+    last_q = q1()
+    orthonormal_qs = []
 
+    first = True
     for q in self.qs:
-        qp = product(conj(q), last_q)
-        orthonormal_q = normalize(dif(q, qp), math.sqrt(1 / self.dim), )
+        
+        if first:
+            first = False
+            orthonormal_q = normalize(q, math.sqrt(1 / self.dim), )
+        else:
+            qp = product(conj(q), last_q)
+            orthonormal_q = normalize(dif(q, qp), math.sqrt(1 / self.dim), )
         orthonormal_qs.append(orthonormal_q)
         last_q = orthonormal_q
 

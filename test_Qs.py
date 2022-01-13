@@ -532,11 +532,17 @@ def test__1240_normalize():
     assert q_z.z == 0
 
 
-def test__1241_normalize():
+def test__1241_normalizes():
     qn_test = normalizes(qn)
     print("Op normalized: ", qn_test)
     assert math.isclose(qn_test.qs[0].t, 0.6)
     assert qn_test.qs[0].z == 0.8
+
+def test__1245_orthonormalize():
+    qn_test = normalize(qn)
+    print("Op normalized: ", qn_test)
+    assert equals(qn_test, q1s())
+    assert not equals(qn_test, qn)
 
 
 def test__1250_determinant():
