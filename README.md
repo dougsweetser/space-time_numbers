@@ -67,15 +67,31 @@ like one would treat individual space-time numbers and series.
 
 ## Technology for Tomorrow
 
-We need to have a technology stack that can allow users to manipulate
-space-time number and series expressions on the web and on a smart phone
-with the result being a 3D animation.
+We need to have a technology stack that can:
+
+* show 3D animations
+* allow users to manipulate input data and functions
+* work on all platforms, even smart phones
 
 I am testing out several alternatives:
 
 * Streamlit
 * Pluto.jl
 * D3?
+
+Two other possibilities are the big 3D game engines: Unity and Unreal. 
+Since I am big into python, there are integrations, but Unity is still
+talking about Python 2.7 (unacceptable) and unreal appears to be rather
+complicated. Panda3d is still being developed but appears to be more
+script friendly. 
+
+Many years ago I developed a project called "command line quaternions"
+that used a mix of C programs for the number manipulations, POVRay for
+the 3D impages, and Perl to glue it all together. I called the result
+user-hostile because it was not easy to use and darn slow. And yet it
+did generate some interesting animations.
+
+![](images/c15114.povray.animation.scan.100.1000.gif)
 
 ## A Comment on Notation
 
