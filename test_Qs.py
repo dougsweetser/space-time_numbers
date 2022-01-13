@@ -99,7 +99,7 @@ Op: Qs = Qs(
     columns=3,
 )
 Op4i = Qs([q_i4, q_0, q_0, q_i4, q_2, q_3], "op", rows=2, columns=3)
-Op_scalar = Qs([q_i4], "scalar")
+Op_scalar = Qs([q_i4], "scalar_q")
 q_1234 = Qs(
     [Q([1, 1, 0, 0]), Q([2, 1, 0, 0]), Q([3, 1, 0, 0]), Q([4, 1, 0, 0])]
 )
@@ -538,11 +538,14 @@ def test__1241_normalizes():
     assert math.isclose(qn_test.qs[0].t, 0.6)
     assert qn_test.qs[0].z == 0.8
 
+
 def test__1245_orthonormalize():
-    qn_test = normalize(qn)
-    print("Op normalized: ", qn_test)
+    qn_ortho = orthonormalize(Qs([P, P]))
+    qn_test = norm_squareds(qn_ortho)
+    print("qn_ortho: ", qn_ortho)
+    print("norm_squared of qn_orth: ", qn_test)
     assert equals(qn_test, q1s())
-    assert not equals(qn_test, qn)
+    assert not equals(qn_ortho, qn)
 
 
 def test__1250_determinant():
