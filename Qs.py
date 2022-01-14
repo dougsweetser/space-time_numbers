@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # coding: utf-8
 """
-Developing Quaternions for iPython
+Developing Space-time numbers for Python
 
-Define a class Q to manipulate quaternions as Hamilton would have done it so many years ago.
-The "q_type" is a little bit of text to leave a trail of breadcrumbs about how a particular quaternion was generated.
+Define a class Q to manipulate space-time numbers as Hamilton would have done
+it so many years ago.  The "q_type" is a little bit of text to leave a trail
+of breadcrumbs about how a particular space-time number was generated.
 
-The class Qs is a semi-group with inverses, that has a row * column = dimensions as seen in
-quantum mechanics. The importance of Qs is that one can deal with a great number of quaternions together. One quaternion
-cannot tell a story but a few tens of thousands can.
+The class Qs is a semi-group with inverses, that has row * column = dimensions
+as seen in quantum mechanics. The importance of Qs is that one can deal with a
+great number of space-time numbers together. One quaternion cannot tell a story
+but a few tens of thousands can.
 
-This library was recently refactored so that functions are on the same level as the classes Q and Qs.
+This library was refactored so that functions are on the same level as the
+classes Q and Qs.
 
 The function calls for Q and Qs are meant to be very similar.
 """
@@ -35,38 +38,47 @@ class Q(object):
     Different representations are possible.
     """
 
-    def __init__(self, values: List = None, q_type: object = "Q", representation: str = ""):
+    def __init__(self, values: List = None, q_type: object = "Q",
+                 representation: str = ""):
 
         if values is None:
-            self.df = pd.DataFrame(data=[0, 0, 0, 0], index=["t", "x", "y", "z"])
+            self.df = pd.DataFrame(data=[0, 0, 0, 0],
+                                   index=["t", "x", "y", "z"])
         elif len(values) == 4:
             self.df = pd.DataFrame(data=values, index=["t", "x", "y", "z"])
 
         elif len(values) == 8:
-            self.df = pd.DataFrame(data=[values[0] - values[1], values[2] - values[3],
-                                         values[4] - values[5], values[6] - values[7]], index=["t", "x", "y", "z"])
+            self.df = pd.DataFrame(data=[values[0] - values[1],
+                                         values[2] - values[3],
+                                         values[4] - values[5],
+                                         values[6] - values[7]],
+                                   index=["t", "x", "y", "z"])
 
         else:
-            raise ValueError(f"The program accepts lists/arrays of 4 or 8 dimensions, not {len(values)}")
+            raise ValueError("Accepts lists of 4 or 8 dimensions, not " +
+                             f"{len(values)}")
 
-        self.t, self.x, self.y, self.z = self.df.at["t", 0], self.df.at["x", 0], self.df.at["y", 0], self.df.at["z", 0]
-
+        self.t = self.df.at["t", 0]
+        self.x = self.df.at["x", 0]
+        self.y = self.df.at["y", 0]
+        self.z = self.df.at["z", 0]
         self.representation = representation
 
-        # "Under the hood", all quaternions are manipulated in a Cartesian coordinate system.
+        # "Under the hood", all space-time numbers are manipulated in a
+        # Cartesian coordinate system.
         if representation != "":
-            self.t, self.x, self.y, self.z = self.representation_2_txyz(representation)
+            self.t, self.x, self.y, self.z = \
+                self.representation_2_txyz(representation)
 
         self.q_type = q_type
 
     def __str__(self, quiet: bool = False) -> str:
         """
-        Customizes the output of a quaternion
-        as a tuple given a particular representation.
-        Since all quaternions 'look the same',
-        the q_type after the tuple tries to summarize
-        how this quaternions came into being.
-        Quiet turns off printing the q_type.
+        Customizes the output of a space-time number as a tuple given a
+        particular representation.  Since all space-time numbers 'look the
+        same', the q_type after the tuple tries to summarize how this
+        space-time numbers came into being.  Quiet turns off printing the
+        q_type.
 
         Args:
             quiet: bool
@@ -86,17 +98,20 @@ class Q(object):
 
         elif self.representation == "polar":
             rep = self.txyz_2_representation("polar")
-            string = f"({rep[0]} A, {rep[1]} 𝜈x, {rep[2]} 𝜈y, {rep[3]} 𝜈z) {q_type}"
+            string = f"({rep[0]} A, {rep[1]} 𝜈x, {rep[2]} 𝜈y, {rep[3]} 𝜈z)" +\
+                     f" {q_type}"
 
         elif self.representation == "spherical":
             rep = self.txyz_2_representation("spherical")
-            string = f"({rep[0]} t, {rep[1]} R, {rep[2]} θ, {rep[3]} φ) {q_type}"
+            string = f"({rep[0]} t, {rep[1]} R, {rep[2]} θ, {rep[3]} φ) " +\
+                     f"{q_type}"
 
         return string
 
-    def print_state(self: Q, label: str = "", spacer: bool = True, quiet: bool = True) -> None:
+    def print_state(self: Q, label: str = "", spacer: bool = True,
+                    quiet: bool = True) -> None:
         """
-        Utility to print a quaternion with a label.
+        Utility to print a space-time number with a label.
 
         Args:
             label: str     User chosen
@@ -116,7 +131,7 @@ class Q(object):
 
     def is_symbolic(self: Q) -> bool:
         """
-        Figures out if a quaternion has any symbolic terms.
+        Figures out if a space-time number has any symbolic terms.
 
         Return: bool
 
@@ -124,19 +139,17 @@ class Q(object):
 
         symbolic = False
 
-        if (
-                hasattr(self.t, "free_symbols")
-                or hasattr(self.x, "free_symbols")
-                or hasattr(self.y, "free_symbols")
-                or hasattr(self.z, "free_symbols")
-        ):
+        if (hasattr(self.t, "free_symbols") or
+                hasattr(self.x, "free_symbols") or
+                hasattr(self.y, "free_symbols") or
+                hasattr(self.z, "free_symbols")):
             symbolic = True
 
         return symbolic
 
     def txyz_2_representation(self: Q, representation: str = "") -> List:
         """
-        Given a quaternion in Cartesian coordinates
+        Given a space-time number in Cartesian coordinates
         returns one in another representation.
         Only 'polar' and 'spherical' are done so far.
 
@@ -153,9 +166,8 @@ class Q(object):
             rep = [self.t, self.x, self.y, self.z]
 
         elif representation == "polar":
-            amplitude = (self.t ** 2 + self.x ** 2 + self.y ** 2 + self.z ** 2) ** (
-                    1 / 2
-            )
+            amplitude = (self.t ** 2 + self.x ** 2 + self.y ** 2 +
+                         self.z ** 2) ** (1 / 2)
 
             abs_v = abs_of_vector(self).t
 
@@ -197,7 +209,7 @@ class Q(object):
             rep = [spherical_t, spherical_r, theta, phi]
 
         else:
-            raise ValueError(f"Oops, don't know representation: representation")
+            raise ValueError(f"Oops, unknown representation: {representation}")
 
         return rep
 
@@ -216,19 +228,18 @@ class Q(object):
 
         symbolic = False
 
-        if (
-                hasattr(self.t, "free_symbols")
-                or hasattr(self.x, "free_symbols")
-                or hasattr(self.y, "free_symbols")
-                or hasattr(self.z, "free_symbols")
-        ):
+        if (hasattr(self.t, "free_symbols") or
+                hasattr(self.x, "free_symbols") or
+                hasattr(self.y, "free_symbols") or
+                hasattr(self.z, "free_symbols")):
             symbolic = True
 
         if representation == "":
             box_t, box_x, box_y, box_z = self.t, self.x, self.y, self.z
 
         elif representation == "polar":
-            amplitude, theta_x, theta_y, theta_z = self.t, self.x, self.y, self.z
+            amplitude, theta_x = self.t, self.x
+            theta_y, theta_z = self.y, self.z
 
             theta = (theta_x ** 2 + theta_y ** 2 + theta_z ** 2) ** (1 / 2)
 
@@ -276,7 +287,7 @@ class Q(object):
                 box_z = v * math.cos(theta)
 
         else:
-            raise ValueError(f"Oops, don't know representation: representation")
+            raise ValueError(f"Oops, unknown representation: {representation}")
 
         return [box_t, box_x, box_y, box_z]
 
@@ -295,7 +306,8 @@ class Q(object):
             return True
 
         else:
-            raise Exception(f"Oops, 2 have different representations: {self.representation} {q_2.representation}")
+            raise ValueError("Oops, 2 have different representations: " +
+                             f"{self.representation} {q_2.representation}")
 
     def display_q(self: Q, label: str = ""):
         """
@@ -346,7 +358,8 @@ class Q(object):
 
     def subs(self: Q, symbol_value_dict: annotations.Dict) -> Q:
         """
-        Evaluates a quaternion using sympy values and a dictionary {t:1, x:2, etc}.
+        Evaluates a space-time number using sympy values and a dictionary
+        {t:1, x:2, etc}.
 
         Args:
             symbol_value_dict: Dict
@@ -360,9 +373,8 @@ class Q(object):
         y1 = self.y.subs(symbol_value_dict)
         z1 = self.z.subs(symbol_value_dict)
 
-        q_txyz = Q(
-            [t1, x1, y1, z1], q_type=self.q_type, representation=self.representation
-        )
+        q_txyz = Q([t1, x1, y1, z1], q_type=self.q_type,
+                   representation=self.representation)
 
         return q_txyz
 
@@ -389,17 +401,20 @@ class Q(object):
 
 class Qs(object):
     """
-    A class made up of many quaternions. It also includes values for rows * columns = dimension(Qs).
-    To mimic language already in wide use in linear algebra, there are qs_types of scalar, bra, ket, op/operator
-    depending on the rows and column numbers.
+    A class made up of many space-time numbers. It also includes values for
+    rows and columns so that rows * columnts = dimension(Qs).  To mimic
+    language already in wide use in linear algebra, there are qs_types of
+    scalar, bra, ket, op/operator depending on the rows and column numbers.
 
-    Quaternion states are a semi-group with inverses. A semi-group has more than one possible identity element. For
-    quaternion states, there are $2^{dim}$ possible identities.
+    Quaternion states are a semi-group with inverses. A semi-group has more
+    than one possible identity element. For space-time number states, there
+    are $2^{dim}$ possible identities.
     """
 
     QS_TYPES = ["scalar_q", "bra", "ket", "op", "operator"]
 
-    def __init__(self, qs=None, qs_type: str = "ket", rows: int = 0, columns: int = 0):
+    def __init__(self, qs=None, qs_type: str = "ket", rows: int = 0,
+                 columns: int = 0):
 
         self.qs = qs
         self.qs_type = qs_type
@@ -407,19 +422,20 @@ class Qs(object):
         self.columns = columns
 
         if qs_type not in self.QS_TYPES:
-            print(
-                "Oops, only know of these quaternion series types: {}".format(
-                    self.QS_TYPES
-                )
-            )
+            raise ValueError("Oops, known space-time number series types: " +
+                             f"{self.QS_TYPES}")
 
         if qs is None:
             self.qs = [q0()]
-            self.d, self.dim, self.dimensions = 0, 0, 0
-            self.df = pd.DataFrame([[0, 0, 0, 0]],  columns=('t', 'x', 'y', 'z'))
+            self.d = 0
+            self.df = pd.DataFrame([[0, 0, 0, 0]],
+                                   columns=('t', 'x', 'y', 'z'))
         else:
-            self.d, self.dim, self.dimensions = int(len(qs)), int(len(qs)), int(len(qs))
-            self.df = pd.DataFrame([[q.t, q.x, q.y, q.z] for q in qs], columns=('t', 'x', 'y', 'z'))
+            self.d = int(len(qs))
+            self.df = pd.DataFrame([[q.t, q.x, q.y, q.z] for q in qs],
+                                   columns=('t', 'x', 'y', 'z'))
+
+        self.dim, self.dimensions = self.d, self.d
 
         if not self.qs[0].is_symbolic():
             mins = self.df.min()
@@ -438,7 +454,8 @@ class Qs(object):
 
         self.set_qs_type(qs_type, rows, columns, copy=False)
 
-    def set_qs_type(self: Qs, qs_type: str = "", rows: int = 0, columns: int = 0, copy: bool = True) -> Qs:
+    def set_qs_type(self: Qs, qs_type: str = "", rows: int = 0,
+                    columns: int = 0, copy: bool = True) -> Qs:
         """
         Set the qs_type to something sensible.
 
@@ -454,9 +471,8 @@ class Qs(object):
 
         # Checks.
         if rows and columns and rows * columns != self.dim:
-            raise ValueError(
-                f"Oops, check those values again for rows:{rows} columns:{columns} dim:{self.dim}"
-            )
+            raise ValueError("Oops, check those values again for rows: "
+                             f"{rows} columns:{columns} dim:{self.dim}")
 
         new_q = self
 
@@ -495,9 +511,7 @@ class Qs(object):
                 qs_type = "op"
 
         if not qs_type:
-            raise Exception(
-                "Oops, please set rows and columns for this quaternion series operator. Thanks."
-            )
+            raise ValueError("Oops, please set rows and columns. Thanks.")
 
         if new_q.dim == 1:
             qs_type = "scalar_q"
@@ -508,7 +522,8 @@ class Qs(object):
 
     def bra(self: Qs) -> Qs:
         """
-        Quickly set the qs_type to bra by calling set_qs_type() with rows=1, columns=dim and taking a conjugate.
+        Quickly set the qs_type to bra by calling set_qs_type() with rows=1,
+        columns=dim and taking a conjugate.
 
         Returns: Qs
 
@@ -526,7 +541,8 @@ class Qs(object):
 
     def ket(self: Qs) -> Qs:
         """
-        Quickly set the qs_type to ket by calling set_qs_type() with rows=dim, columns=1 and taking a conjugate.
+        Quickly set the qs_type to ket by calling set_qs_type() with rows=dim,
+        columns=1 and taking a conjugate.
 
         Returns: Qs
 
@@ -554,11 +570,9 @@ class Qs(object):
         Returns: Qs
 
         """
-
         if rows * columns != self.dim:
-            raise Exception(
-                f"Oops, rows * columns != dim: {rows} * {columns}, {self.dimensions}"
-            )
+            raise ValueError("Oops, rows * columns != dim: " +
+                             f"{rows} * {columns}, {self.dimensions}")
 
         op_q = deepcopy(self)
 
@@ -588,9 +602,10 @@ class Qs(object):
 
         return states.rstrip()
 
-    def print_state(self: Qs, label: str = "", spacer: bool = True, quiet: bool = True) -> None:
+    def print_state(self: Qs, label: str = "", spacer: bool = True,
+                    quiet: bool = True) -> None:
         """
-        Utility for printing states as a quaternion series.
+        Utility for printing states as a space-time number series.
 
         Returns: None
 
@@ -600,7 +615,7 @@ class Qs(object):
 
         # Warn if empty.
         if self.qs is None or len(self.qs) == 0:
-            raise ValueError("Oops, no quaternions in the series.")
+            raise ValueError("Oops, no space-time numbers in the series.")
 
         for n, q in enumerate(self.qs):
             print(f"n={n + 1}: {q.__str__(quiet)}")
@@ -642,9 +657,8 @@ class Qs(object):
         for ket in self.qs:
             new_states.append(ket.simple_q())
 
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
+        return Qs(new_states, qs_type=self.qs_type, rows=self.rows,
+                  columns=self.columns)
 
     def subs(self: Qs, symbol_value_dict) -> Qs:
         """
@@ -662,9 +676,8 @@ class Qs(object):
         for ket in self.qs:
             new_states.append(ket.subs(symbol_value_dict))
 
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
+        return Qs(new_states, qs_type=self.qs_type, rows=self.rows,
+                  columns=self.columns)
 
     def t(self: Qs) -> List:
         """
@@ -726,7 +739,8 @@ class Qs(object):
     @staticmethod
     def braket(bra: Qs, ket: Qs) -> Qs:
         """
-        Forms <bra|ket>, no operator. Note: if fed 2 kets, will take a conjugate.
+        Forms <bra|ket>, no operator. Note: if fed 2 kets, will take a
+        conjugate.
 
         Args:
             bra: Qs
@@ -747,18 +761,22 @@ class Qs(object):
             flip += 1
 
         if flip == 1:
-            print("fed 2 bras or kets, took a conjugate. Double check.")
+            print("fed 2 bras or kets, took a conjugate. " +
+                  "Double check.")
 
         else:
-            print("Assumes your <bra| already has been conjugated. Double check.")
+            print("Assumes your <bra| already has been conjugated. " +
+                  "Double check.")
 
         b = products(bra, ket)
 
         return b
 
-    def op_q(self: Qs, q: Qs, first: bool = True, kind: str = "", reverse: bool = False) -> Qs:
+    def op_q(self: Qs, q: Qs, first: bool = True, kind: str = "",
+             reverse: bool = False) -> Qs:
         """
-        Multiply an operator times a quaternion, in that order. Set first=false for n * Op
+        Multiply an operator times a space-time number, in that order. Set
+        first=false for n * Op
 
         Args:
             q: Qs
@@ -780,72 +798,74 @@ class Qs(object):
             else:
                 new_states.append(product(q, op, kind, reverse))
 
-        return Qs(
-            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-        )
+        return Qs(new_states, qs_type=self.qs_type, rows=self.rows,
+                  columns=self.columns)
 
 
 # # Aids to transform Q functions to Qs functions.
 
 def q_to_qs_function(func, q_1):
     """
-    Utility to transform quaternion functions to quaternion state function
-    that operate separately on each qs state.
+    Utility to transform space-time number functions to quaternion state
+    function that operate separately on each qs state.
 
     Args:
         func:    pointer to a function
-        q_1: Q   a quaternion argument
+        q_1: Q   a space-time number argument
 
     Returns: Qs
 
     """
 
-    return Qs([func(q) for q in q_1.qs], qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns)
+    return Qs([func(q) for q in q_1.qs], qs_type=q_1.qs_type, rows=q_1.rows,
+              columns=q_1.columns)
 
 
 def qq_to_qs_function(func, q_1, q_2):
     """
-    Utility to transform quaternion functions to quaternion state function
-    that operate separately on each qs state.
+    Utility to transform space-time number functions to quaternion state
+    function that operate separately on each qs state.
 
     Args:
         func:    pointer to a function
-        q_1: Qs   a quaternion state
-        q_2: Qs   a quaternion state
+        q_1: Qs   a space-time number state
+        q_2: Qs   a space-time number state
 
     Returns: Qs
 
     """
 
-    return Qs([func(q, r) for q, r in zip(q_1.qs, q_2.qs)], qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns)
+    return Qs([func(q, r) for q, r in zip(q_1.qs, q_2.qs)],
+              qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns)
 
 
 def qqq_to_qs_function(func, q_1, q_2, q_3):
     """
-    Utility to transform quaternion functions to quaternion series function
-    that operate separately on each qs state.
+    Utility to transform space-time number functions to quaternion series
+    function that operate separately on each qs state.
 
     Args:
         func:    pointer to a function
-        q_1: Q   a quaternion argument
-        q_2: Q   a quaternion argument
-        q_3: Q   a quaternion argument
+        q_1: Q   a space-time number argument
+        q_2: Q   a space-time number argument
+        q_3: Q   a space-time number argument
 
     Returns: Qs
 
     """
 
-    return Qs([func(q, r, s) for q, r, s in zip(q_1.qs, q_2.qs, q_3.qs)], qs_type=q_1.qs_type, rows=q_1.rows,
-              columns=q_1.columns)
+    return Qs([func(q, r, s) for q, r, s in zip(q_1.qs, q_2.qs, q_3.qs)],
+              qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns)
 
 
 def qs_to_q_function(func: FunctionType, q_1: Qs) -> Q:
     """
-    Utility to transform quaternion series functions to a quaternion function.
+    Utility to transform space-time number series functions and a
+    space-time number series to a space-time number function.
 
     Args:
         func:     Pointer to a function
-        q_1: Qs   A quaternion series
+        q_1: Qs   A space-time number series
 
     Returns: Q
 
@@ -861,12 +881,13 @@ def qs_to_q_function(func: FunctionType, q_1: Qs) -> Q:
 
 def qs_qs_to_q_function(func: FunctionType, q_1: Qs, q_2: Qs) -> Q:
     """
-    Utility to transform quaternion series functions to a quaternion function.
+    Utility to transform space-time number series functions needing two
+    space-time number series to a space-time number function.
 
     Args:
         func:     Pointer to a function
-        q_1: Qs   A quaternion series
-        q_2: Qs   A quaternion series
+        q_1: Qs   A space-time number series
+        q_2: Qs   A space-time number series
 
     Returns: Q
 
@@ -880,11 +901,11 @@ def qs_qs_to_q_function(func: FunctionType, q_1: Qs, q_2: Qs) -> Q:
     return scalar.qs[0]
 
 
-# # Parts of quaternions
+# # Parts of space-time numbers
 
 def scalar_q(q_1: Q) -> Q:
     """
-    Returns the scalar_q part of a quaternion as a quaternion.
+    Returns the scalar_q part of a space-time number as a quaternion.
 
     $ \rm{scalar_q(q)} = (q + q^*)/2 = (t, 0) $
 
@@ -898,7 +919,8 @@ def scalar_q(q_1: Q) -> Q:
     """
 
     end_q_type = f"scalar_q({q_1.q_type})"
-    s = Q([q_1.t, 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
+    s = Q([q_1.t, 0, 0, 0], q_type=end_q_type,
+          representation=q_1.representation)
     return s
 
 
@@ -909,8 +931,8 @@ def scalar_qs(q_1: Qs) -> Qs:
 
 def vector_q(q_1: Q) -> Q:
     """
-    Returns the vector_q part of a quaternion.
-    $ \rm{vector_q(q)} = (q\_1 - q\_1^*)/2 = (0, R) $
+    Returns the vector_q part of a space-time number.
+    $ \rm{vector_q(q)} = (q_1 - q_1^*)/2 = (0, R) $
 
     Returns: Q
 
@@ -933,9 +955,9 @@ def vector_qs(q_1: Qs) -> Qs:
 
 def q0(q_type: str = "0", representation: str = "") -> Q:
     """
-    Return a zero quaternion.
+    Return a zero space-time number.
 
-    $ q\_0() = 0 = (0, 0) $
+    $ q_0() = 0 = (0, 0) $
 
     Returns: Q
 
@@ -951,9 +973,9 @@ def q0s(dim: int = 1, qs_type: str = "ket") -> Qs:
 
 def q1(n: float = 1.0, q_type: str = "1", representation: str = "") -> Q:
     """
-    Return a real-valued quaternion multiplied by n.
+    Return a real-valued space-time number multiplied by n.
 
-    $ q\_1(n) = n = (n, 0) $
+    $ q_1(n) = n = (n, 0) $
 
     Returns: Q
 
@@ -969,9 +991,9 @@ def q1s(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
 
 def qi(n: float = 1.0, q_type: str = "i", representation: str = "") -> Q:
     """
-    Return a quaternion with $ i * n $.
+    Return a space-time number with $ i * n $.
 
-    $ q\_i(n) = n i = (0, n i) $
+    $ q_i(n) = n i = (0, n i) $
 
     Returns: Q
 
@@ -987,9 +1009,9 @@ def qis(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
 
 def qj(n: float = 1.0, q_type: str = "j", representation: str = "") -> Q:
     """
-    Return a quaternion with $ j * n $.
+    Return a space-time number with $ j * n $.
 
-    $ q\_j(n) = n j = (0, n j) $
+    $ q_j(n) = n j = (0, n j) $
 
     Returns: Q
 
@@ -1005,9 +1027,9 @@ def qjs(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
 
 def qk(n: float = 1, q_type: str = "k", representation: str = "") -> Q:
     """
-    Return a quaternion with $ k * n $.
+    Return a space-time number with $ k * n $.
 
-    $ q\_k(n) = n k =(0, n k) $
+    $ q_k(n) = n k =(0, n k) $
 
     Returns: Q
 
@@ -1021,10 +1043,11 @@ def qks(n: float = 1.0, dim: int = 1, qs_type: str = "ket") -> Qs:
     return Qs([qk(n) for _ in range(dim)], qs_type=qs_type)
 
 
-def qrandom(low: float = -1.0, high: float = 1.0, distribution: str = "uniform", q_type: str = "?",
+def qrandom(low: float = -1.0, high: float = 1.0,
+            distribution: str = "uniform", q_type: str = "?",
             representation: str = "") -> Q:
     """
-    Return a random-valued quaternion.
+    Return a random-valued space-time number.
     The distribution is uniform, but one could add to options.
     It would take some work to make this clean so will skip for now.
 
@@ -1055,10 +1078,12 @@ def qrandom(low: float = -1.0, high: float = 1.0, distribution: str = "uniform",
     return qr
 
 
-def qrandoms(low: float = -1.0, high: float = 1.0, distribution: str = "uniform", dim: int = 1,
+def qrandoms(low: float = -1.0, high: float = 1.0,
+             distribution: str = "uniform", dim: int = 1,
              qs_type: str = "ket") -> Qs:
     f"""{qrandom.__doc__}""".replace("Q", "Qs")
-    return Qs([qrandom(low, high, distribution) for _ in range(dim)], qs_type=qs_type)
+    return Qs([qrandom(low, high, distribution) for _ in range(dim)],
+              qs_type=qs_type)
 
 
 def dupe(q_1: Q) -> Q:
@@ -1079,16 +1104,17 @@ def dupe(q_1: Q) -> Q:
 
 def equal(q_1: Q, q_2: Q, scalar: bool = True, vector: bool = True) -> bool:
     """
-    Tests if q1 and q_2 quaternions are close to equal. If vector_q is set to False, will compare
-    only the scalar_q. If scalar_q is set to False, will compare 3-vectors.
+    Tests if q1 and q_2 space-time numbers are close to equal. If vector_q is
+    set to False, will compare only the scalar_q. If scalar_q is set to False,
+    will compare 3-vectors.
 
-    $ q.equal(q\_2) = q == q\_2 = True $
+    $ q.equal(q_2) = q == q_2 = True $
 
     Args:
         q_1: Q
         q_2: Q
-        scalar: bool    Will compare quaternion scalars
-        vector: bool    Will compare quaternion 3-vectors
+        scalar: bool    Will compare space-time number scalars
+        vector: bool    Will compare space-time number 3-vectors
 
     Returns: bool
 
@@ -1110,7 +1136,7 @@ def equal(q_1: Q, q_2: Q, scalar: bool = True, vector: bool = True) -> bool:
     )
 
     if not scalar and not vector:
-        raise ValueError("Equals needs either scalar_q or vector_q to be set to True")
+        raise ValueError("Equals needs scalar_q or vector_q to be set to True")
 
     t_equals = math.isclose(q_1_t, q_2_t)
     x_equals = math.isclose(q_1_x, q_2_x)
@@ -1219,14 +1245,15 @@ def conjs(q_1: Qs, conj_type: int = 0) -> Qs:
 
 def conj_q(q_1: Q, q_2: Q) -> Q:
     """
-    Given a quaternion with 0s or 1s, will do the standard conjugate, first conjugate
-    second conjugate, sign flip, or all combinations of the above.
+    Given a space-time number with 0s or 1s, will do the standard conjugate,
+    first conjugate second conjugate, sign flip, or all combinations of the
+    above.
 
     q.conj(q(1, 1, 1, 1)) = q.conj(0).conj(1).conj(2).conj(3)
 
     Args:
         q_1: Q
-        q_2: Q    Use a quaternion to do one of 4 conjugates in combinations
+        q_2: Q    Use a space-time number to do conjugates in combinations
 
     Returns: Q
 
@@ -1258,7 +1285,7 @@ def flip_sign(q_1: Q) -> Q:
     """
     Flip the signs of all terms.
 
-    $ q.flip\_sign() = -q = (-t, -R) $
+    $ q.flip_sign() = -q = (-t, -R) $
 
     Args:
         q_1: Q
@@ -1290,7 +1317,8 @@ def flip_signs(q_1: Qs) -> Qs:
 
 def vahlen_conj(q_1: Q, conj_type: str = "-", q_type: str = "vc") -> Q:
     """
-    Three types of conjugates dash, apostrophe, or star as done by Vahlen in 1901.
+    Three types of conjugates dash, apostrophe, or star as done by Vahlen in
+    1901.
 
     q.vahlen_conj("-") = q^* = (t, -x, -y, -z)
 
@@ -1376,7 +1404,8 @@ def _commuting_products(q_1: Q, q_2: Q) -> Dict:
 
 def _anti_commuting_products(q_1: Q, q_2: Q) -> Dict:
     """
-    Returns a dictionary with the three anti-commuting products. For internal use.
+    Returns a dictionary with the three anti-commuting products. For internal
+    use.
 
     Args:
         q_1: Q
@@ -1403,7 +1432,8 @@ def _anti_commuting_products(q_1: Q, q_2: Q) -> Dict:
 
 def _all_products(q_1: Q, q_2: Q) -> Dict:
     """
-    All products, commuting and anti-commuting products as a dictionary. For internal use.
+    All products, commuting and anti-commuting products as a dictionary. For
+    internal use.
 
     Args:
         q_1: Q
@@ -1421,7 +1451,7 @@ def _all_products(q_1: Q, q_2: Q) -> Dict:
 
 def square(q_1: Q) -> Q:
     """
-    Square a quaternion.
+    Square a space-time number.
 
     $ q.square() = q^2 = (t^2 - R.R, 2 t R) $
 
@@ -1453,9 +1483,9 @@ def squares(q_1: Qs) -> Qs:
 
 def norm_squared(q_1: Q) -> Q:
     """
-    The norm_squared of a quaternion.
+    The norm_squared of a space-time number.
 
-    $ q.norm\_squared() = q q^* = (t^2 + R.R, 0) $
+    $ q.norm_squared() = q q^* = (t^2 + R.R, 0) $
 
     Returns: Q
 
@@ -1478,9 +1508,9 @@ def norm_squareds(q_1: Qs) -> Qs:
 
 def norm_squared_of_vector(q_1: Q):
     """
-    The norm_squared of the vector_q of a quaternion.
+    The norm_squared of the vector_q of a space-time number.
 
-    $ q.norm\_squared\_of\_vector_q() = ((q - q^*)(q - q^*)^*)/4 = (R.R, 0) $
+    $ q.norm_squared_of_vector_q() = ((q - q^*)(q - q^*)^*)/4 = (R.R, 0) $
 
     Returns: Q
     """
@@ -1497,14 +1527,15 @@ def norm_squared_of_vector(q_1: Q):
 
 def norm_squared_of_vectors(q_1: Qs) -> Qs:
     f"""{norm_squared_of_vector.__doc__}""".replace("Q", "Qs")
-    return products(vector_qs(conjs(q_1.set_qs_type("bra"))), vector_qs(q_1.set_qs_type("ket")))
+    return products(vector_qs(conjs(q_1.set_qs_type("bra"))),
+                    vector_qs(q_1.set_qs_type("ket")))
 
 
 def abs_of_q(q_1: Q) -> Q:
     """
     The absolute value, the square root of the norm_squared.
 
-    $ q.abs_of_q() = \sqrt{q q^*} = (\sqrt{t^2 + R.R}, 0) $
+    $ q.abs_of_q() = sqrt{q q^*} = (sqrt{t^2 + R.R}, 0) $
 
     Returns: Q
 
@@ -1530,9 +1561,9 @@ def abs_of_qs(q_1: Qs) -> Qs:
 
 def normalize(q_1: Q, n: float = 1.0, q_type: str = "U") -> Q:
     """
-    Normalize a quaternion to a given value n.
+    Normalize a space-time number to a given value n.
 
-    $ q.normalized(n) = q (q q^*)^{-1} = q (n/\sqrt{q q^*}, 0) $
+    $ q.normalized(n) = q (q q^*)^{-1} = q (n/sqrt{q q^*}, 0) $
 
     Args:
         q_1: Q
@@ -1582,21 +1613,16 @@ def normalizes(q_1: Qs, n: float = 1.0) -> Qs:
 
     for new_state in new_states:
         new_states_normalized.append(
-            product(new_state, Q([math.
-                                  sqrt(1 / non_zero_states), 0, 0, 0]))
+            product(new_state, Q([math.sqrt(1 / non_zero_states), 0, 0, 0]))
         )
 
-    return Qs(
-        new_states_normalized,
-        qs_type=q_1.qs_type,
-        rows=q_1.rows,
-        columns=q_1.columns,
-    )
+    return Qs(qs=new_states_normalized, qs_type=q_1.qs_type,
+              rows=q_1.rows, columns=q_1.columns,)
 
 
 def orthonormalize(self: Qs) -> Qs:
     """
-    Given a quaternion series, returns an orthonormal basis.
+    Given a space-time number series, returns an orthonormal basis.
 
     Returns: Qs
 
@@ -1609,7 +1635,6 @@ def orthonormalize(self: Qs) -> Qs:
 
     first = True
     for q in self.qs:
-        
         if first:
             first = False
             orthonormal_q = normalize(q, math.sqrt(1 / self.dim), )
@@ -1619,14 +1644,13 @@ def orthonormalize(self: Qs) -> Qs:
         orthonormal_qs.append(orthonormal_q)
         last_q = orthonormal_q
 
-    return Qs(
-        orthonormal_qs, qs_type=self.qs_type, rows=self.rows, columns=self.columns
-    )
+    return Qs(orthonormal_qs, qs_type=self.qs_type, rows=self.rows,
+              columns=self.columns)
 
 
 def determinant(self: Qs) -> Qs:
     """
-    Calculate the determinant of a 'square' quaternion series.
+    Calculate the determinant of a 'square' space-time number series.
 
     Returns: Qs
 
@@ -1654,7 +1678,7 @@ def determinant(self: Qs) -> Qs:
         q_det = dif(sum_pos, sum_neg)
 
     else:
-        raise ValueError("Oops, don't know how to calculate the determinant of this one.")
+        raise ValueError("Oops, don't know how to calculate the determinant.")
 
     return Qs(
         [q_det], qs_type=self.qs_type, rows=1, columns=1
@@ -1663,9 +1687,11 @@ def determinant(self: Qs) -> Qs:
 
 def abs_of_vector(q_1: Q) -> Q:
     """
-    The absolute value of the vector_q, the square root of the norm_squared of the vector_q.
+    The absolute value of the vector_q, the square root of the norm_squared of
+    the vector_q.
 
-    $ q.abs_of_vector() = \sqrt{(q\_1 - q\_1^*)(q\_1 - q\_1^*)/4} = (\sqrt{R.R}, 0) $
+    $ q.abs_of_vector() = sqrt{(q_1 - q_1^*)(q_1 - q_1^*)/4} $
+                      $ = (sqrt{R.R}, 0) $
 
     Args:
         q_1: Q
@@ -1692,9 +1718,9 @@ def abs_of_vectors(q_1: Qs) -> Qs:
 
 def add(q_1: Q, q_2: Q) -> Q:
     """
-    Add two quaternions.
+    Add two space-time numbers.
 
-    $ q.add(q\_2) = q_1 + q\_2 = (t + t\_2, R + R\_2) $
+    $ q.add(q_2) = q_1 + q_2 = (t + t_2, R + R_2) $
 
     Args:
         q_1: Q
@@ -1725,7 +1751,8 @@ def adds(q_1: Qs, q_2: Qs) -> Qs:
 
     if (q_1.rows != q_2.rows) or (q_1.columns != q_2.columns):
         error_msg = "Oops, can only add if rows and columns are the same.\n"
-        error_msg += f"rows are {q_1.rows}/{q_2.rows}, col: {q_1.columns}/{q_2.columns}"
+        error_msg += f"rows are {q_1.rows}/{q_2.rows}, "
+        error_msg += f"col: {q_1.columns}/{q_2.columns}"
         raise ValueError(error_msg)
 
     return qq_to_qs_function(add, q_1, q_2)
@@ -1733,9 +1760,9 @@ def adds(q_1: Qs, q_2: Qs) -> Qs:
 
 def dif(q_1: Q, q_2: Q) -> Q:
     """
-    Takes the difference of 2 quaternions.
+    Takes the difference of 2 space-time numbers.
 
-    $ q.dif(q\_2) = q_1 - q\_2 = (t - t\_2, R - R\_2) $
+    $ q.dif(q_2) = q_1 - q_2 = (t - t_2, R - R_2) $
 
     Args:
         q_1: Q
@@ -1766,7 +1793,8 @@ def difs(q_1: Qs, q_2: Qs) -> Qs:
 
     if (q_1.rows != q_2.rows) or (q_1.columns != q_2.columns):
         error_msg = "Oops, can only dif if rows and columns are the same.\n"
-        error_msg += f"rows are {q_1.rows}/{q_2.rows}, col: {q_1.columns}/{q_2.columns}"
+        error_msg += f"rows are {q_1.rows}/{q_2.rows}, "
+        error_msg += f"col: {q_1.columns}/{q_2.columns}"
         raise ValueError(error_msg)
 
     return qq_to_qs_function(dif, q_1, q_2)
@@ -1774,18 +1802,23 @@ def difs(q_1: Qs, q_2: Qs) -> Qs:
 
 def product(q_1: Q, q_2: Q, kind: str = "", reverse: bool = False) -> Q:
     """
-    Form a product given 2 quaternions. Kind of product can be '' aka standard, even, odd, or even_minus_odd.
-    Setting reverse=True is like changing the order.
+    Form a product given 2 space-time numbers. Kind of product can be '' aka
+    standard, even, odd, or even_minus_odd.  Setting reverse=True is like
+    changing the order.
 
-    $ q.product(q_2) = q\_1 q\_2 = (t t_2 - R.R_2, t R_2 + R t_2 + RxR_2 ) $
+    $ q.product(q_2) = q_1 q_2 = (t t_2 - R.R_2, t R_2 + R t_2 + RxR_2 ) $
 
-    $ q.product(q_2, kind="even") = (q\_1 q\_2 + (q q\_2)^*)/2 = (t t_2 - R.R_2, t R_2 + R t_2 ) $
+    $ q.product(q_2, kind="even") = (q_1 q_2 + (q q_2)^*)/2 $
+                                $ = (t t_2 - R.R_2, t R_2 + R t_2 ) $
 
-    $ q.product(q_2, kind="odd") = (q\_1 q\_2 - (q q\_2)^*)/2 = (0, RxR_2 ) $
+    $ q.product(q_2, kind="odd") = (q_1 q_2 - (q q_2)^*)/2 $
+                               $ = (0, RxR_2 ) $
 
-    $ q.product(q_2, kind="even_minus_odd") = q\_2 q\_1 = (t t_2 - R.R_2, t R_2 + R t_2 - RxR_2 ) $
+    $ q.product(q_2, kind="even_minus_odd") = q_2 q_1 $
+                               $ = (t t_2 - R.R_2, t R_2 + R t_2 - RxR_2 ) $
 
-    $ q.product(q_2, reverse=True) = q\_2 q\_1 = (t t_2 - R.R_2, t R_2 + R t_2 - RxR_2 ) $
+    $ q.product(q_2, reverse=True) = q_2 q_1 $
+                                 $ = (t t_2 - R.R_2, t R_2 + R t_2 - RxR_2 ) $
 
     Args:
         q_1: Q
@@ -1833,7 +1866,7 @@ def product(q_1: Q, q_2: Q, kind: str = "", reverse: bool = False) -> Q:
         times_symbol = "xE-xO"
     else:
         raise Exception(
-            "Four 'kind' values are known: '', 'even', 'odd', and 'even_minus_odd'."
+            "Four 'kind' values: '', 'even', 'odd', and 'even_minus_odd'."
         )
 
     if reverse:
@@ -1847,8 +1880,9 @@ def product(q_1: Q, q_2: Q, kind: str = "", reverse: bool = False) -> Q:
 
 def products(q_1: Qs, q_2: Qs, kind: str = "", reverse: bool = False) -> Qs:
     """
-    Forms the quaternion product for each state. The details for handling the variety of cases for lengths
-    of rows, states, and operators makes this code the most complex in this library.
+    Forms the space-time number product for each state. The details for
+    handling the variety of cases for lengths of rows, states, and
+    operators makes this code the most complex in this library.
 
     Args:
         q_1: Qs
@@ -1887,11 +1921,9 @@ def products(q_1: Qs, q_2: Qs, kind: str = "", reverse: bool = False) -> Qs:
         qs_right = q_2_copy
 
     else:
-        print(
-            "Oops, cannot multiply series with row/column dimensions of {}/{} to {}/{}".format(
-                q_1.rows, q_1.columns, q_2.rows, q_2.columns
-            )
-        )
+        raise ValueError("Oops, cannot multiply row/column dimensions of " +
+                         f"{q_1.rows}/{q_1.columns} to " +
+                         f"{q_2.rows}/{q_2.columns}")
 
     # Operator products need to be transposed.
     operator_flag = False
@@ -1901,9 +1933,9 @@ def products(q_1: Qs, q_2: Qs, kind: str = "", reverse: bool = False) -> Qs:
     outer_row_max = qs_left.rows
     outer_column_max = qs_right.columns
     shared_inner_max = qs_left.columns
-    projector_flag = (
-            (shared_inner_max == 1) and (outer_row_max > 1) and (outer_column_max > 1)
-    )
+    projector_flag = ((shared_inner_max == 1) and
+                      (outer_row_max > 1) and
+                      (outer_column_max > 1))
 
     result = [
         [q0(q_type="") for _i in range(outer_column_max)]
@@ -1922,13 +1954,13 @@ def products(q_1: Qs, q_2: Qs, kind: str = "", reverse: bool = False) -> Qs:
                     left_index = outer_row + shared_inner * outer_row_max
 
                 if outer_column_max >= 1 and shared_inner_max > 1:
-                    right_index = shared_inner + outer_column * shared_inner_max
+                    right_index = shared_inner + \
+                                  outer_column * shared_inner_max
 
-                result[outer_row][outer_column] = add(result[outer_row][outer_column],
-                                                      product(qs_left.qs[left_index],
-                                                              qs_right.qs[right_index], kind=kind, reverse=reverse
-                                                              )
-                                                      )
+                result[outer_row][outer_column] = \
+                    add(result[outer_row][outer_column],
+                        product(qs_left.qs[left_index],
+                        qs_right.qs[right_index], kind=kind, reverse=reverse))
 
     # Flatten the list.
     new_qs = [item for sublist in result for item in sublist]
@@ -1964,12 +1996,13 @@ def cross_qs(q_1: Qs, q_2: Qs) -> Qs:
 
 def dot_product(q_1: Qs, q_2: Qs) -> Q:
     f"""{products.__doc__}"""
-    return  qs_qs_to_q_function(products, q_1, q_2)
+    return qs_qs_to_q_function(products, q_1, q_2)
 
 
 def inverse(q_1: Q, additive: bool = False) -> Q:
     """
-    The additive or multiplicative inverse of a quaternion. Defaults to 1/q, not -q.
+    The additive or multiplicative inverse of a space-time number. Defaults to
+    1/q, not -q.
 
     $ q.inverse() = q^* (q q^*)^{-1} = (t, -R) / (t^2 + R.R) $
 
@@ -2009,8 +2042,8 @@ def inverse(q_1: Q, additive: bool = False) -> Q:
 
 def inverses(q_1: Qs, additive: bool = False) -> Qs:
     """
-    Inversing bras and kets calls inverse() once for each.
-    Inversing operators is more tricky as one needs a diagonal identity matrix.
+    Inverting bras and kets calls inverse() once for each.  Inversing operators
+    is more tricky as one needs a diagonal identity matrix.
 
     Args:
         q_1: Qs
@@ -2065,23 +2098,32 @@ def inverses(q_1: Qs, additive: bool = False) -> Qs:
                 det = determinant(q_1)
                 detinv = inverse(det)
 
-                q0 = product(dif(q_1.qs[4], product(q_1.qs[8]), product(q_1.qs[5], q_1.qs[7])), detinv)
+                q0 = product(dif(q_1.qs[4], product(q_1.qs[8]),
+                             product(q_1.qs[5], q_1.qs[7])), detinv)
 
-                q_2 = product(dif(q_1.qs[7], product(q_1.qs[2]), product(q_1.qs[8], q_1.qs[1])), detinv)
+                q_2 = product(dif(q_1.qs[7], product(q_1.qs[2]),
+                              product(q_1.qs[8], q_1.qs[1])), detinv)
 
-                q2 = product(dif(q_1.qs[1], product(q_1.qs[5]), product(q_1.qs[2], q_1.qs[4])), detinv)
+                q2 = product(dif(q_1.qs[1], product(q_1.qs[5]),
+                             product(q_1.qs[2], q_1.qs[4])), detinv)
 
-                q3 = product(dif(q_1.qs[6], product(q_1.qs[5]), product(q_1.qs[8], q_1.qs[3])), detinv)
+                q3 = product(dif(q_1.qs[6], product(q_1.qs[5]),
+                             product(q_1.qs[8], q_1.qs[3])), detinv)
 
-                q4 = product(dif(q_1.qs[0], product(q_1.qs[8]), product(q_1.qs[2], q_1.qs[6])), detinv)
+                q4 = product(dif(q_1.qs[0], product(q_1.qs[8]),
+                             product(q_1.qs[2], q_1.qs[6])), detinv)
 
-                q5 = product(dif(q_1.qs[3], product(q_1.qs[2]), product(q_1.qs[5], q_1.qs[0])), detinv)
+                q5 = product(dif(q_1.qs[3], product(q_1.qs[2]),
+                             product(q_1.qs[5], q_1.qs[0])), detinv)
 
-                q6 = product(dif(q_1.qs[3], product(q_1.qs[7]), product(q_1.qs[4], q_1.qs[6])), detinv)
+                q6 = product(dif(q_1.qs[3], product(q_1.qs[7]),
+                             product(q_1.qs[4], q_1.qs[6])), detinv)
 
-                q7 = product(dif(q_1.qs[6], product(q_1.qs[1]), product(q_1.qs[7], q_1.qs[0])), detinv)
+                q7 = product(dif(q_1.qs[6], product(q_1.qs[1]),
+                             product(q_1.qs[7], q_1.qs[0])), detinv)
 
-                q8 = product(dif(q_1.qs[0], product(q_1.qs[4]), product(q_1.qs[1], q_1.qs[3])), detinv)
+                q8 = product(dif(q_1.qs[0], product(q_1.qs[4]),
+                             product(q_1.qs[1], q_1.qs[3])), detinv)
 
                 q_inv = Qs(
                     [q0, q_2, q2, q3, q4, q5, q6, q7, q8],
@@ -2108,9 +2150,11 @@ def inverses(q_1: Qs, additive: bool = False) -> Qs:
 
 def divide_by(q_1: Q, q_2: Q) -> Q:
     """
-    Divide one quaternion by another. The order matters unless one is using a norm_squared (real number).
+    Divide one space-time number by another. The order matters unless one is
+    using a norm_squared (real number).
 
-    $ q.divided_by(q_2) = q\_1 q_2^{-1} = (t t\_2 + R.R\_2, -t R\_2 + R t\_2 - RxR\_2) $
+    $ q.divided_by(q_2) = q_1 q_2^{-1} $
+    $ = (t t_2 + R.R_2, -t R_2 + R t_2 - RxR_2) $
 
     Args:
         q_1: Q
@@ -2138,15 +2182,18 @@ def divide_bys(q_1: Qs, q_2: Qs) -> Qs:
 
 def triple_product(q_1: Q, q_2: Q, q_3: Q) -> Q:
     """
-    Form a triple product given 3 quaternions, in left-to-right order: q1, q_2, q_3.
+
+    Form a triple product given 3 space-time numbers, in left-to-right order:
+    q1, q_2, q_3.
 
     $ q.triple_product(q_2, q_3) = q q_2 q_3 $
 
-    $ = (t t\_2 t\_3 - R.R\_2 t\_3 - t R\_2.R|_3 - t\_2 R.R\_3 - (RxR_2).R\_3, $
+    $ = (t t_2 t_3 - R.R_2 t_3 - t R_2.R_3 - t_2 R.R_3 $
+    $ - (RxR_2).R_3, $
 
-    $ ... t t\_2 R\_3 - (R.R\_2) R\_3 + t t\_3 R\_2 + t\_2 t\_3 R $
+    $ ... t t_2 R_3 - (R.R_2) R_3 + t t_3 R_2 + t_2 t_3 R $
 
-    $ ... + t\_3 RxR\_2 + t R_2xR\_3 + t_2 RxR\_3 + RxR\_2xR\_3) $
+    $ ... + t_3 RxR_2 + t R_2xR_3 + t_2 RxR_3 + RxR_2xR_3) $
 
     Args:
         q_1: Q
@@ -2173,6 +2220,7 @@ def triple_products(q_1: Qs, q_2: Qs, q_3: Qs) -> Qs:
 
 def rotation(q_1: Q, h: Q) -> Q:
     """
+
     Do a rotation using a triple product: u R 1/u.
     SPECIAL NOTE: q_1 = 0 MUST WORK! Zero is just another number.
     To make it work, view the rotation function as a 2-part function.
@@ -2213,10 +2261,9 @@ def rotation_and_rescale(q_1: Q, h: Q) -> Q:
     Do a rotation using a triple product: u R u^*.
     The rescaling will be by a factor of ||u||^2
 
-    SPECIAL NOTE: q_1 = 0 MUST WORK! Zero is just another number.
-    To make it work, view the rotation function as a 2-part function.
-    If h=0, then return q_1.
-    If h!=0, then form the Rodrigues triple product.
+    SPECIAL NOTE: q_1 = 0 MUST WORK! Zero is just another number.  To make it
+    work, view the rotation function as a 2-part function.  If h=0, then return
+    q_1.  If h!=0, then form the Rodrigues triple product.
 
     $ rotation(q, h) = h q h^* $
 
@@ -2246,31 +2293,36 @@ def rotation_and_rescales(q_1: Qs, h: Qs) -> Qs:
     return qq_to_qs_function(rotation_and_rescale, q_1, h)
 
 
-def rotation_angle(q_1: Q, q_2: Q, origin: Q = q0(), tangent_space_norm: float = 1.0, degrees: bool = False) -> Q:
+def rotation_angle(q_1: Q, q_2: Q, origin: Q = q0(),
+                   tangent_space_norm: float = 1.0,
+                   degrees: bool = False) -> Q:
     """
     Returns the spatial angle between the origin and 2 points.
 
-    $$ scalar(normalize(vector(q_1) vector(q_2)^*)) = \cos(a) $$
+    $$ scalar(normalize(vector(q_1) vector(q_2)^*)) = cos(a) $$
 
-    The product of the 3-vectors is a mix of symmetric and anti-symmetric terms.
-    The normalized scalar is $\cos(a)$. Take the inverse cosine to get the angle
-    for the angle in the plane between q_1, the origin and q_2.
+    The product of the 3-vectors is a mix of symmetric and anti-symmetric
+    terms. The normalized scalar is $cos(a)$. Take the inverse cosine to get
+    the angle for the angle in the plane between q_1, the origin and q_2.
 
-    I have a radical view of space-time. It is where-when everything happens. In space-time, all algebra
-    operations are the same: $ 2 + 3 = 5 $ and $ 2 * 3 = 6 $. The same cannot be said about the tangent
-    space of space-time because it is tangent space that can be 'curved'. My proposal for gravity is that
-    changes in the tangent space measurements of time, dt, exactly cancel those of the tangent space
-    measurements of space, dR. When one is making a measurement that involves gravity, the tangent space
-    norm will not be equal to unity, but greater or lesser than unity.
+    I have a radical view of space-time. It is where-when everything happens.
+    In space-time, all algebra operations are the same: $ 2 + 3 = 5 $ and
+    $ 2 * 3 = 6 $. The same cannot be said about the tangent space of
+    space-time because it is tangent space that can be 'curved'. My proposal
+    for gravity is that changes in the tangent space measurements of time, dt,
+    exactly cancel those of the tangent space measurements of space, dR. When
+    one is making a measurement that involves gravity, the tangent space norm
+    will not be equal to unity, but greater or lesser than unity.
 
-    There are a number of bothersome qualities about this function. The scalar term doesn't matter in the
-    slightest way. As a consequence, this is a purely spatial function.
+    There are a number of bothersome qualities about this function. The scalar
+    term doesn't matter in the slightest way. As a consequence, this is a
+    purely spatial function.
 
     Args:
         q_1: Q
         q_2: Q
         origin: Q    default is zero.
-        tangent_space_norm: float   Will be different from unity in 'curved' tangent spaces
+        tangent_space_norm: float   not unity in 'curved' tangent spaces
         degrees: float    Use degrees instead of radians
 
     Returns: Q    only the scalar is possibly non-zero
@@ -2280,7 +2332,8 @@ def rotation_angle(q_1: Q, q_2: Q, origin: Q = q0(), tangent_space_norm: float =
     q_1_shifted_vector = vector_q(dif(q_1, origin))
     q_2_shifted_vector = vector_q(dif(q_2, origin))
 
-    q_1__q_2 = normalize(product(q_1_shifted_vector, conj(q_2_shifted_vector)), n=tangent_space_norm)
+    q_1__q_2 = normalize(product(q_1_shifted_vector, conj(q_2_shifted_vector)),
+                         n=tangent_space_norm)
     angle = math.acos(q_1__q_2.t)
 
     if degrees:
@@ -2291,32 +2344,38 @@ def rotation_angle(q_1: Q, q_2: Q, origin: Q = q0(), tangent_space_norm: float =
 
 def rotation_and_or_boost(q_1: Q, h: Q, verbose=False) -> Q:
     """
-    The method for doing a rotation in 3D space discovered by Rodrigues in the 1840s used a quaternion triple
-    product. After Minkowski characterized Einstein's work in special relativity as a 4D rotation, efforts were
-    made to do the same with one quaternion triple product. Two people were able to do the trick with complex-valued
-    quaternions in 1910-1911, but complex-valued quaternion are not a division altebra. The goal to do the
-    transformation with a division algebra took a century (not of work, but ignoring the issue). In 2010 D. Sweetser
-    and independently by M. Kharinov (year unknown to me) the same algebra was found. Two other triple products need to
-    be used like so:
+    The method for doing a rotation in 3D space discovered by Rodrigues in the
+    1840s used a space-time number triple product. After Minkowski
+    characterized Einstein's work in special relativity as a 4D-vector
+    rotation, efforts were made to do the same with one space-time number
+    triple product. Two people were able to do the trick with complex-valued
+    space-time numbers in 1910-1911, but complex-valued space-time numbers are
+    not a division altebra. The goal to do the transformation with a division
+    algebra took a century (not of work, but ignoring the issue). In 2010 D.
+    Sweetser and independently by M. Kharinov (year unknown to me) the same
+    algebra was found. Two other triple products
+    need to be used like so:
 
     $ b.rotation_and_or_boost(h) = h b h^* + 1/2 ((hhb)^* -(h^* h^* b)^*) $
 
-    The parameter h is NOT free from constraints. There are two constraints. If the parameter h is to do a
-    rotation, it must have a norm of unity and have the first term equal to zero.
+    The parameter h is NOT free from constraints. There are two constraints.
+    If the parameter h is to do a rotation, it must have a norm of unity and
+    have the first term equal to zero.
 
     $ h = (0, R), scalar_q(h) = 0, scalar_q(h h^*) = 1 $
 
     For such a value of h, the second and third terms cancel leaving
 
-    To do a boost which may or may not also do a rotation, then the parameter h must have a square whose first
-    term is equal to zero:
+    To do a boost which may or may not also do a rotation, then the parameter h
+    must have a square whose first term is equal to zero:
 
-    $ h = (\cosh(a), \sinh(a)), scalar_q(h^2) = 1 $
+    $ h = (cosh(a), sinh(a)), scalar_q(h^2) = 1 $
 
-    There has been no issue about the ability of this function to do boosts. There has been a spirited debate
-    as to whether the function can do rotations. Notice that the form reduces to the Rodrigues triple product.
-    I consider this so elementary that I cannot argue the other side. Please see the wiki page or use this code
-    to see for yourself.
+    There has been no issue about the ability of this function to do boosts.
+    There has been a spirited debate as to whether the function can do
+    rotations. Notice that the form reduces to the Rodrigues triple product.
+    I consider this so elementary that I cannot argue the other side. Please
+    see the wiki page or use this code to see for yourself.
 
     Args:
         q_1: Q
@@ -2330,37 +2389,46 @@ def rotation_and_or_boost(q_1: Q, h: Q, verbose=False) -> Q:
 
     if not h.is_symbolic():
 
-        if (not math.isclose(h.t, 0) and not equal(q0(), vector_q(h))) or equal(h, q0()):
+        if (not math.isclose(h.t, 0) and not equal(q0(), vector_q(h)) or
+                equal(h, q0())):
 
             if not math.isclose(square(h).t, 1):
-                # The scalar part of h will be used to calculate cosh(h.t) and sinh(h.t)
-                # The normalized vector part will point sinh(t) in the direction of vector_q(h)
+
+                # The scalar part of h will be used to calculate cosh(h.t) and
+                # sinh(h.t) The normalized vector part will point sinh(t) in
+                # the direction of vector_q(h)
+
                 h_scalar = scalar_q(h)
                 h_nomralized_vector = normalize(vector_q(h))
 
                 if np.abs(h_scalar.t) > 1:
                     h_scalar = inverse(h_scalar)
 
-                h_cosh = product(add(exp(h_scalar), exp(flip_sign(h_scalar))), q1(1.0 / 2.0))
-                h_sinh = product(dif(exp(h_scalar), exp(flip_sign(h_scalar))), q1(1.0 / 2.0))
+                h_cosh = product(add(exp(h_scalar), exp(flip_sign(h_scalar))),
+                                 q1(1.0 / 2.0))
+                h_sinh = product(dif(exp(h_scalar), exp(flip_sign(h_scalar))),
+                                 q1(1.0 / 2.0))
 
                 h = add(h_cosh, product(h_nomralized_vector, h_sinh))
 
                 if verbose:
-                    h.print_state("To do a Lorentz boost, adjusted value of h so scalar_q(h²) = 1")
+                    h.print_state("To do a Lorentz boost, adjusted value of" +
+                                  " of h so scalar_q(h²) = 1")
 
         else:
             if not math.isclose(norm_squared(h).t, 1):
                 h = normalize(h)
                 if verbose:
-                    h.print_state("To do a 3D rotation, adjusted value of h so scalar_q(h h^*) = 1")
+                    h.print_state("To do a 3D rotation, adjusted value of" +
+                                  " h so scalar_q(h h^*) = 1")
 
     triple_1 = triple_product(h, q_1, conj(h))
     triple_2 = conj(triple_product(h, h, q_1))
     triple_3 = conj(triple_product(conj(h), conj(h), q_1))
 
     triple_23 = dif(triple_2, triple_3)
-    half_23 = product(triple_23, Q([0.5, 0, 0, 0], representation=q_1.representation))
+    half_23 = product(triple_23, Q([0.5, 0, 0, 0],
+                      representation=q_1.representation))
     triple_123 = add(triple_1, half_23)
     triple_123.q_type = end_q_type
     triple_123.representation = q_1.representation
@@ -2375,12 +2443,13 @@ def rotation_and_or_boosts(q_1: Qs, h: Qs) -> Qs:
 
 def rotation_only(q_1: Q, h: Q) -> Q:
     """
-    The function calls another function, rotations_and_or_boost() but does so hy constraining the parameter h
-    to have a scalar of zero.
+    The function calls another function, rotations_and_or_boost() but does
+    so hy constraining the parameter h to have a scalar of zero.
 
     $ b.rotation_and_or_boost(h) = h b h^* + 1/2 ((hhb)^* -(h^* h^* b)^*) $
 
-    The second and third terms drop out, leaving the Rodrigues 3D spatial rotation formula.
+    The second and third terms drop out, leaving the Rodrigues 3D spatial
+    rotation formula.
 
     Args:
         q_1: Q
@@ -2400,26 +2469,30 @@ def rotation_onlys(q_1: Qs, h: Qs) -> Qs:
 
 def next_rotation(q_1: Q, q_2: Q) -> Q:
     """
-    Given 2 quaternions, creates a new quaternion to do a rotation
-    in the triple triple quaternion function by using a normalized cross product.
+    Given 2 space-time numbers, creates a new quaternion to do a rotation in
+    the triple triple space-time number function by using a normalized cross
+    product.
 
-    $ next_rotation(q, q_2) = (q q\_2 - q\_2 q) / 2|(q q\_2 - (q\_2 q)^*)| = (0, QxQ\_2)/|(0, QxQ\_2)| $
+    $ next_rotation(q, q_2) = (q q_2 - q_2 q) / 2|(q q_2 - (q_2 q)^*)| $
 
     Args:
-        q_1: Q   any quaternion
-        q_2: Q   any quaternion whose first term equal the first term of q and
-                  for the first terms of each squared.
+        q_1: Q   any space-time number
+        q_2: Q   any space-time number whose first term equal the first term
+                    of q and for the first terms of each squared.
 
     Returns: Q
 
     """
+
     q_1.check_representations(q_2)
 
     if not math.isclose(q_1.t, q_2.t):
-        raise ValueError(f"Oops, to be a rotation, the first values must be the same: {q_1.t} != {q_2.t}")
+        raise ValueError("Oops, rotation need the first values equal: " +
+                         f"{q_1.t} != {q_2.t}")
 
     if not math.isclose(norm_squared(q_1).t, norm_squared(q_2).t):
-        raise ValueError(f"Oops, the norm squared of these two are not equal: {norm_squared(q_1).t} != {norm_squared(q_2).t}")
+        raise ValueError("Oops, the norm squared are not equal: " +
+                         f"{norm_squared(q_1).t} != {norm_squared(q_2).t}")
 
     next_rot = product(q_1, q_2)
     v_abs_q_1 = abs_of_vector(q_1).t
@@ -2436,15 +2509,17 @@ def next_rotations(q_1: Qs, q_2: Qs) -> Qs:
 
 def next_rotation_randomized(q_1: Q, q_2: Q) -> Q:
     """
-    Given 2 quaternions, creates a new quaternion to do a rotation
-    in the triple triple quaternion function by using a normalized cross product.
+    Given 2 space-time numbers, creates a new quaternion to do a rotation
+    in the triple triple space-time number function by using a normalized
+    cross product.
 
-    To assure that repeated calls cover the sphere, multiply by a random factor.
+    To assure that repeated calls cover the sphere, multiply by a random
+    factor.
 
     Args:
-        q_1: Q   any quaternion
-        q_2: Q   any quaternion whose first term equal the first term of q and
-                  for the first terms of each squared.
+        q_1: Q   any space-time number
+        q_2: Q   any space-time number whose first term equal the first term
+                    of q and for the first terms of each squared.
 
     Returns: Q
 
@@ -2452,10 +2527,12 @@ def next_rotation_randomized(q_1: Q, q_2: Q) -> Q:
     q_1.check_representations(q_2)
 
     if not math.isclose(q_1.t, q_2.t):
-        raise ValueError(f"Oops, to be a rotation, the first values must be the same: {q_1.t} != {q_2.t}")
+        raise ValueError("Oops, rotations need the first values equal: " +
+                         "{q_1.t} != {q_2.t}")
 
     if not math.isclose(norm_squared(q_1).t, norm_squared(q_2).t):
-        raise ValueError(f"Oops, the norm squared of these two are not equal: {norm_squared(q_1).t} != {norm_squared(q_2).t}")
+        raise ValueError("Oops, the norm squared of are not equal: " +
+                         f"{norm_squared(q_1).t} != {norm_squared(q_2).t}")
 
     next_rot = product(product(q_1, q_2), qrandom())
     v_abs_q_1 = abs_of_vector(q_1).t
@@ -2472,11 +2549,11 @@ def next_rotation_randomizeds(q_1: Qs, q_2: Qs) -> Qs:
 
 def next_boost(q_1: Q, q_2: Q) -> Q:
     """
-    Given 2 quaternions, creates a new quaternion to do a boost/rotation
-    using the triple triple quaternion product
-    by using the scalar_q of an even product to form (cosh(x), i sinh(x)).
+    Given 2 space-time numbers, creates a new space-time number to do a boost
+    or rotation using the triple triple space-time number product by using the
+    scalar_q of an even product to form (cosh(x), i sinh(x)).
 
-    $ next_boost(q, q_2) = q q\_2 + q\_2 q
+    $ next_boost(q, q_2) = q q_2 + q_2 q
 
     Args:
         q_1: Q
@@ -2488,10 +2565,12 @@ def next_boost(q_1: Q, q_2: Q) -> Q:
     q_1.check_representations(q_2)
 
     if not (q_1.t >= 1.0 and q_2.t >= 1.0):
-        raise ValueError(f"Oops, to be a boost, the first values must both be greater than one: {q_1.t},  {q_2.t}")
+        raise ValueError(f"Oops, to be a boost, the first values must both " +
+                         "be greater than one: {q_1.t},  {q_2.t}")
 
     if not math.isclose(square(q_1).t, square(q_2).t):
-        raise ValueError(f"Oops, the squares of these two are not equal: {square(q_1).t} != {square(q_2).t}")
+        raise ValueError(f"Oops, the squares of these two are not equal: " +
+                         "{square(q_1).t} != {square(q_2).t}")
 
     q_even = product(q_1, q_2, kind="even")
     q_s = scalar_q(q_even)
@@ -2515,10 +2594,12 @@ def next_boosts(q_1: Qs, q_2: Qs) -> Qs:
 
 def permutation(q_1: Q, perm: str = "txyz") -> Q:
     """
-    All possible permutations can be set with the 4 character perm string, variations on t, x, y, z.
+
+    All possible permutations can be set with the 4 character perm string,
+    variations on t, x, y, z.
 
     Args:
-        q_1: Q     The quaternion to permute
+        q_1: Q     The space-time number to permute
         perm:      A shorthand for the 12 permutations
 
     Returns: Q
@@ -2545,10 +2626,10 @@ def permutation(q_1: Q, perm: str = "txyz") -> Q:
 
 def all_permutations(q_1: Q) -> Qs:
     """
-    Returns all permutations as a quaternion series. Can be made unique.
+    Returns all permutations as a space-time number series. Can be made unique.
 
     Args:
-        q_1: Q        The quaternion to permute
+        q_1: Q        The space-time number to permute
 
     Returns: Q
 
@@ -2562,12 +2643,13 @@ def all_permutations(q_1: Q) -> Qs:
     return Qs(results)
 
 
-# g_shift is a function based on the space-times-time invariance proposal for gravity,
-# which proposes that if one changes the distance from a gravitational source, then
-# squares a measurement, the observers at two different hieghts agree to their
-# space-times-time values, but not the intervals.
-# g_form is the form of the function, either minimal or exponential
-# Minimal is what is needed to pass all weak field tests of gravity
+# g_shift is a function based on the space-times-time invariance proposal for
+# gravity, which proposes that if one changes the distance from a gravitational
+# source, then squares a measurement, the observers at two different hieghts
+# agree to their space-times-time values, but not the intervals.  g_form is the
+# form of the function, either minimal or exponential Minimal is what is needed
+# to pass all weak field tests of gravity
+
 def g_shift(q_1: Q, dimensionless_g, g_form="exp"):
     """Shift an observation based on a dimensionless GM/c^2 dR."""
 
@@ -2578,7 +2660,7 @@ def g_shift(q_1: Q, dimensionless_g, g_form="exp"):
     elif g_form == "minimal":
         g_factor = 1 + 2 * dimensionless_g + 2 * dimensionless_g ** 2
     else:
-        print("g_form not defined, should be 'exp' or 'minimal': {}".format(g_form))
+        print(f"g_form not defined, use 'exp' or 'minimal': {g_form}")
         return q_1
 
     g_q = Q(q_type=end_q_type)
@@ -2591,6 +2673,7 @@ def g_shift(q_1: Q, dimensionless_g, g_form="exp"):
 
     return g_q
 
+
 def g_shifts(q_1: Qs, g: float, g_form="exp") -> Qs:
     f"""{g_shift.__doc__}""".replace("Q", "Qs")
     return Qs([g_shift(q, g, g_form) for q in q_1.qs], qs_type=q_1.qs_type)
@@ -2598,9 +2681,9 @@ def g_shifts(q_1: Qs, g: float, g_form="exp") -> Qs:
 
 def sin(q_1: Q) -> Q:
     """
-    Take the sine of a quaternion
+    Take the sine of a space-time number
 
-    $ q.sin() = (\sin(t) \cosh(|R|), \cos(t) \sinh(|R|) R/|R|)$
+    $ q.sin() = (sin(t) cosh(|R|), cos(t) sinh(|R|) R/|R|)$
 
     Returns: Q
 
@@ -2611,7 +2694,8 @@ def sin(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.sin(q_1.t), 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
+        return Q([math.sin(q_1.t), 0, 0, 0], q_type=end_q_type,
+                 representation=q_1.representation)
 
     sint = math.sin(q_1.t)
     cost = math.cos(q_1.t)
@@ -2639,8 +2723,8 @@ def sins(q_1: Qs) -> Qs:
 
 def cos(q_1: Q) -> Q:
     """
-    Take the cosine of a quaternion.
-    $ q.cos() = (\cos(t) \cosh(|R|), \sin(t) \sinh(|R|) R/|R|) $
+    Take the cosine of a space-time number.
+    $ q.cos() = (cos(t) cosh(|R|), sin(t) sinh(|R|) R/|R|) $
 
     Returns: Q
 
@@ -2651,7 +2735,8 @@ def cos(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.cos(q_1.t), 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
+        return Q([math.cos(q_1.t), 0, 0, 0], q_type=end_q_type,
+                 representation=q_1.representation)
 
     sint = math.sin(q_1.t)
     cost = math.cos(q_1.t)
@@ -2679,9 +2764,9 @@ def coss(q_1: Qs) -> Qs:
 
 def tan(q_1: Q) -> Q:
     """
-    Take the tan of a quaternion.
+    Take the tan of a space-time number.
 
-     $ q.tan() = \sin(q) \cos(q)^{-1} $
+     $ q.tan() = sin(q) cos(q)^{-1} $
 
      Returns: Q
 
@@ -2695,7 +2780,8 @@ def tan(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.tan(q_1.t), 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
+        return Q([math.tan(q_1.t), 0, 0, 0], q_type=end_q_type,
+                 representation=q_1.representation)
 
     sinq = sin(q_1)
     cosq = cos(q_1)
@@ -2714,9 +2800,9 @@ def tans(q_1: Qs) -> Qs:
 
 def sinh(q_1: Q) -> Q:
     """
-    Take the sinh of a quaternion.
+    Take the sinh of a space-time number.
 
-    $ q.sinh() = (\sinh(t) \cos(|R|), \cosh(t) \sin(|R|) R/|R|) $
+    $ q.sinh() = (sinh(t) cos(|R|), cosh(t) sin(|R|) R/|R|) $
 
     Returns: Q
 
@@ -2727,7 +2813,8 @@ def sinh(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.sinh(q_1.t), 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
+        return Q([math.sinh(q_1.t), 0, 0, 0], q_type=end_q_type,
+                 representation=q_1.representation)
 
     sinh_t = math.sinh(q_1.t)
     cos_r = math.cos(abs_v.t)
@@ -2752,9 +2839,9 @@ def sinhs(q_1: Qs) -> Qs:
 
 def cosh(q_1: Q) -> Q:
     """
-    Take the cosh of a quaternion.
+    Take the cosh of a space-time number.
 
-    $ (\cosh(t) \cos(|R|), \sinh(t) \sin(|R|) R/|R|) $
+    $ (cosh(t) cos(|R|), sinh(t) sin(|R|) R/|R|) $
 
     Returns: Q
 
@@ -2765,7 +2852,8 @@ def cosh(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.cosh(q_1.t), 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
+        return Q([math.cosh(q_1.t), 0, 0, 0], q_type=end_q_type,
+                 representation=q_1.representation)
 
     cosh_t = math.cosh(q_1.t)
     cos_r = math.cos(abs_v.t)
@@ -2790,9 +2878,9 @@ def coshs(q_1: Qs) -> Qs:
 
 def tanh(q_1: Q) -> Q:
     """
-    Take the tanh of a quaternion.
+    Take the tanh of a space-time number.
 
-    $ q.tanh() = \sin(q) \cos(q)^{-1} $
+    $ q.tanh() = sin(q) cos(q)^{-1} $
 
     Returns: Q
 
@@ -2803,7 +2891,8 @@ def tanh(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.tanh(q_1.t), 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
+        return Q([math.tanh(q_1.t), 0, 0, 0], q_type=end_q_type,
+                 representation=q_1.representation)
 
     sinhq = sinh(q_1)
     coshq = cosh(q_1)
@@ -2822,9 +2911,9 @@ def tanhs(q_1: Qs) -> Qs:
 
 def exp(q_1: Q) -> Q:
     """
-    Take the exponential of a quaternion.
+    Take the exponential of a space-time number.
 
-    $ q.exp() = (\exp(t) \cos(|R|, \exp(t) \sin(|R|) R/|R|) $
+    $ q.exp() = (exp(t) cos(|R|, exp(t) sin(|R|) R/|R|) $
 
     Returns: Q
     """
@@ -2835,7 +2924,8 @@ def exp(q_1: Q) -> Q:
     et = math.exp(q_1.t)
 
     if abs_v.t == 0:
-        return Q([et, 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
+        return Q([et, 0, 0, 0], q_type=end_q_type,
+                 representation=q_1.representation)
 
     cosR = math.cos(abs_v.t)
     sinR = math.sin(abs_v.t)
@@ -2857,9 +2947,9 @@ def exps(q_1: Qs) -> Qs:
 
 def ln(q_1: Q) -> Q:
     """
-    Take the natural log of a quaternion.
+    Take the natural log of a space-time number.
 
-    $ q.ln() = (0.5 \ln t^2 + R.R, \atan2(|R|, t) R/|R|) $
+    $ q.ln() = (0.5 ln t^2 + R.R, atan2(|R|, t) R/|R|) $
 
     Returns: Q
 
@@ -2871,10 +2961,12 @@ def ln(q_1: Q) -> Q:
     if abs_v.t == 0:
 
         if q_1.t > 0:
-            return Q([math.log(q_1.t), 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
+            return Q([math.log(q_1.t), 0, 0, 0], q_type=end_q_type,
+                     representation=q_1.representation)
         else:
             # I don't understand this, but Mathematica does the same thing.
-            return Q([math.log(-q_1.t), math.pi, 0, 0], q_type=end_q_type, representation=q_1.representation)
+            return Q([math.log(-q_1.t), math.pi, 0, 0],
+                     q_type=end_q_type, representation=q_1.representation)
 
     t_value = 0.5 * math.log(q_1.t * q_1.t + abs_v.t * abs_v.t)
     k = math.atan2(abs_v.t, q_1.t) / abs_v.t
@@ -2894,9 +2986,9 @@ def lns(q_1: Qs) -> Qs:
 
 
 def q_2_q(q_1: Q, q_2: Q) -> Q:
-    """Take the natural log of a quaternion.
+    """Take the natural log of a space-time number.
 
-    $ q.q_2_q(p) = \exp(\ln(q) * p) $
+    $ q.q_2_q(p) = exp(ln(q) * p) $
 
     Returns: Q
 
@@ -3015,7 +3107,7 @@ def dagger(q_1: Qs, m: int, n: int, conj_type: int = 0) -> Qs:
 
 def is_square(q_1: Qs) -> bool:
     """
-    Tests if a quaternion series is square, meaning the dimenion is n^2.
+    Tests if a space-time number series is square, meaning the dimenion is n^2.
 
     Returns: bool
 
@@ -3039,7 +3131,8 @@ def is_Hermitian(q_1: Qs) -> bool:
 
 def diagonal(q_1: Qs, dim: int) -> Qs:
     """
-    Make a state dim * dim with q or qs along the 'diagonal'. Always returns an operator.
+    Make a state dim * dim with q or qs along the 'diagonal'. Always returns an
+    operator.
 
     Args:
         q_1: Qs
@@ -3058,7 +3151,7 @@ def diagonal(q_1: Qs, dim: int) -> Qs:
     elif q_1.qs is None:
         raise ValueError("Oops, the qs here is None.")
     else:
-        raise ValueError("Oops, need the length to be equal to the dimensions.")
+        raise ValueError("Oops, length to be equal to dimensions.")
 
     for i in range(dim):
         for j in range(dim):
@@ -3070,8 +3163,8 @@ def diagonal(q_1: Qs, dim: int) -> Qs:
     return Qs(the_diagonal, qs_type="op", rows=dim, columns=dim)
 
 
-def identity(dim: int = 1, operator: bool = False, additive: bool = False, non_zeroes=None, qs_type: str = "ket") \
-        -> Qs:
+def identity(dim: int = 1, operator: bool = False, additive: bool = False,
+             non_zeroes=None, qs_type: str = "ket") -> Qs:
     """
     Identity operator for states or operators which are diagonal.
 
@@ -3093,7 +3186,7 @@ def identity(dim: int = 1, operator: bool = False, additive: bool = False, non_z
         id_q = []
 
         if len(non_zeroes) != dim:
-            raise ValueError(f"Oops, len(non_zeroes)={len(non_zeroes)}, should be: {dim}")
+            raise ValueError(f"Oops, {len(non_zeroes)} != {dim}")
 
         else:
             for non_zero in non_zeroes:
@@ -3117,7 +3210,7 @@ def identity(dim: int = 1, operator: bool = False, additive: bool = False, non_z
 
 def trace(q_1: Qs) -> Qs:
     """
-    Return the trace as a scalar_q quaternion series.
+    Return the trace as a scalar_q space-time number series.
 
     Returns: Qs
 
@@ -3129,7 +3222,8 @@ def trace(q_1: Qs) -> Qs:
     """
 
     if q_1.rows != q_1.columns:
-        raise ValueError(f"Oops, not a square quaternion series: {q_1.rows}/{q_1.columns}")
+        raise ValueError("Oops, not a square series: " +
+                         f"{q_1.rows}/{q_1.columns}")
 
     else:
         tr = q_1.qs[0]
@@ -3142,7 +3236,8 @@ def trace(q_1: Qs) -> Qs:
 
 def sigma(kind: str = "x", theta: float = None, phi: float = None) -> Qs:
     """
-    Returns a sigma when given a type like, x, y, z, xy, xz, yz, xyz, with optional angles theta and phi.
+    Returns a sigma when given a type like, x, y, z, xy, xz, yz, xyz, with
+    optional angles theta and phi.
 
     Args:
         kind: str  x, y, z, xy, etc
@@ -3185,12 +3280,13 @@ def sigma(kind: str = "x", theta: float = None, phi: float = None) -> Qs:
     sigma_bunch.xyz = adds(adds(sigma_bunch.x, sigma_bunch.y), sigma_bunch.z)
 
     if kind not in sigma_bunch:
-        raise ValueError("Oops, I only know about x, y, z, and their combinations.")
+        raise ValueError("Oops, set to x, y, z, and their combinations.")
 
     return normalizes(sigma_bunch[kind])
 
 
-def zero_out(q_1: Q, t: bool = False, x: bool = False, y: bool = False, z: bool = False) -> Q:
+def zero_out(q_1: Q, t: bool = False, x: bool = False,
+             y: bool = False, z: bool = False) -> Q:
     """
     Puts a zero in one or more of the four places.
 
@@ -3221,30 +3317,30 @@ def zero_out(q_1: Q, t: bool = False, x: bool = False, y: bool = False, z: bool 
     return new_q
 
 
-def zero_outs(q_1: Qs, t: bool = False, x: bool = False, y: bool = False, z: bool = False) -> Qs:
+def zero_outs(q_1: Qs, t: bool = False, x: bool = False,
+              y: bool = False, z: bool = False) -> Qs:
     f"""{zero_out.__doc__}""".replace("Q", "Qs")
 
-    return Qs(
-        [zero_out(q, t, x, y, z) for q in q_1.qs],
-        qs_type=q_1.qs_type,
-        rows=q_1.rows,
-        columns=q_1.columns,
-    )
+    return Qs([zero_out(q, t, x, y, z) for q in q_1.qs],
+              qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns,)
 
 
-# Generators of quaternion series.
-def generate_Qs(func: FunctionType, q_1: Union[Q, Qs, FunctionType], dim: int = 10, qs_type: str = "ket") -> Qs:
+# Generators of space-time number series.
+def generate_Qs(func: FunctionType, q_1: Union[Q, Qs, FunctionType],
+                dim: int = 10, qs_type: str = "ket") -> Qs:
     """
-    One quaternion cannot tell a story. generate_Qs provides a general way to create a
-    quaternion series given a function and one quaternion/another function. The function
-    is applied to each subsequent value of the function. If q_1 is itself a function, it
-    will be called each time.
+
+    One space-time number cannot tell a story. generate_Qs provides a general
+    way to to create a space-time number series given a function and one
+    space-time number or function. The function is applied to each subsequent
+    value of the function.  If q_1 is itself a function, it will be called each
+    time.
 
     Args:
-        func: FunctionType   a function that generates an instance of the class Q
+        func: FunctionType   a function that returns a class Q
         q_1: Q, FunctionType  Either an instance of Q, Qs, or a Q function
-        dim: int    The dimensions of the quaternion series
-        qs_type:    bra/ket/operator  Only works for a square operator at this time
+        dim: int    The dimensions of the space-time number series
+        qs_type:    bra/ket/operator  Only works for a square operator
 
     Returns: Qs
 
@@ -3271,22 +3367,25 @@ def generate_Qs(func: FunctionType, q_1: Union[Q, Qs, FunctionType], dim: int = 
     return Qs(new_qs, qs_type=qs_type)
 
 
-def generate_QQs(func, q_1: Union[Q, Qs, FunctionType], q_2: Union[Q, Qs, FunctionType], dim: int = 10, qs_type: str = "ket") -> Qs:
+def generate_QQs(func, q_1: Union[Q, Qs, FunctionType],
+                 q_2: Union[Q, Qs, FunctionType], dim: int = 10,
+                 qs_type: str = "ket") -> Qs:
     """
-    One quaternion cannot tell a story. generate_QQs provides a general way to create a
-    quaternion series given a function and two other quaternions/functions. The function
-    is applied to each subsequent value of the function. If q_1 or q_2 is itself a function, it
-    will be called each time.
+    One space-time number cannot tell a story. generate_QQs provides a general
+    way to create a space-time number series given a function and two other
+    space-time numbers/functions. The function is applied to each subsequent
+    value of the function. If q_1 or q_2 is itself a function, it will be
+    called each time.
 
     This function was written for the function add to be
-    able to represent inertial motion, adding the same value over and over again.
+    able to represent inertial motion, adding the same value over and over.
 
     Args:
-        func: FunctionType   a function that generates an instance of the class Q
+        func: FunctionType   a function that returns a class Q
         q_1: Q, Qs, FunctionType  Either an instance of Q, Qs, or a Q function
         q_2: Q, Qs, FunctionType  Either an instance of Q, Qs, or a Q function
-        dim: int    The dimensions of the quaternion series
-        qs_type:    bra/ket/operator  Only works for a square operator at this time
+        dim: int    The dimensions of the space-time number series
+        qs_type:    bra/ket/operator  Only works for a square operator
 
     Returns: Qs
 
@@ -3321,4 +3420,3 @@ def generate_QQs(func, q_1: Union[Q, Qs, FunctionType], q_2: Union[Q, Qs, Functi
         raise ValueError(f"Cannot work with q_1's type: {type(q_1)}")
 
     return Qs(new_qs, qs_type=qs_type)
-
