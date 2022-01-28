@@ -2694,13 +2694,12 @@ def sin(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.sin(q_1.t), 0, 0, 0], q_type=end_q_type,
-                 representation=q_1.representation)
+        return Q([sp.sin(q_1.t), 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
 
-    sint = math.sin(q_1.t)
-    cost = math.cos(q_1.t)
-    sinhR = math.sinh(abs_v.t)
-    coshR = math.cosh(abs_v.t)
+    sint = sp.sin(q_1.t)
+    cost = sp.cos(q_1.t)
+    sinhR = sp.sinh(abs_v.t)
+    coshR = sp.cosh(abs_v.t)
 
     k = cost * sinhR / abs_v.t
 
@@ -2735,7 +2734,7 @@ def cos(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.cos(q_1.t), 0, 0, 0], q_type=end_q_type,
+        return Q([sp.cos(q_1.t), 0, 0, 0], q_type=end_q_type,
                  representation=q_1.representation)
 
     sint = math.sin(q_1.t)
@@ -2813,7 +2812,7 @@ def sinh(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.sinh(q_1.t), 0, 0, 0], q_type=end_q_type,
+        return Q([sp.sinh(q_1.t), 0, 0, 0], q_type=end_q_type,
                  representation=q_1.representation)
 
     sinh_t = math.sinh(q_1.t)
@@ -2852,7 +2851,7 @@ def cosh(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.cosh(q_1.t), 0, 0, 0], q_type=end_q_type,
+        return Q([sp.cosh(q_1.t), 0, 0, 0], q_type=end_q_type,
                  representation=q_1.representation)
 
     cosh_t = math.cosh(q_1.t)
@@ -2891,7 +2890,7 @@ def tanh(q_1: Q) -> Q:
     abs_v = abs_of_vector(q_1)
 
     if abs_v.t == 0:
-        return Q([math.tanh(q_1.t), 0, 0, 0], q_type=end_q_type,
+        return Q([sp.tanh(q_1.t), 0, 0, 0], q_type=end_q_type,
                  representation=q_1.representation)
 
     sinhq = sinh(q_1)
@@ -2927,8 +2926,8 @@ def exp(q_1: Q) -> Q:
         return Q([et, 0, 0, 0], q_type=end_q_type,
                  representation=q_1.representation)
 
-    cosR = math.cos(abs_v.t)
-    sinR = math.sin(abs_v.t)
+    cosR = sp.cos(abs_v.t)
+    sinR = sp.sin(abs_v.t)
     k = et * sinR / abs_v.t
 
     q_exp = Q(
@@ -2961,11 +2960,11 @@ def ln(q_1: Q) -> Q:
     if abs_v.t == 0:
 
         if q_1.t > 0:
-            return Q([math.log(q_1.t), 0, 0, 0], q_type=end_q_type,
+            return Q([sp.log(q_1.t), 0, 0, 0], q_type=end_q_type,
                      representation=q_1.representation)
         else:
             # I don't understand this, but Mathematica does the same thing.
-            return Q([math.log(-q_1.t), math.pi, 0, 0],
+            return Q([sp.log(-q_1.t), math.pi, 0, 0],
                      q_type=end_q_type, representation=q_1.representation)
 
     t_value = 0.5 * math.log(q_1.t * q_1.t + abs_v.t * abs_v.t)
