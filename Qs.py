@@ -2920,7 +2920,7 @@ def exp(q_1: Q) -> Q:
     end_q_type = f"exp({q_1.q_type})"
 
     abs_v = abs_of_vector(q_1)
-    et = math.exp(q_1.t)
+    et = sp.exp(q_1.t)
 
     if abs_v.t == 0:
         return Q([et, 0, 0, 0], q_type=end_q_type,
