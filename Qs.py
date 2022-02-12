@@ -309,7 +309,7 @@ class Q(object):
             raise ValueError("Oops, 2 have different representations: " +
                              f"{self.representation} {q_2.representation}")
 
-    def display_q(self: Q, label: str = ""):
+    def display(self: Q, label: str = ""):
         """
         Prints LaTeX-like output, one line for each of th 4 terms.
 
@@ -341,7 +341,7 @@ class Q(object):
         self.z = sp.simplify(self.z)
         return self
 
-    def expand_q(self) -> Q:
+    def expand(self) -> Q:
         """
         Runs expand on each term, good for symbolic expressions.
 
@@ -625,7 +625,7 @@ class Qs(object):
         if spacer:
             print("")
 
-    def display_q(self: Qs, label: str = "") -> None:
+    def display(self: Qs, label: str = "") -> None:
         """
         Try to display algebra in a pretty LaTeX way.
 
@@ -641,7 +641,7 @@ class Qs(object):
 
         for i, ket in enumerate(self.qs, start=1):
             print(f"n={i}")
-            ket.display_q()
+            ket.display()
             print("")
 
     def simplify(self: Qs) -> Qs:
@@ -659,6 +659,23 @@ class Qs(object):
 
         return Qs(new_states, qs_type=self.qs_type, rows=self.rows,
                   columns=self.columns)
+
+    def expand(self: Qs) -> Qs:
+        """
+        expand the states using sympy.
+
+        Returns: Qs
+
+        """
+
+        new_states = []
+
+        for ket in self.qs:
+            new_states.append(ket.expand())
+
+        return Qs(
+            new_states, qs_type=self.qs_type, rows=self.rows, columns=self.columns
+        )
 
     def subs(self: Qs, symbol_value_dict) -> Qs:
         """
@@ -905,11 +922,9 @@ def qs_qs_to_q_function(func: FunctionType, q_1: Qs, q_2: Qs) -> Q:
 
 def scalar_q(q_1: Q) -> Q:
     """
-    Returns the scalar_q part of a space-time number as a quaternion.
+    Returns the scalar (aka time) part of a space-time number as a space-time number.
 
-    $ \rm{scalar_q(q)} = (q + q^*)/2 = (t, 0) $
-
-    Returns: Q
+    $ \rm{scalar_q}(q) = (q + q^*)/2 = (t, 0) $
 
     Args:
         q_1: Q
@@ -919,8 +934,8 @@ def scalar_q(q_1: Q) -> Q:
     """
 
     end_q_type = f"scalar_q({q_1.q_type})"
-    s = Q([q_1.t, 0, 0, 0], q_type=end_q_type,
-          representation=q_1.representation)
+    
+    s = Q([q_1.t, 0, 0, 0], q_type=end_q_type, representation=q_1.representation)
     return s
 
 
@@ -931,9 +946,13 @@ def scalar_qs(q_1: Qs) -> Qs:
 
 def vector_q(q_1: Q) -> Q:
     """
-    Returns the vector_q part of a space-time number.
-    $ \rm{vector_q(q)} = (q_1 - q_1^*)/2 = (0, R) $
+    Returns the vector (aka space) part of a space-time number as a space-time number.
+    
+    $ \rm{vector_q}(q) = (q - q^*)/2 = (0, R) $
 
+    Args:
+        q_1: Q
+        
     Returns: Q
 
     """
@@ -942,8 +961,7 @@ def vector_q(q_1: Q) -> Q:
 
     v = Q(
         [0, q_1.x, q_1.y, q_1.z],
-        q_type=end_q_type,
-        representation=q_1.representation,
+        q_type=end_q_type, representation=q_1.representation,
     )
     return v
 
