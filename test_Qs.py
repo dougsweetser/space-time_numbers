@@ -129,7 +129,18 @@ qs_1324 = Qs([q1324, q1324])
 
 def test__1000_qt():
     assert Q1.t == 1
+    q_none = Q(values = None)
+    assert all(q_none.df) == all(Q([0,0,0,0]).df)
+    q18 = Q(values=[1, 0, 0, 2, 0, 3, 0, 4])
+    print("q18: ", q18)
+    assert equal(q18, Q1)    
 
+def test__1005_str():
+    Q1_str = Q1.__str__()
+    print("q1 str: ", Q1_str)
+    assert Q1_str == "(1, -2, -3, -4) Q"
+    Q1_str = Q1.__str__(quiet=True)
+    assert Q1_str == "(1, -2, -3, -4) "
 
 def test__1010_txyz_2_representation():
     qr = Q(Q12.txyz_2_representation(""))
@@ -904,7 +915,7 @@ def test__1471_rotation_and_or_boosts():
     assert round(q_z2.qs[0].t, 5) == round(q1_sq.qs[0].t, 5)
 
 
-def test_1472_rotation_only():
+def test__1472_rotation_only():
     Q1123_rot = rotation_only(Q1123, Q12)
     print("Q1123_rot", Q1123_rot)
     assert equal(Q1123, Q1123_rot, vector=False)
@@ -912,7 +923,7 @@ def test_1472_rotation_only():
     assert equal(norm_squared(Q1123), norm_squared(Q1123_rot))
 
 
-def test_1473_rotations_onlys():
+def test__1473_rotations_onlys():
     Q12s, Q1123s = Qs([Q12]), Qs([Q1123])
     Q1123s_rot = rotation_onlys(Q1123s, Q12s)
     print("Q1123s_rot", Q1123s_rot)
@@ -1422,14 +1433,67 @@ def test__1360_zero_outs():
     assert qz.qs[0].x == 0
 
 
-def test__1600_generate_Qs():
+def test__1600_Dq_derivative():
+    T, X, Y, Z = sp.symbols("T X Y Z")
+    TXYZ = [T, X, Y, Z]
+
+    assert equal(Dq(q1(), TXYZ), q0())
+    assert equal(Dq(Q([T, X, Y, Z]), [T]), q0())
+
+    q_TX = Q([T, X, 0, 0])
+    q_TX_3 = product(product(q_TX, q_TX), q_TX)
+    D_q_TX_3 = Dq(q_TX, TXYZ)
+    assert D_q_TX_3.t == 0
+    assert D_q_TX_3.x == 0
+    assert D_q_TX_3.y == 0
+    assert D_q_TX_3.z == 0
+
+    q_TXYZ = Q(TXYZ)
+    q_TXYZ_3 = product(product(q_TXYZ, q_TXYZ), q_TXYZ)
+    D_q_TXYZ_3 = Dq(q_TXYZ_3, TXYZ)
+    assert D_q_TXYZ_3.t == -6*T**2 + 2*X**2 + 2*Y**2 + 2*Z**2
+    assert D_q_TXYZ_3.x ==  0
+    assert D_q_TXYZ_3.y ==  0
+    assert D_q_TXYZ_3.z ==  0
+
+
+def test__1610_Dqs_derivative():
+    T, X, Y, Z = sp.symbols("T X Y Z")
+    TXYZ = [T, X, Y, Z]
+
+    assert equals(Dqs(Qs([q1()]), TXYZ), q0s())
+    assert equals(Dqs(Qs([Q([T, X, Y, Z])]), [T]), q0s())
+
+    q_TX = Q([T, X, 0, 0])
+    q_TX_3 = product(product(q_TX, q_TX), q_TX)
+
+    q_TXYZ = Q(TXYZ)
+    q_TXYZ_3 = product(product(q_TXYZ, q_TXYZ), q_TXYZ)
+
+    qs_TX_3_TXYZ_3 = Qs([q_TX_3, q_TXYZ_3])
+
+    D_q_TX_3_TXYZ_3 = Dqs(qs_TX_3_TXYZ_3, TXYZ)
+
+    assert D_q_TX_3_TXYZ_3.qs[0].t == 0
+    assert D_q_TX_3_TXYZ_3.qs[0].x == 0
+    assert D_q_TX_3_TXYZ_3.qs[0].y == 0
+    assert D_q_TX_3_TXYZ_3.qs[0].z == 0
+
+    assert D_q_TX_3_TXYZ_3.qs[1].t == -6*T**2 + 2*X**2 + 2*Y**2 + 2*Z**2
+    assert D_q_TX_3_TXYZ_3.qs[1].x ==  0
+    assert D_q_TX_3_TXYZ_3.qs[1].y ==  0
+    assert D_q_TX_3_TXYZ_3.qs[1].z ==  0
+
+
+def test__1700_generate_Qs():
     q_10 = generate_Qs(scalar_q, Q1123)
     assert q_10.dim == 10
     assert equals(q_10, q1s(dim=10))
 
 
-def test__1610_generate_QQs():
+def test__1710_generate_QQs():
     q_10s = generate_QQs(add, Q1123, q0())
     assert q_10s.dim == 10
     assert equal(q_10s.qs[9], Q1123)
+
 

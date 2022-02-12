@@ -327,7 +327,7 @@ class Q(object):
         display(self.y)
         display(self.z)
 
-    def simple_q(self: Q) -> Q:
+    def simplify(self: Q) -> Q:
         """
         Runs symboy.simplify() on each term, good for symbolic expression.
 
@@ -368,10 +368,10 @@ class Q(object):
 
         """
 
-        t1 = self.t.subs(symbol_value_dict)
-        x1 = self.x.subs(symbol_value_dict)
-        y1 = self.y.subs(symbol_value_dict)
-        z1 = self.z.subs(symbol_value_dict)
+        t1 = 0 if self.t == 0 else self.t.subs(symbol_value_dict)
+        x1 = 0 if self.x == 0 else self.x.subs(symbol_value_dict)
+        y1 = 0 if self.y == 0 else self.y.subs(symbol_value_dict)
+        z1 = 0 if self.z == 0 else self.z.subs(symbol_value_dict)
 
         q_txyz = Q([t1, x1, y1, z1], q_type=self.q_type,
                    representation=self.representation)
@@ -644,7 +644,7 @@ class Qs(object):
             ket.display_q()
             print("")
 
-    def simple_q(self: Qs) -> Qs:
+    def simplify(self: Qs) -> Qs:
         """
         Simplify the states using sympy.
 
@@ -655,7 +655,7 @@ class Qs(object):
         new_states = []
 
         for ket in self.qs:
-            new_states.append(ket.simple_q())
+            new_states.append(ket.simplify())
 
         return Qs(new_states, qs_type=self.qs_type, rows=self.rows,
                   columns=self.columns)
@@ -3419,3 +3419,93 @@ def generate_QQs(func, q_1: Union[Q, Qs, FunctionType],
         raise ValueError(f"Cannot work with q_1's type: {type(q_1)}")
 
     return Qs(new_qs, qs_type=qs_type)
+
+## Calculus
+
+def Dq(q_1: Q, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: bool = False, conj_type: int=0, reverse: bool=False) -> Q:
+     """
+     Calculate the quaternion derivative composed of 16 terms. The conjugation applies to the differential operator. The reverse flag will flip the cross product terms.
+
+     Args:
+         q_1         A symbolic expression that returns a space-time number expression.
+         vars        A complete list of what 4 symbols are being used.
+         these_vars  An optional (possibly shorter) list of symbols to use to take a derivative.
+         conj        If one wants to take a conjugate of the differential operator, set this option.
+         conj_type   An integer for which term is positive, 0 the default for the standard conjugate.
+                     The first, second, and third conjugates flip the other three, keeping the first,
+                     second, and third term positive
+         
+     Return:
+         Q     The space-time derivative
+     """
+
+     end_q_type = f"D{q_1.q_type}"
+
+     # Check for errors.
+     if len(vars) != 4:
+         print("Oops: needs to be given 4 symbols. Try again.")
+         return q0()
+
+     if not q_1.is_symbolic():
+         print("Oops, the function needs to be symbolic.")
+         return q0()
+
+     if these_vars is None:
+         these_vars = vars
+
+     # Use the_D_signs to apply different conjugates to the differential operator D.
+     D_signs = [1, 1, 1, 1]
+
+     if conj:
+         if conj_type == 0:
+             D_signs = [1, -1, -1, -1]
+         if conj_type == 1:
+             D_signs = [-1, 1, -1, -1]
+         if conj_type == 2:
+             D_signs = [-1, -1, 1, -1]
+         if conj_type == 3:
+             D_signs = [-1, -1, -1, 1]
+     
+     the_16 = []
+  
+     for sign, var in enumerate(vars):
+         if var in these_vars:
+             the_16.append(sp.diff(D_signs[sign] * q_1.t, var))
+             the_16.append(sp.diff(D_signs[sign] * q_1.x, var))
+             the_16.append(sp.diff(D_signs[sign] * q_1.y, var))
+             the_16.append(sp.diff(D_signs[sign] * q_1.z, var))
+             
+         else:
+             for _ in range(4):
+                 the_16.append(0)
+
+     flip = -1 if reverse else 1
+ 
+     first_term =  the_16[0] - (the_16[5] + the_16[10] + the_16[15])
+     second_term = the_16[1] + the_16[4] + flip * the_16[11] - flip * the_16[14]
+     third_term =  the_16[2] + the_16[8] + flip * the_16[13] - flip * the_16[7]
+     forth_term =  the_16[3] + the_16[12] + flip * the_16[6] - flip * the_16[9]
+
+     return Q([first_term.simplify(), second_term.simplify(), third_term.simplify(), forth_term.simplify()], q_type=end_q_type)
+
+
+def Dqs(q_1: Qs, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: bool = False, conj_type: int=0, reverse: bool=False) -> Qs:
+    """
+    Calculate the quaternion derivative composed of 16 terms. The conjugation applies to the differential operator. The reverse flag will flip the cross product terms.
+
+    Args:
+        q_1         Symbolic expressions that returns a space-time number expression in a space-time number series.
+        vars        A complete list of what 4 symbols are being used.
+        these_vars  An optional (possibly shorter) list of symbols to use to take a derivative.
+        conj        If one wants to take a conjugate of the differential operator, set this option.
+        conj_type   An integer for which term is positive, 0 the default for the standard conjugate.
+                    The first, second, and third conjugates flip the other three, keeping the first,
+                    second, and third term positive
+
+    Return:
+        Q     The space-time derivative
+    """
+
+    results = [Dq(q, vars, these_vars, conj, conj_type, reverse) for q in q_1.qs]
+
+    return Qs(results, qs_type=q_1.qs_type, rows=q_1.rows, columns=q_1.columns)
