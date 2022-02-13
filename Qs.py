@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 """
-Developing Space-time numbers for Python
+Developing Space-time numbers (aka quaternions) for Python
 
 Define a class Q to manipulate space-time numbers as Hamilton would have done
 it so many years ago.  The "q_type" is a little bit of text to leave a trail
@@ -9,8 +9,8 @@ of breadcrumbs about how a particular space-time number was generated.
 
 The class Qs is a semi-group with inverses, that has row * column = dimensions
 as seen in quantum mechanics. The importance of Qs is that one can deal with a
-great number of space-time numbers together. One quaternion cannot tell a story
-but a few tens of thousands can.
+great number of space-time numbers together. One space-time number cannot tell 
+a story but a few tens of thousands can.
 
 This library was refactored so that functions are on the same level as the
 classes Q and Qs.
@@ -34,8 +34,8 @@ from bunch import Bunch
 
 class Q(object):
     """
-    Quaternions as Hamilton would have defined them, on the manifold R^4.
-    Different representations are possible.
+    Space-time numbers, aka Quaternions, as Hamilton would have defined them, 
+    on the manifold R^4. Different representations are possible.
     """
 
     def __init__(self, values: List = None, q_type: object = "Q",
@@ -406,9 +406,9 @@ class Qs(object):
     language already in wide use in linear algebra, there are qs_types of
     scalar, bra, ket, op/operator depending on the rows and column numbers.
 
-    Quaternion states are a semi-group with inverses. A semi-group has more
-    than one possible identity element. For space-time number states, there
-    are $2^{dim}$ possible identities.
+    Space-time number series (aka quaternion series) are a semi-group with
+    inverses. A semi-group has more than one possible identity element. 
+    For space-time number series, there are $2^{dim}$ possible identities.
     """
 
     QS_TYPES = ["scalar_q", "bra", "ket", "op", "operator"]
@@ -823,8 +823,8 @@ class Qs(object):
 
 def q_to_qs_function(func, q_1):
     """
-    Utility to transform space-time number functions to quaternion state
-    function that operate separately on each qs state.
+    Utility to transform space-time number functions to space-time number
+    series function that operate separately on each qs state.
 
     Args:
         func:    pointer to a function
@@ -840,8 +840,8 @@ def q_to_qs_function(func, q_1):
 
 def qq_to_qs_function(func, q_1, q_2):
     """
-    Utility to transform space-time number functions to quaternion state
-    function that operate separately on each qs state.
+    Utility to transform space-time number functions to space-time number
+    serties function that operate separately on each qs state.
 
     Args:
         func:    pointer to a function
@@ -858,8 +858,8 @@ def qq_to_qs_function(func, q_1, q_2):
 
 def qqq_to_qs_function(func, q_1, q_2, q_3):
     """
-    Utility to transform space-time number functions to quaternion series
-    function that operate separately on each qs state.
+    Utility to transform space-time number functions to space-time number
+    series function that operate separately on each qs state.
 
     Args:
         func:    pointer to a function
@@ -2487,8 +2487,8 @@ def rotation_onlys(q_1: Qs, h: Qs) -> Qs:
 
 def next_rotation(q_1: Q, q_2: Q) -> Q:
     """
-    Given 2 space-time numbers, creates a new quaternion to do a rotation in
-    the triple triple space-time number function by using a normalized cross
+    Given 2 space-time numbers, creates a new space-time number to do a rotation 
+    in the triple triple space-time number function by using a normalized cross
     product.
 
     $ next_rotation(q, q_2) = (q q_2 - q_2 q) / 2|(q q_2 - (q_2 q)^*)| $
@@ -2527,9 +2527,9 @@ def next_rotations(q_1: Qs, q_2: Qs) -> Qs:
 
 def next_rotation_randomized(q_1: Q, q_2: Q) -> Q:
     """
-    Given 2 space-time numbers, creates a new quaternion to do a rotation
-    in the triple triple space-time number function by using a normalized
-    cross product.
+    Given 2 space-time numbers, creates a new space-time number to do a
+    rotation in the triple triple space-time number function by using a
+    normalized cross product.
 
     To assure that repeated calls cover the sphere, multiply by a random
     factor.
@@ -3440,9 +3440,11 @@ def generate_QQs(func, q_1: Union[Q, Qs, FunctionType],
 
 ## Calculus
 
-def Dq(q_1: Q, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: bool = False, conj_type: int=0, reverse: bool=False) -> Q:
+def Dq(q_1: Q, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: bool = False,
+       conj_type: int=0, reverse: bool=False) -> Q:
      """
-     Calculate the quaternion derivative composed of 16 terms. The conjugation applies to the differential operator. The reverse flag will flip the cross product terms.
+     Calculate the space-time number derivative composed of 16 terms. The conjugation applies
+     to the differential operator. The reverse flag will flip the cross product terms.
 
      Args:
          q_1         A symbolic expression that returns a space-time number expression.
@@ -3517,9 +3519,11 @@ def Dq(q_1: Q, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: 
      return Q([first_term.simplify(), second_term.simplify(), third_term.simplify(), forth_term.simplify()], q_type=end_q_type)
 
 
-def Dqs(q_1: Qs, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: bool = False, conj_type: int=0, reverse: bool=False) -> Qs:
+def Dqs(q_1: Qs, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: bool = False,
+        conj_type: int=0, reverse: bool=False) -> Qs:
     """
-    Calculate the quaternion derivative composed of 16 terms. The conjugation applies to the differential operator. The reverse flag will flip the cross product terms.
+    Calculate the space-time number derivatives composed of 16 terms for each term in the series.
+    The conjugation applies to the differential operator. The reverse flag will flip the cross product terms.
 
     Args:
         q_1         Symbolic expressions that returns a space-time number expression in a space-time number series.
