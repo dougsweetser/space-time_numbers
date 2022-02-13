@@ -3456,8 +3456,18 @@ def Dq(q_1: Q, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: 
      Return:
          Q     The space-time derivative
      """
-
-     end_q_type = f"D{q_1.q_type}"
+     if conj and conj_type and reverse:
+        end_q_type = f"{q_1.q_type}D*{conj_type}"
+     elif conj and conj_type:
+         end_q_type = f"D*{conj_type}{q_1.q_type}"
+     elif conj and reverse:
+        end_q_type = f"{q_1.q_type}D*"
+     elif conj:
+        end_q_type = f"D*{q_1.q_type}"
+     elif reverse:
+        end_q_type = f"{q_1.q_type}D"
+     else:
+        end_q_type = f"D{q_1.q_type}"
 
      # Check for errors.
      if len(vars) != 4:
