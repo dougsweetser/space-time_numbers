@@ -671,10 +671,10 @@ def test__1340_product():
     assert equals(products(b, o), Qs([Q([10, 0, 0, 0]), Q([20, 0, 0, 0]), Q([30, 0, 0, 0])]))
     assert equals(products(b, k), Qs([Q([32, 0, 0, 0])]))
     assert equals(products(products(b, o), k), Qs([Q([320, 0, 0, 0])]))
-    assert equals(products(b, b), Qs([Q([1, 0, 0, 0]), Q([4, 0, 0, 0]), Q([9, 0, 0, 0])]))
+    assert equals(products(b, b.ket()), q1s(14))
     assert equals(products(o, k), Qs([Q([40, 0, 0, 0]), Q([50, 0, 0, 0]), Q([60, 0, 0, 0])]))
     assert equals(products(o, o), Qs([Q([100, 0, 0, 0])]))
-    assert equals(products(k, k), Qs([Q([16, 0, 0, 0]), Q([25, 0, 0, 0]), Q([36, 0, 0, 0])]))
+    assert equals(products(k.bra(), k), q1s(77))
     assert equals(products(k, b), Qs(
         [
             Q([4, 0, 0, 0]),
@@ -1286,21 +1286,23 @@ def test__1034_xyz():
 def test__1060_inverse():
     inv_v1123 = inverses(v1123)
     print("inv_v1123 operator", inv_v1123)
-    vvinv = products(inv_v1123, v1123)
+    vvinv = products(inv_v1123.bra(), v1123)
     vvinv.print_state("vinvD x v")
-    assert equals(vvinv, q14)
+    assert equals(vvinv, q1s(4.0))
 
     inv_v33 = inverses(v33)
     print("inv_v33 operator", inv_v33)
-    vv33 = products(inv_v33, v33)
+    vv33 = products(inv_v33.bra(), v33)
     vv33.print_state("inv_v33D x v33")
-    assert equals(vv33, q19)
+    assert equals(vv33, q1s(8.0))
 
     Ainv = inverses(A)
     print("A ket inverse, ", Ainv)
-    AAinv = products(A, Ainv)
+    A.print_state("A")
+    Ainv.print_state("Ainv")
+    AAinv = products(A, conjs(Ainv.ket()))
     AAinv.print_state("A x AinvD")
-    assert equals(AAinv, q12)
+    assert equals(AAinv, q1s(2.0))
 
 
 def test__1120_diagonal():
