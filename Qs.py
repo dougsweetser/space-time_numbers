@@ -520,7 +520,7 @@ class Qs(object):
 
         return new_q
 
-    def bra(self: Qs) -> Qs:
+    def bra(self: Qs, conj_type: int=0) -> Qs:
         """
         Quickly set the qs_type to bra by calling set_qs_type() with rows=1,
         columns=dim and taking a conjugate.
@@ -532,14 +532,14 @@ class Qs(object):
         if self.qs_type == "bra":
             return self
 
-        bra = conjs(deepcopy(self))
+        bra = conjs(deepcopy(self), conj_type)
         bra.rows = 1
         bra.columns = self.dim
         bra.qs_type = "bra" if self.dim > 1 else "scalar_q"
 
         return bra
 
-    def ket(self: Qs) -> Qs:
+    def ket(self: Qs, conj_type: int=0) -> Qs:
         """
         Quickly set the qs_type to ket by calling set_qs_type() with rows=dim,
         columns=1 and taking a conjugate.
@@ -551,7 +551,7 @@ class Qs(object):
         if self.qs_type == "ket":
             return self
 
-        ket = conjs(deepcopy(self))
+        ket = conjs(deepcopy(self), conj_type)
         ket.rows = self.dim
         ket.columns = 1
 
@@ -1156,10 +1156,10 @@ def equal(q_1: Q, q_2: Q, scalar: bool = True, vector: bool = True) -> bool:
     if not scalar and not vector:
         raise ValueError("Equals needs scalar_q or vector_q to be set to True")
 
-    t_equals = math.isclose(q_1_t, q_2_t)
-    x_equals = math.isclose(q_1_x, q_2_x)
-    y_equals = math.isclose(q_1_y, q_2_y)
-    z_equals = math.isclose(q_1_z, q_2_z)
+    t_equals = (sp.simplify(q_1_t - q_2_t) == 0) or math.isclose(q_1_t, q_2_t)
+    x_equals = (sp.simplify(q_1_x - q_2_x) == 0) or math.isclose(q_1_x, q_2_x)
+    y_equals = (sp.simplify(q_1_y - q_2_y) == 0) or math.isclose(q_1_y, q_2_y)
+    z_equals = (sp.simplify(q_1_z - q_2_z) == 0) or math.isclose(q_1_z, q_2_z)
 
     result = False
 
@@ -1499,7 +1499,7 @@ def squares(q_1: Qs) -> Qs:
     return q_to_qs_function(square, q_1)
 
 
-def norm_squared(q_1: Q) -> Q:
+def norm_squared(q_1: Q, conj_type: int=0) -> Q:
     """
     The norm_squared of a space-time number.
 
@@ -1514,12 +1514,32 @@ def norm_squared(q_1: Q) -> Q:
     qxq = _commuting_products(q_1, q_1)
 
     n_q = Q(q_type=end_q_type, representation=q_1.representation)
-    n_q.t = qxq["tt"] + qxq["xx+yy+zz"]
+    
+    if conj_type == 0:
+        n_q.t = qxq["tt"] + qxq["xx+yy+zz"]
 
+    elif conj_type == 1:
+        n_q.t = - q_1.t * q_1.t - q_1.x * q_1.x + q_1.y * q_1.y + q_1.z * q_1.z
+        n_q.x = 0
+        n_q.y = - 2 * q_1.t * q_1.y - 2 * q_1.x * q_1.z
+        n_q.z = - 2 * q_1.t * q_1.z + 2 * q_1.x * q_1.y
+        
+    elif conj_type == 2:
+        n_q.t = - q_1.t * q_1.t + q_1.x * q_1.x - q_1.y * q_1.y + q_1.z * q_1.z
+        n_q.x = - 2 * q_1.t * q_1.x + 2 * q_1.y * q_1.z
+        n_q.y = 0
+        n_q.z = - 2 * q_1.t * q_1.z - 2 * q_1.x * q_1.y
+    
+    elif conj_type == 3:
+        n_q.t = - q_1.t * q_1.t + q_1.x * q_1.x + q_1.y * q_1.y - q_1.z * q_1.z
+        n_q.x = - 2 * q_1.t * q_1.x - 2 * q_1.y * q_1.z
+        n_q.y = - 2 * q_1.t * q_1.y + 2 * q_1.x * q_1.z
+        n_q.z = 0
+    
     return n_q
 
 
-def norm_squareds(q_1: Qs) -> Qs:
+def norm_squareds(q_1: Qs, conj_type: int = 0) -> Qs:
     f"""{norm_squared.__doc__}""".replace("Q", "Qs")
     return products(conjs(q_1.set_qs_type("bra")), q_1.set_qs_type("ket"))
 
@@ -1917,23 +1937,22 @@ def products(q_1: Qs, q_2: Qs, kind: str = "", reverse: bool = False) -> Qs:
     qs_left, qs_right = Qs(), Qs()
 
     # Diagonalize if need be.
-    if ((q_1.rows == q_2.rows) and (q_1.columns == q_2.columns)) or (
-            "scalar_q" in [q_1.qs_type, q_2.qs_type]
-    ):
-
-        if q_1.columns == 1:
+    # original 'if', I don't get it, so replacing
+    # if ((q_1.rows == q_2.rows) and (q_1.columns == q_2.columns)) 
+    #    or ("scalar_q" in [q_1.qs_type, q_2.qs_type]):
+    if ("scalar_q" in [q_1.qs_type, q_2.qs_type]):
+        if q_1.qs_type == "scalar_q":
             qs_right = q_2_copy
-            qs_left = diagonal(q_1_copy, qs_right.rows)
+            qs_left = diagonal(q_1_copy, max(qs_right.rows, qs_right.columns))
 
         elif q_2.rows == 1:
             qs_left = q_1_copy
-            qs_right = diagonal(q_2_copy, qs_left.columns)
+            qs_right = diagonal(q_2_copy, max(qs_left.rows, qs_left.columns))
 
-        else:
-            qs_left = q_1_copy
-            qs_right = q_2_copy
+    elif q_1.columns == q_2.rows:
+        qs_left = q_1_copy
+        qs_right = q_2_copy
 
-    # Typical matrix multiplication criteria.
     elif q_1.columns == q_2.rows:
         qs_left = q_1_copy
         qs_right = q_2_copy
