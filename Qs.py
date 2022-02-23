@@ -1156,10 +1156,28 @@ def equal(q_1: Q, q_2: Q, scalar: bool = True, vector: bool = True) -> bool:
     if not scalar and not vector:
         raise ValueError("Equals needs scalar_q or vector_q to be set to True")
 
-    t_equals = (sp.simplify(q_1_t - q_2_t) == 0) or math.isclose(q_1_t, q_2_t)
-    x_equals = (sp.simplify(q_1_x - q_2_x) == 0) or math.isclose(q_1_x, q_2_x)
-    y_equals = (sp.simplify(q_1_y - q_2_y) == 0) or math.isclose(q_1_y, q_2_y)
-    z_equals = (sp.simplify(q_1_z - q_2_z) == 0) or math.isclose(q_1_z, q_2_z)
+    t_equals, x_equals, y_equals, z_equals = False, False, False, False
+
+    try:
+        t_equals = (sp.simplify(q_1_t - q_2_t) == 0) or math.isclose(q_1_t, q_2_t)
+    except TypeError:
+        # presumes it is symbolic and NOT equal to zero.
+        pass
+
+    try:
+        x_equals = (sp.simplify(q_1_x - q_2_x) == 0) or math.isclose(q_1_x, q_2_x)
+    except TypeError:
+        pass
+
+    try:
+        y_equals = (sp.simplify(q_1_y - q_2_y) == 0) or math.isclose(q_1_y, q_2_y)
+    except TypeError:
+        pass
+    
+    try:
+        z_equals = (sp.simplify(q_1_z - q_2_z) == 0) or math.isclose(q_1_z, q_2_z)
+    except TypeError:
+        pass
 
     result = False
 
