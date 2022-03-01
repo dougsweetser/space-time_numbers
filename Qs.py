@@ -1234,8 +1234,10 @@ def conj(q_1: Q, conj_type: int = 0, even=False) -> Q:
     Returns: Q
 
     """
-
-    end_q_type = f"{q_1.q_type}*"
+    star = "*e" if even else "*"
+    
+    end_q_type = f"{q_1.q_type}{star}"
+    
     c_t, c_x, c_y, c_z = q_1.t, q_1.x, q_1.y, q_1.z
     cq = Q()
 
@@ -3537,14 +3539,16 @@ def Dq(q_1: Q, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: 
      Return:
          Q     The space-time derivative
      """
+     star = "*e" if even else "*"
+    
      if conj and conj_type and reverse:
-        end_q_type = f"{q_1.q_type}D*{conj_type}"
+        end_q_type = f"{q_1.q_type}D{star}{conj_type}"
      elif conj and conj_type:
-         end_q_type = f"D*{conj_type}{q_1.q_type}"
+         end_q_type = f"D{star}{conj_type}{q_1.q_type}"
      elif conj and reverse:
         end_q_type = f"{q_1.q_type}D*"
      elif conj:
-        end_q_type = f"D*{q_1.q_type}"
+        end_q_type = f"D{star}{q_1.q_type}"
      elif reverse:
         end_q_type = f"{q_1.q_type}D"
      else:
