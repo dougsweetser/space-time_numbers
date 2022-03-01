@@ -368,6 +368,14 @@ def test__1140_conj():
     assert q_z.y == 3
     assert q_z.z == 4
 
+def test__1140_conj_even():
+    q_z = conj(Q1, even=True)
+    print("q_conj 0: ", q_z)
+    assert q_z.t == 1
+    assert q_z.x == -2
+    assert q_z.y == -3
+    assert q_z.z == -4
+
 
 def test__1141_conjs():
     qc = conjs(q_1_q_i)
@@ -385,6 +393,15 @@ def test__1141_conj_1():
     assert q_z.x == -2
     assert q_z.y == 3
     assert q_z.z == 4
+
+
+def test__1141_conj_1_even():
+    q_z = conj(Q1, 1, even=True)
+    print("q_conj 1: ", q_z)
+    assert q_z.t == -1
+    assert q_z.x == 2
+    assert q_z.y == -3
+    assert q_z.z == -4
 
 
 def test__1141_conjs_1():
@@ -405,6 +422,15 @@ def test__1150_conj_2():
     assert q_z.z == 4
 
 
+def test__1150_conj_2_even():
+    q_z = conj(Q1, 2, even=True)
+    print("q_conj 2: ", q_z)
+    assert q_z.t == -1
+    assert q_z.x == -2
+    assert q_z.y == 3
+    assert q_z.z == -4
+
+
 def test__1151_conj_2():
     q_z = conjs(Qs([Q1]), 2)
     print("q_conj 2: ", q_z)
@@ -412,6 +438,33 @@ def test__1151_conj_2():
     assert q_z.qs[0].x == 2
     assert q_z.qs[0].y == -3
     assert q_z.qs[0].z == 4
+
+
+def test__1150_conj_3():
+    q_z = conj(Q1, 3)
+    print("q_conj 3: ", q_z)
+    assert q_z.t == -1
+    assert q_z.x == 2
+    assert q_z.y == 3
+    assert q_z.z == -4
+
+
+def test__1150_conj_3_even():
+    q_z = conj(Q1, 3, even=True)
+    print("q_conj 2: ", q_z)
+    assert q_z.t == -1
+    assert q_z.x == -2
+    assert q_z.y == -3
+    assert q_z.z == 4
+
+
+def test__1151_conj_3():
+    q_z = conjs(Qs([Q1]), 3)
+    print("q_conj 2: ", q_z)
+    assert q_z.qs[0].t == -1
+    assert q_z.qs[0].x == 2
+    assert q_z.qs[0].y == 3
+    assert q_z.qs[0].z == -4
 
 
 def test__1155_conj_q():

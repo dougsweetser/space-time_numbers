@@ -1208,7 +1208,7 @@ def equals(q_1: Qs, q_2: Qs, scalar: bool = True, vector: bool = True) -> bool:
     return result
 
 
-def conj(q_1: Q, conj_type: int = 0) -> Q:
+def conj(q_1: Q, conj_type: int = 0, even=False) -> Q:
     """
     There are 4 types of conjugates.
 
@@ -1217,9 +1217,19 @@ def conj(q_1: Q, conj_type: int = 0) -> Q:
     $ q.conj(2) = (j q j)^* =(-t, -x, y, -z) $
     $ q.conj(3) = (k q k)^* =(-t, -x, -y, z) $
 
+    An "even" conjugate does not do the conjugate!
+    The number of sign flips is even, either zero or two.
+    Idea from an email with Aleks Kleyn.
+    
+    $ q.conj(0, even=True) = q =(t, -x, -y, -z) $
+    $ q.conj(1, even=True) = (i q i) =(-t, -x, y, z) $
+    $ q.conj(2, even=True) = (j q j) =(-t, x, -y, z) $
+    $ q.conj(3, even=True) = (k q k) =(-t, x, y, -z) $
+
     Args:
         q_1: Q
         conj_type: int:   0-3 depending on who stays positive.
+        even: bool        Wether it is an even conjugate or not
 
     Returns: Q
 
@@ -1231,41 +1241,72 @@ def conj(q_1: Q, conj_type: int = 0) -> Q:
 
     if conj_type % 4 == 0:
         cq.t = c_t
-        if c_x != 0:
-            cq.x = -1 * c_x
-        if c_y != 0:
-            cq.y = -1 * c_y
-        if c_z != 0:
-            cq.z = -1 * c_z
+        
+        if even:
+            cq.x = c_x
+            cq.y = c_y
+            cq.z = c_z
+        else:
+            if c_x != 0:
+                cq.x = -1 * c_x
+            if c_y != 0:
+                cq.y = -1 * c_y
+            if c_z != 0:
+                cq.z = -1 * c_z
 
     elif conj_type % 4 == 1:
-        if c_t != 0:
-            cq.t = -1 * c_t
-        cq.x = c_x
-        if c_y != 0:
-            cq.y = -1 * c_y
-        if c_z != 0:
-            cq.z = -1 * c_z
+        if even:
+            if c_t != 0:
+                cq.t = -1 * c_t
+            if c_x != 0:
+                cq.x = -1 * c_x
+            cq.y = c_y
+            cq.z = c_z
+            
+        else:
+            if c_t != 0:
+                cq.t = -1 * c_t
+            cq.x = c_x
+            if c_y != 0:
+                cq.y = -1 * c_y
+            if c_z != 0:
+                cq.z = -1 * c_z
         end_q_type += "1"
 
     elif conj_type % 4 == 2:
-        if c_t != 0:
-            cq.t = -1 * c_t
-        if c_x != 0:
-            cq.x = -1 * c_x
-        cq.y = c_y
-        if c_z != 0:
-            cq.z = -1 * c_z
+        if even:
+            if c_t != 0:
+                cq.t = -1 * c_t
+            cq.x = c_x
+            if c_y != 0:
+                cq.y = -1 * c_y
+            cq.z = c_z
+        else:
+            if c_t != 0:
+                cq.t = -1 * c_t
+            if c_x != 0:
+                cq.x = -1 * c_x
+            cq.y = c_y
+            if c_z != 0:
+                cq.z = -1 * c_z
         end_q_type += "2"
 
     elif conj_type % 4 == 3:
-        if c_t != 0:
-            cq.t = -1 * c_t
-        if c_x != 0:
-            cq.x = -1 * c_x
-        if c_y != 0:
-            cq.y = -1 * c_y
-        cq.z = c_z
+        if even:
+            if c_t != 0:
+                cq.t = -1 * c_t
+            cq.x = c_x
+            cq.y = c_y
+            if c_z != 0:
+                cq.z = -1 * c_z
+        else:
+            if c_t != 0:
+                cq.t = -1 * c_t
+            if c_x != 0:
+                cq.x = -1 * c_x
+            if c_y != 0:
+                cq.y = -1 * c_y
+            cq.z = c_z
         end_q_type += "3"
 
     cq.q_type = end_q_type
@@ -1274,7 +1315,7 @@ def conj(q_1: Q, conj_type: int = 0) -> Q:
     return cq
 
 
-def conjs(q_1: Qs, conj_type: int = 0) -> Qs:
+def conjs(q_1: Qs, conj_type: int = 0, even=False) -> Qs:
     f"""{conj.__doc__}""".replace("Q", "Qs")
     return Qs([conj(q, conj_type) for q in q_1.qs], qs_type=q_1.qs_type)
 
