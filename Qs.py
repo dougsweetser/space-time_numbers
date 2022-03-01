@@ -1317,7 +1317,7 @@ def conj(q_1: Q, conj_type: int = 0, even=False) -> Q:
 
 def conjs(q_1: Qs, conj_type: int = 0, even=False) -> Qs:
     f"""{conj.__doc__}""".replace("Q", "Qs")
-    return Qs([conj(q, conj_type) for q in q_1.qs], qs_type=q_1.qs_type)
+    return Qs([conj(q, conj_type, even) for q in q_1.qs], qs_type=q_1.qs_type)
 
 
 def conj_q(q_1: Q, q_2: Q) -> Q:
