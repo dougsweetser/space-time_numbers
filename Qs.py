@@ -1221,7 +1221,7 @@ def conj(q_1: Q, conj_type: int = 0, even=False) -> Q:
     The number of sign flips is even, either zero or two.
     Idea from an email with Aleks Kleyn.
     
-    $ q.conj(0, even=True) = q =(t, -x, -y, -z) $
+    $ q.conj(0, even=True) = q =(t, x, y, z) $
     $ q.conj(1, even=True) = (i q i) =(-t, -x, y, z) $
     $ q.conj(2, even=True) = (j q j) =(-t, x, -y, z) $
     $ q.conj(3, even=True) = (k q k) =(-t, x, y, -z) $
@@ -1229,7 +1229,7 @@ def conj(q_1: Q, conj_type: int = 0, even=False) -> Q:
     Args:
         q_1: Q
         conj_type: int:   0-3 depending on who stays positive.
-        even: bool        Wether it is an even conjugate or not
+        even: bool        Whether it is an even conjugate or not
 
     Returns: Q
 
@@ -3519,7 +3519,7 @@ def generate_QQs(func, q_1: Union[Q, Qs, FunctionType],
 ## Calculus
 
 def Dq(q_1: Q, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: bool = False,
-       conj_type: int=0, reverse: bool=False) -> Q:
+       conj_type: int=0, even: bool=False, reverse: bool=False) -> Q:
      """
      Calculate the space-time number derivative composed of 16 terms. The conjugation applies
      to the differential operator. The reverse flag will flip the cross product terms.
@@ -3532,6 +3532,7 @@ def Dq(q_1: Q, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: 
          conj_type   An integer for which term is positive, 0 the default for the standard conjugate.
                      The first, second, and third conjugates flip the other three, keeping the first,
                      second, and third term positive
+         even        An even conjugate flips signs 0 or 2 times
          
      Return:
          Q     The space-time derivative
@@ -3566,13 +3567,25 @@ def Dq(q_1: Q, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: 
 
      if conj:
          if conj_type == 0:
-             D_signs = [1, -1, -1, -1]
+             if even:
+                 pass
+             else:
+                 D_signs = [1, -1, -1, -1]
          if conj_type == 1:
-             D_signs = [-1, 1, -1, -1]
+             if even:
+                 D_signs = [-1, -1, 1, 1]
+             else:
+                 D_signs = [-1, 1, -1, -1]
          if conj_type == 2:
-             D_signs = [-1, -1, 1, -1]
+             if even:
+                D_signs = [-1, 1, -1, 1]
+             else:
+                D_signs = [-1, -1, 1, -1]
          if conj_type == 3:
-             D_signs = [-1, -1, -1, 1]
+             if even:
+                 D_signs = [-1, 1, 1, -1]
+             else:       
+                 D_signs = [-1, -1, -1, 1]
      
      the_16 = []
   
