@@ -1221,7 +1221,7 @@ def conj(q_1: Q, conj_type: int = 0, even=False) -> Q:
     The number of sign flips is even, either zero or two.
     Idea from an email with Aleks Kleyn.
     
-    $ q.conj(0, even=True) = q =(t, x, y, z) $
+    $ q.conj(0, even=True) = i² q =(-t, -x, -y, -z) $
     $ q.conj(1, even=True) = (i q i) =(-t, -x, y, z) $
     $ q.conj(2, even=True) = (j q j) =(-t, x, -y, z) $
     $ q.conj(3, even=True) = (k q k) =(-t, x, y, -z) $
