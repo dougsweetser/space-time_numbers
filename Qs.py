@@ -301,13 +301,16 @@ class Q(object):
         Returns: bool
 
         """
-
-        if self.representation == q_2.representation:
-            return True
-
-        else:
-            raise ValueError("Oops, 2 have different representations: " +
+        
+        try:
+            if self.representation == q_2.representation:
+                return True
+            else:
+                raise ValueError("Oops, 2 have different representations: " +
                              f"{self.representation} {q_2.representation}")
+        except AttributeError:
+            print("Oops, probably need 's' function to work on a space-time number SERIES")
+            
 
     def display(self: Q, label: str = ""):
         """
@@ -519,7 +522,7 @@ class Qs(object):
         new_q.qs_type = qs_type
 
         return new_q
-
+    
     def bra(self: Qs, conj_type: int=0) -> Qs:
         """
         Quickly set the qs_type to bra by calling set_qs_type() with rows=1,
@@ -539,6 +542,11 @@ class Qs(object):
 
         return bra
 
+    def check_representations(self: Qs, q2: Qs = None) -> bool:
+        """This should not be called. Appears if q series given q qs object."""
+        
+        raise Exception("Oops, the function used was probably 'not plural', using a space-time number function, not a series funcion.")
+    
     def ket(self: Qs, conj_type: int=0) -> Qs:
         """
         Quickly set the qs_type to ket by calling set_qs_type() with rows=dim,
