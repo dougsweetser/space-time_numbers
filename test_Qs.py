@@ -1444,19 +1444,20 @@ def test__1320_transpose():
     opt = transpose(q_1234)
     print("op1234 transposed: ", opt)
     assert opt.qs[0].t == 1
-    assert opt.qs[1].t == 3
-    assert opt.qs[2].t == 2
+    assert opt.qs[1].t == 2
+    assert opt.qs[2].t == 3
     assert opt.qs[3].t == 4
     optt = transpose(transpose(q_1234))
     assert equals(optt, q_1234)
-
+    assert opt.qs_type == "bra"
+    
 
 def test__1330_Hermitian_conj():
     q_hc = Hermitian_conj(q_1234, 2, 2)
     print("op1234 Hermtian_conj: ", q_hc)
     assert q_hc.qs[0].t == 1
-    assert q_hc.qs[1].t == 3
-    assert q_hc.qs[2].t == 2
+    assert q_hc.qs[1].t == 2
+    assert q_hc.qs[2].t == 3
     assert q_hc.qs[3].t == 4
     assert q_hc.qs[0].x == -1
     assert q_hc.qs[1].x == -1
