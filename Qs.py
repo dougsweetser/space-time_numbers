@@ -3150,14 +3150,17 @@ def transpose(q_1: Qs, m: int = None, n: int = None) -> Qs:
 
     """
 
-    if m is None:
-        # test if it is square.
-        if math.sqrt(q_1.dim).is_integer():
-            m = int(sp.sqrt(q_1.dim))
-            n = m
+    if q_1.rows == 1 or q_1.columns == 1:
+        m, n = q_1.rows, q_1.columns
+    else:
+        if m is None:
+            # test if it is square.
+            if math.sqrt(q_1.dim).is_integer():
+                m = int(sp.sqrt(q_1.dim))
+                n = m
 
-    if n is None:
-        n = int(q_1.dim / m)
+        if n is None:
+            n = int(q_1.dim / m)
 
     matrix = [[0 for _x in range(m)] for _y in range(n)]
 
@@ -3171,8 +3174,15 @@ def transpose(q_1: Qs, m: int = None, n: int = None) -> Qs:
         for q in t:
             qs_t.append(q)
 
+    qs_type = q_1.qs_type
+    
+    if q_1.qs_type == "bra":
+        qs_type = "ket"
+    elif q_1.qs_type == "ket":
+        qs_type = "bra"
+        
     # Switch rows and columns.
-    return Qs(qs_t, rows=q_1.columns, columns=q_1.rows)
+    return Qs(qs_t, rows=q_1.columns, columns=q_1.rows, qs_type=qs_type)
 
 
 def Hermitian_conj(q_1: Qs, m: int, n: int, conj_type: object = 0) -> Qs:
