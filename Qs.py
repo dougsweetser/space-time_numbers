@@ -3590,7 +3590,7 @@ def Dq(q_1: Q, vars: List[sp.Symbol], these_vars: List[sp.Symbol] = None, conj: 
      if conj:
          if conj_type == 0:
              if even:
-                 pass
+                 D_signs = [-1, -1, -1, -1]
              else:
                  D_signs = [1, -1, -1, -1]
          if conj_type == 1:
